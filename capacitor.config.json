@@ -1,0 +1,8 @@
+{
+  "appId": "com.myclinicapp",
+  "appName": "myclinicapp",
+  "webDir": "dist/spa",
+  "server": {
+    "androidScheme": "https"
+  }
+}

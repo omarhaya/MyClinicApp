@@ -1,0 +1,7 @@
+{
+  "name": "myclinicapp",
+  "integrations": {
+    "capacitor": {}
+  },
+  "type": "custom"
+}
