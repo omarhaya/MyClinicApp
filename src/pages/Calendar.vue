@@ -11,7 +11,7 @@
       <!-- <div v-if="!mobile" class="col-4" >
         <FullCalendar
           ref="externalCalendar" id="externalCalendar"
-          class="calendar q-pa-lg" 
+          class="calendar q-pa-lg"
           :options="srcCalendarOptions"
           @eventLeave="handleEventLeave"
           @eventReceive="handleEventReceive"
@@ -178,9 +178,9 @@ scrollTime:'14:00:00',//dayjs(today).format('HH:mm:ss')
     // info.event._def.resourceIds = ['b'];
   },
   eventClassNames: function(arg) {
-    return  `text-red bg-${arg.event.extendedProps.background}-3` 
+    return  `text-red bg-${arg.event.extendedProps.background}-3`
   },
- 
+
 
     }});
     // Method to get the class name based on the event value
@@ -204,10 +204,10 @@ function handleWeekendsToggle() {
 
 function handleWindowResize() {
   const calendarApi = calendar.value.getApi();
- 
+
   calendarApi.updateSize();
 if(!mobile){
-  const externalCalendarApi=externalCalendar.value.getApi() 
+  const externalCalendarApi=externalCalendar.value.getApi()
   externalCalendarApi.updateSize()};
 }
 
@@ -397,7 +397,7 @@ function   isShortEvent(event) {
   position: absolute;
   right: 0px;
   z-index: 4;
-  
+
 }
 
 .fc .fc-timegrid-now-indicator-arrow {
@@ -446,7 +446,7 @@ function   isShortEvent(event) {
 .fc-timegrid-event-harness-inset .fc-timegrid-event,
 .fc-timegrid-event.fc-event-mirror,
 .fc-timegrid-more-link {
-    box-shadow:0 0px 2px 0 rgba(0, 0, 0, .14), 0 1px 10px -5px hsla(0, 0%, 60%, .4);  
+    box-shadow:0 0px 2px 0 rgba(0, 0, 0, .14), 0 1px 10px -5px hsla(0, 0%, 60%, .4);
     border: 0 !important;
     /* border-left: 3px solid red !important; 2px left border */
 }
