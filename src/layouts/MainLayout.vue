@@ -362,7 +362,7 @@ const essentialLinks = [
   {
     title: 'Patients List',
     icon: 'recent_actors',
-    link: '/patients'
+    link: '/Patients'
   },
   {
     title: 'Calendar',
@@ -389,10 +389,10 @@ const essentialLinks = [
       }
     const checkPopup=()=>{
       if (storeInvoices.invoiceModal||storePayments.paymentModal)
-      {storeSettings.miniState=true 
+      {storeSettings.miniState=true
         console.log('changed')
       }
-    else storeSettings.miniState=false 
+    else storeSettings.miniState=false
     console.log('changed')
       }
       function handleToothSelected(selectedTeeth){

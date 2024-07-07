@@ -71,7 +71,7 @@
           <ion-item-sliding
           v-for="patient in group.patients"
           >
-            <ion-item @click="$router.push(`/PatientDetails/${patient.patientId}`)" button >
+            <ion-item @click="$router.push(`/Patients/${patient.patientId}`)" button >
 
               <ion-label :style="getLabelStyle('primary')" >
                 <h2>{{patient.namef}}</h2>

@@ -9,14 +9,7 @@
        <q-card-section >
            <div >
     <form @submit.prevent.stop="onSubmit" @reset.prevent.stop="onReset" class="q-gutter-md">
-
-
         <q-card-section class="q-pt-none">
-
-     <!-- <q-badge color="secondary" multi-line>
-        Model: "{{ appointmenttitle }}"
-      </q-badge> -->
-
       <q-select
         filled
         v-model="appointment.title"
@@ -115,16 +108,12 @@ import {useStoreAppointments} from 'stores/storeAppointments'
 import { useStorePatients } from 'src/stores/storePatients'
 import { useStoreAuth } from 'src/stores/storeAuth'
 import { uid, useQuasar } from 'quasar'
-import { isObject } from '@vueuse/core'
-
-
 
 /*
  Quasar Lib
 */
 
 const $q =useQuasar()
-
 
 /*
    props
@@ -163,7 +152,6 @@ doctorId:{
   default:''
 }
 })
-
 
 /*
   store

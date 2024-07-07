@@ -20,11 +20,11 @@ const routes = [
       },
       { path: '/Patients',
       component: Patients,
-      name:'patients'
+      name:'Patients'
       },
-      { path: '/PatientDetails/:patientId',
+      { path: '/Patients/:patientId',
       component: PatientDetails,
-      name:'patientdetails'
+      name:'PatientDetails'
       },
       { path: '/editPatient/:patientId',
       component: EditPatient,
