@@ -19,17 +19,37 @@
       </div> -->
       <!-- {{ formattedCurrentTime }} -->
       <!-- <q-btn @click="handleWindowResize"> hi</q-btn> -->
+      <q-dialog v-model="modals.addAppointment"  >
+     <ModalAddAppointment
+     v-if="modals.addAppointment"
+     v-model="modals.addAppointment"
+     :appointment="appointment"
+     :startTime="appointment.eventTimeStart"
+     :endTime="appointment.eventTimeEnd"
+     :doctorId="appointment.doctorId"
+     :startDate="appointment.eventDateStart"
+     :endDate="appointment.eventDateEnd"
+      />
+    </q-dialog>
    <FullCalendar ref="calendar" id="calendar" :options="calendarOptions" class="calendar col" >
     <template v-slot:eventContent="arg">
-      <q-tooltip v-if="arg.event.display!=='background'">
+      <!-- <q-popup-proxy  v-model="popupProxy[arg.event.extendedProps.appointmentId]" transition-show="flip-up" transition-hide="flip-down">
+        <q-banner class="bg-brown text-white">
+          <template v-slot:avatar>
+            <q-icon name="signal_wifi_off" />
+          </template>
+          You have lost connection to the internet. This app is offline.
+        </q-banner>
+      </q-popup-proxy> -->
+      <!-- <q-tooltip v-if="arg.event.display!=='background'">
           Some text as content of Tooltip
-        </q-tooltip>
+        </q-tooltip> -->
       <div class="event-content">
         <div v-if="arg.event.display!=='background'"  :class="borderClasses(arg)" class="appointment-border"></div>
       <div :class="['fc-event-main-frame', { 'short-event': isShortEvent(arg.event) }]">
           <div class="fc-event-title-container">
-            <div v-if="arg.event.display!=='background'" class="fc-event-time">{{ formatEventTime(arg.event) }}</div>
-            <div class="fc-event-title fc-sticky">{{ arg.event.title }}</div>
+            <div v-if="arg.event.display!=='background'" class="fc-event-time"><q-icon class="q-pr-xs" name="schedule"/>{{ formatEventTime(arg.event) }}</div>
+            <q-badge v-if="arg.event.display!=='background'&&arg.event.title" :color="arg.event.extendedProps.background" class="fc-event-title fc-sticky"><q-icon class="q-pr-xs" name="person"></q-icon>{{ arg.event.title }}</q-badge>
           </div>
         </div>
       </div>
@@ -40,7 +60,7 @@
 </template>
 
 <script setup>
-import { ref, computed,onMounted,onActivated,watch ,onRenderTriggered} from 'vue';
+import { ref, computed,onMounted,reactive,watch } from 'vue';
 import FullCalendar from '@fullcalendar/vue3';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import interactionPlugin from '@fullcalendar/interaction';
@@ -57,7 +77,7 @@ import NavigationBar from 'src/components/Calendar/NavigationBar.vue'
 import { useStoreAppointments } from 'src/stores/storeAppointments';
 import { storeToRefs } from 'pinia'
 import { useStoreAuth } from 'src/stores/storeAuth';
-
+import ModalAddAppointment from 'src/components/PaymentsAndAppointments/ModalAddAppointment.vue'
 
 const storeAppointments=useStoreAppointments()
 const storeSettings=useStoreSettings()
@@ -67,7 +87,22 @@ const doctors=computed(()=>{ return storeAuth.doctors})
 const calendar = ref(null)
 const externalCalendar = ref(null)
 const today = dayjs().format('YYYY-MM-DDTHH:mm:ss')
+
+const appointment =ref({
+ resourceId:null,
+ eventTimeStart:null,
+ eventTimeEnd:null,
+ eventDateStart:null,
+ eventDateEnd:null,
+ doctorId:null,
+ appointmentId:null,
+ allDay:null,
+})
+const modals = reactive({
+ addAppointment:false,
+})
 const currentEvents = ref([])
+const popupProxy= ref({})
 // Data property for current time
 const currentTime = ref(dayjs().format('h:mm'));
 
@@ -158,10 +193,12 @@ const calendarOptions =computed(() => {
 }],
 scrollTime:'14:00:00',//dayjs(today).format('HH:mm:ss')
   select: handleDateSelect,
-  eventClick: handleEventClick,
+  // // eventClick: handleEventClick,
+  eventDragStart:handleEventDragStart,
   eventsSet: handleEvents,
   eventAdd: handleEventAdd,
   eventChange: handleEventChange,
+  unselectAuto:false,
   // eventRemove: handleEventRemove,
   // windowResize(arg) {
   //   alert('The calendar has adjusted to a window resize. Current view: ' + arg.view.type);
@@ -180,9 +217,9 @@ scrollTime:'14:00:00',//dayjs(today).format('HH:mm:ss')
   eventClassNames: function(arg) {
     return  `text-red bg-${arg.event.extendedProps.background}-3`
   },
+    }})
 
 
-    }});
     // Method to get the class name based on the event value
 const getEventClassNames = (arg) => {
   switch (arg.event.extendedProps.value) {
@@ -210,27 +247,45 @@ if(!mobile){
   const externalCalendarApi=externalCalendar.value.getApi()
   externalCalendarApi.updateSize()};
 }
-
-function handleDateSelect(selectInfo) {
-  let title = prompt('Please enter a new title for your event')
-  let calendarApi = selectInfo.view.calendar
-
-  calendarApi.unselect()
-
-  if (title) {
-    const newEvent = {
-      id: createEventId(),
-      title,
-      start: selectInfo.startStr,
-      end: selectInfo.endStr,
-      allDay: selectInfo.allDay,
-      resourceId: selectInfo.resource.id
-    };
-    calendarApi.addEvent(newEvent);
-    storeAppointments.addAppointment(newEvent);
+// Add event handler for event drag start
+const handleEventDragStart = () => {
+  for (const key in popupProxy.value) {
+    popupProxy.value[key] = false;
   }
-}
+};
+function handleDateSelect(selectInfo) {
+  modals.addAppointment=true
+  if (modals.addAppointment) {
+    const eventTimeStart = new Date(selectInfo.startStr).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })
+    const eventTimeEnd = new Date(selectInfo.endStr).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })
+    const eventDateStart = new Date(selectInfo.startStr).toISOString().split('T')[0];
+    const eventDateEnd = new Date(selectInfo.endStr).toISOString().split('T')[0];
+    const newAppointment = {
+  appointmentId:createEventId(),
+  eventTimeStart,
+  eventTimeEnd,
+  eventDateStart,
+  eventDateEnd,
+  allDay:selectInfo.allDay,
+  doctorId:selectInfo.resource.id,
+    }
+    appointment.value=newAppointment
+    // storeAppointments.addAppointment(newAppointment);
+  }
 
+console.log(appointment.value,'apppppp')
+}
+watch(() => modals.addAppointment, (currentValue, oldValue) => {
+         if(currentValue!==true){
+          handleEventUnselect ()
+         }
+     })
+
+  function handleEventUnselect () {
+    console.log('finish')
+    let calendarApi = calendar.value.getApi()
+    calendarApi.unselect()
+  }
 function handleEventClick(clickInfo) {
   if (confirm(`Are you sure you want to delete the event '${clickInfo.event.title}'`)) {
     // clickInfo.event.remove();
@@ -260,21 +315,29 @@ console.log(addInfo,'evvvent')
   storeAppointments.addAppointment(newAppointmentDetails);
 }
 
-function handleEventChange(changeInfo) {
+async function handleEventChange(changeInfo) {
   const event = changeInfo.event;
   const resourceId=event._def.resourceIds
   const updatedAppointment = {
       appointmentId: event.extendedProps.appointmentId,
       title: event.title,
+      patientDetails:event.extendedProps.patientDetails,
       startDate: dayjs(event.startStr).format('YYYY-MM-DD'),
       endDate: dayjs(event.endStr).format('YYYY-MM-DD'),
       startTime: dayjs(event.startStr).format('HH:mm:ss'),
       endTime: dayjs(event.endStr).format('HH:mm:ss'),
-      doctor: resourceId, // Example doctor, replace with actual value
+      doctorId: resourceId, // Example doctor, replace with actual value
       status: 'booked'
   };
-  storeAppointments.dropAppointment(updatedAppointment);
+  await storeAppointments.dropAppointment(updatedAppointment);
   console.log(updatedAppointment,'updatedAppointment')
+  refreshCalendarEvents ()
+}
+
+function refreshCalendarEvents (){
+  const calendarApi = calendar.value.getApi();
+  calendarApi.removeAllEvents();
+  calendarApi.addEventSource(storeAppointments.dayAppointments[storeAppointments.selectedDate])
 }
 
 function handleEventRemove(removeInfo) {
@@ -308,6 +371,14 @@ onMounted(() => {
            }
          { await storeAppointments.getDayAppointments(newValue)}
          })
+         watch(modals.addAppointment, async (newValue, oldValue) => {
+         if (newValue=false) {
+          let calendarApi = selectInfo.view.calendar
+          calendarApi.unselect()
+          console.log('hi')
+         }
+         else  console.log('hi22')
+         })
      })
 
 setInterval(()=>{
@@ -340,6 +411,7 @@ function formatEventTime(event) {
 function   isShortEvent(event) {
       return !event.end || event.end.getTime() - event.start.getTime() <= 15 * 60 * 1000; // 1 hour or less
     }
+
 </script>
 
 <style scoped lang="scss">

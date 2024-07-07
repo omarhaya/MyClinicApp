@@ -41,14 +41,15 @@ export const useStoreAppointments= defineStore('storeAppointments', {
           appointmentId: doc.id,
           details: doc.data().details,
           date: doc.data().date,
-          title: doc.data().patientname,
+          patientDetails: doc.data().patientDetails,
+          title:doc.data().patientDetails.namef,
           completed: doc.data().completed,
-          resourceIds: doc.data().doctor,
+          resourceIds: doc.data().doctorId,
           start: doc.data().start,
           end: doc.data().end,
           status: doc.data().status || 'booked',
           constraint: 'availableForAppointment',
-          background:'pink',
+          background:'purple',
         };
         fbAppointments.push(appointment);
       });
@@ -89,7 +90,7 @@ console.log(defaultEvent,'default event')
           appointmentId: doc.id,
           details: doc.data().details,
           date: doc.data().date,
-          title: doc.data().patientname,
+          title: doc.data().patientDetails,
           doctor: doc.data().doctor,
           start: doc.data().start.substring(11),
           end: doc.data().end.substring(11),
@@ -146,14 +147,15 @@ console.log(defaultEvent,'default event')
       console.log(this.loading,'ading')
       let currentDate = new Date().getTime(),
           date = currentDate.toString()
+        // Find the doctor with the matching ID
     await addDoc(appointmentsCollectionRef, {
       start: newAppointmentDetails.startDate+'T'+newAppointmentDetails.startTime,
       end:newAppointmentDetails.startDate+'T'+newAppointmentDetails.endTime,
-      patientname: newAppointmentDetails.title,
-      doctor: newAppointmentDetails.doctor,
+      patientDetails: newAppointmentDetails.title,
+      doctorId:[newAppointmentDetails.doctor.doctorId],
       appointmentdate:dayjs(newAppointmentDetails.startDate).format('YYYY-MM-DD'),
       // patientId:newAppointmentDetails.title.patientId,
-     
+
       // duration: newAppointmentDetails.duration,
       // details:newAppointmentDetails.details,
       // appointmentdate: newAppointmentDetails.startDate,
@@ -188,14 +190,18 @@ console.log(defaultEvent,'default event')
     //   })
     // },
     async dropAppointment(appointment){
+      try {
+      console.log(appointment.doctorId)
       await updateDoc(doc(appointmentsCollectionRef, appointment.appointmentId), {
       start: appointment.startDate+'T'+appointment.startTime,
       end:appointment.startDate+'T'+appointment.endTime,
-      patientname: appointment.title,
+      patientDetails: appointment.patientDetails,
       appointmentdate:dayjs(appointment.startDate).format('YYYY-MM-DD'),
-      // patientId:newAppointmentDetails.title.patientId,
-      doctor: appointment.doctor,
+      doctorId: appointment.doctorId,
       })
+    } catch (error) {
+      console.error('Error updating appointment: ', error);
+    }
     }
   },
 

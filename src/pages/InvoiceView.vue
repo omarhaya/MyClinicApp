@@ -3,7 +3,7 @@
     <ion-header v-if="mobile" :translucent="true">
     <ion-toolbar>
       <ion-buttons slot="start">
-        <ion-back-button :text="lastRoute"></ion-back-button>
+        <ion-back-button :text="lastRouteText" :default-href="lastRoute"></ion-back-button>
       </ion-buttons>
       <ion-title>Back Button</ion-title>
     </ion-toolbar>
@@ -15,12 +15,16 @@
         </ion-toolbar>
       </ion-header>
   <div v-if="currentInvoice" class="invoice-view container">
-    <router-link v-if="!mobile" class="nav-link flex" :to="{ name: 'invoices' }">
-      <img src="../assets/icon-arrow-left.svg" alt="" /> Go Back
-    </router-link>
+    <!-- <router-link v-if="!mobile" class="nav-link flex" :to="lastRoute">
+      <img src="../assets/icon-arrow-left.svg" alt="" /> {{ lastRouteText }}
+    </router-link> -->
     <!-- Header -->
     <div class="header flex">
+      <router-link v-if="!mobile" class="nav-link flex" :to="lastRoute">
+      <img src="../assets/icon-arrow-left.svg" alt="" />
+    </router-link>
       <div class="left flex">
+
         <span>Status</span>
         <div v-if="storeWorks.invoiceWorks[currentInvoice.invoiceId]"
           class="status-button flex"
@@ -430,11 +434,20 @@ onMounted(() => {
           year: '2000',
         },
       ])
-  const lastRoute = computed(() => {
-  const route =router.options.history.state.back
-   const filteredRoute=route.substring(1)
-  return filteredRoute
-})
+      const lastRoute = computed(() => {
+      const route = router.options.history.state.back;
+      return route ? route : '/';  // Default to home if no last route is found
+    });
+
+    const lastRouteText = computed(() => {
+      const route = router.options.history.state.back;
+      if (route) {
+        const parts = route.split('/');
+        return parts.length > 1 ? parts[1] : parts[0];
+      } else {
+        return 'home';
+      }
+    });
 
 /*
  Mobile
@@ -452,8 +465,9 @@ const   mobile=computed(()=>{
 <style lang="scss" scoped>
 
 .invoice-view {
+  padding-top:20px !important;
   .nav-link {
-    margin-bottom: 32px;
+    // margin-bottom: 32px;
     align-items: center;
     color: #000000;
     font-size: 12px;

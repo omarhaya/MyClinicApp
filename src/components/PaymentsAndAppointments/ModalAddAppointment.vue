@@ -1,6 +1,6 @@
 <template>
    <q-card style="min-width: 350px">
-      <q-toolbar class="bg-primary text-white" style="min-width: 340px;,background-color=red;">
+      <q-toolbar class="bg-primary text-white" style="min-width: 340px;background-color:red;">
             <q-toolbar-title >
               Add New Appointment
             </q-toolbar-title>
@@ -93,12 +93,12 @@
           align="justify"
           narrow-indicator
         >
-          <q-tab v-for="doctor in storeAuth.doctors" :name= doctor.name><div>Dr.{{ doctor.name }}</div></q-tab>
+          <q-tab v-for="doctor in storeAuth.doctors" :name= doctor><div>Dr.{{ doctor.name }}</div></q-tab>
         </q-tabs>
         </q-card-section>
 
         <q-card-actions align="left" class="text-primary">
-          <q-btn  label="Add Appointment" color="primary" type="submit" v-close-popup />
+          <q-btn  label="Add Appointment" color="primary" type="submit" />
           <q-btn label="Reset"  type="reset" color="primary" flat class="q-ml-sm" />
           <q-btn flat label="Cancel" v-close-popup />
         </q-card-actions>
@@ -115,6 +115,7 @@ import {useStoreAppointments} from 'stores/storeAppointments'
 import { useStorePatients } from 'src/stores/storePatients'
 import { useStoreAuth } from 'src/stores/storeAuth'
 import { uid, useQuasar } from 'quasar'
+import { isObject } from '@vueuse/core'
 
 
 
@@ -153,7 +154,11 @@ startDate:{
   type: String,
   default:''
 },
-doctor:{
+endDate:{
+  type: String,
+  default:''
+},
+doctorId:{
   type: String,
   default:''
 }
@@ -233,27 +238,34 @@ doctor:{
     startTime:props.startTime,
     endTime:props.endTime,
     startDate:props.startDate,
+    endDate:props.endDate,
     title:null,
     content: 'Endo.',
-    doctor:props.doctor,
+    doctor:storeAuth.doctors.find(doc => doc.doctorId === props.doctorId),
     status:status.value,
   })
 
 
   const onSubmit= ()=> {
-            storeAppointments.loadingAppointments=true
-            console.log(appointment.value)
-            storeAppointments.addAppointment(appointment.value)
-            closeModal()
-            storeAppointments.loadingAppointments=false
-            //  addpatientdialog.value=false
-              $q.notify({
-                        icon: 'done',
-                        color: 'positive',
-                        message: 'Appointment Added',
-                        actions: [{ label: 'Dismiss', color: 'white', handler: () => { /* ... */ } } ]
-                        })
+    if (!appointment.value.title) {
+    $q.notify({
+      color: 'negative',
+      message: 'Please select a patient.',
+    })
+    return
+  }
 
+  storeAppointments.loading = true
+  console.log(appointment.value)
+  storeAppointments.addAppointment(appointment.value)
+  closeModal()
+  storeAppointments.loading = false
+  $q.notify({
+    icon: 'done',
+    color: 'positive',
+    message: 'Appointment Added',
+    actions: [{ label: 'Dismiss', color: 'white', handler: () => { /* ... */ } }]
+  })
           }
 
        const onReset= ()=> {
