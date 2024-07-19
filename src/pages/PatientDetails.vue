@@ -1,6 +1,23 @@
 <template>
-   <ion-page  >
+  <ion-page>
+    <ion-header v-if="mobile" :translucent="true">
+    <ion-toolbar>
+      <ion-buttons slot="start">
+        <ion-back-button :text="lastRouteText" :default-href="lastRoute"></ion-back-button>
+      </ion-buttons>
+      <ion-title>Back Button</ion-title>
+    </ion-toolbar>
+  </ion-header>
+      <ion-header collapse="condense">
+        <ion-toolbar>
+
+        </ion-toolbar>
+      </ion-header>
     <ion-content  color="light" >
+      <router-link v-if="!mobile" class="nav-link flex" :to="lastRoute">
+      <img src="../assets/icon-arrow-left.svg" alt="" />
+      Back
+    </router-link>
       <div :class="{'row reverse q-mt-lg q-mr-md ' :$q.screen.gt.sm , 'row q-mt-lg ' :!$q.screen.gt.sm} " >
 
 <div :class="{'q-pl-md q-mb-lg q-mr-xs col-12 col-sm-4 q-gutter-md' :$q.screen.gt.sm , 'q-mb-lg col-12 col-md-auto q-pa-xs' :!$q.screen.gt.sm} " >
@@ -59,7 +76,9 @@ import AppointmentsPatientView from 'src/components/PaymentsAndAppointments/Appo
 import PaymentsPatientView from 'src/components/PaymentsAndAppointments/PaymentsPatientView.vue'
 import InvoicesPatientView from 'src/components/PaymentsAndAppointments/InvoicesPatientView.vue'
 import Patient from 'src/components/Patients/Patient.vue'
-import { IonSearchbar, IonHeader, IonIcon , IonToolbar ,IonPage ,IonContent,modalController} from '@ionic/vue';
+import { IonAccordion, IonAccordionGroup, IonItem, IonLabel, IonPage, IonHeader, IonToolbar, IonTitle, IonContent , IonBackButton, IonButtons, } from '@ionic/vue';
+import { Platform } from 'quasar'
+
  const tab=ref('payments')
 /*
  Quasar Lib
@@ -148,4 +167,30 @@ const patientId=computed(()=>{
         phoneRef.value.resetValidation()
 
        }
+       const lastRoute = computed(() => {
+      const route = router.options.history.state.back;
+      return route ? route : '/';  // Default to home if no last route is found
+    });
+
+    const lastRouteText = computed(() => {
+      const route = router.options.history.state.back;
+      if (route) {
+        const parts = route.split('/');
+        return parts.length > 1 ? parts[1] : parts[0];
+      } else {
+        return 'home';
+      }
+    });
+
+/*
+ Mobile
+*/
+const   mobile=computed(()=>{
+          if (Platform.is.desktop){
+            return false
+          }
+          if (Platform.is.mobile){
+        return true
+          }
+        })
 </script>

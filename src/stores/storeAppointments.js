@@ -7,6 +7,8 @@ import {db} from '/src/js/firebase'
 import { useStoreAuth } from './storeAuth'
 import {today} from '@quasar/quasar-ui-qcalendar/src/index.js'
 import dayjs from 'dayjs';
+import {modalController, } from '@ionic/vue';
+import { useQuasar } from 'quasar'
 
 let appointmentsCollectionRef
 let appointmentsCollectionQuery
@@ -22,6 +24,9 @@ export const useStoreAppointments= defineStore('storeAppointments', {
        dayAppointments:[],
        selectedDate:today(),
        storeAuth,
+       menu:[],
+       $q:useQuasar(),
+       modal:false,
     }
   },
 
@@ -49,7 +54,7 @@ export const useStoreAppointments= defineStore('storeAppointments', {
           end: doc.data().end,
           status: doc.data().status || 'booked',
           constraint: 'availableForAppointment',
-          background:'purple',
+          background:'orange',
         };
         fbAppointments.push(appointment);
       });
@@ -144,6 +149,7 @@ console.log(defaultEvent,'default event')
   // },
    // Add Appointment
     async addAppointment (newAppointmentDetails) {
+      this.loading=true
       console.log(this.loading,'ading')
       let currentDate = new Date().getTime(),
           date = currentDate.toString()
@@ -164,8 +170,16 @@ console.log(defaultEvent,'default event')
       date,
 
     })
+    modalController.dismiss(null, 'confirm');
     console.log(newAppointmentDetails,'newAppointmentDetails')
     console.log(this.loading,'added')
+    this.$q.notify({
+      icon: 'done',
+      color: 'positive',
+      message: 'Appointment Added',
+      actions: [{ label: 'Dismiss', color: 'white', handler: () => { /* ... */ } }]
+    })
+    this.loading=false
     },
     clearAppointments(){
       this.appointments=[]

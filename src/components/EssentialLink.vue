@@ -15,7 +15,8 @@
 
     >
 
-      <q-icon :name="icon"/>
+      <q-icon v-if="icon=='fa-solid fa-vault'" :class="mobile ? 'treasury-icon-mobile' : 'treasury-icon-desktop'" size="20px" :name="icon"/>
+      <q-icon v-else :name="icon"/>
     </q-item-section>
 
     <q-item-section>
@@ -26,10 +27,26 @@
 </template>
 
 <script setup>
-import { defineComponent,ref } from 'vue'
+import { defineComponent,computed } from 'vue'
 import {today} from '@quasar/quasar-ui-qcalendar/src/index.js'
 import { useRoute } from 'vue-router';
+import treasury from 'src/assets/vault-solid.svg';
+import { useQuasar } from 'quasar'
+import { Platform } from 'quasar';
 
+const myIcons = {
+  'treasury': 'img:/src/assets/vault-solid.svg',
+}
+
+// ...
+const $q = useQuasar()
+
+$q.iconMapFn = (iconName) => {
+  const icon = myIcons[iconName]
+  if (icon !== undefined) {
+    return { icon }
+  }
+}
 const route = useRoute();
 
 const active = (link) => {
@@ -64,6 +81,17 @@ let result=null
    })
 
 
+/*
+ Mobile
+*/
+const   mobile=computed(()=>{
+          if (Platform.is.desktop){
+            return false
+          }
+          if (Platform.is.mobile){
+        return true
+          }
+        })
 
 </script>
 <style lang="scss">
@@ -80,5 +108,12 @@ let result=null
 .my-menu-link {
     color: #008e91 !important;
     background: white;
+}
+.treasury-icon-desktop {
+  margin-left :4px;
+}
+.treasury-icon-mobile
+{
+  margin-left :0px;
 }
  </style>

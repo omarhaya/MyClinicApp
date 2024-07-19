@@ -305,8 +305,8 @@
         </ion-tab-button>
 
         <ion-tab-button tab="tab1" href="/Treasury">
-           <q-icon class="treasury-icon" size="26px" name="fa-solid fa-vault"></q-icon>
-           <ion-label> <h6>Treasury</h6></ion-label>
+           <q-icon class="treasury-icon" size="24px" name="fa-solid fa-vault"></q-icon>
+           <ion-label> <h6 class="ion-text">Treasury</h6></ion-label>
         </ion-tab-button>
 
         <ion-tab-button tab="tab2" href="/Invoices">
@@ -338,9 +338,9 @@ import { useStoreSettings } from 'src/stores/storeSettings'
 import { newspaper, people, card ,calendar} from 'ionicons/icons';
 import { useStoreExpenses } from 'src/stores/storeExpenses'
 import ExpenseModal from 'src/components/ExpenseModal.vue'
+
 const $q=useQuasar()
-
-
+const treasuryIcon = 'src/assets/vault-solid.svg'
 /*
  store
 */
@@ -474,9 +474,8 @@ const essentialLinks = [
 .q-toolbar
    min-height: 42px !important
    box-sizing: border-box
-.sc-ion-label-ios-s h6
-
-   font-size: 10px !important
+.ion-text
+   font-size: 11px !important
 .treasury-icon
    padding-bottom:1px
    padding-top:5px

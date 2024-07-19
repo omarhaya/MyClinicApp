@@ -1,6 +1,6 @@
 <template>
-   <q-card style="min-width: 350px">
-      <q-toolbar class="bg-primary text-white" style="min-width: 340px;background-color:red;">
+
+      <q-toolbar v-if="!mobile" class="bg-primary text-white" style="min-width: 340px;background-color:red;">
             <q-toolbar-title >
               Add New Appointment
             </q-toolbar-title>
@@ -8,7 +8,7 @@
           </q-toolbar>
        <q-card-section >
            <div >
-    <form @submit.prevent.stop="onSubmit" @reset.prevent.stop="onReset" class="q-gutter-md">
+    <form ref="formRef" @submit.prevent.stop="onSubmit" @reset.prevent.stop="onReset" class="q-gutter-md">
         <q-card-section class="q-pt-none">
       <q-select
         filled
@@ -90,7 +90,7 @@
         </q-tabs>
         </q-card-section>
 
-        <q-card-actions align="left" class="text-primary">
+        <q-card-actions v-if="!mobile" align="left" class="text-primary">
           <q-btn  label="Add Appointment" color="primary" type="submit" />
           <q-btn label="Reset"  type="reset" color="primary" flat class="q-ml-sm" />
           <q-btn flat label="Cancel" v-close-popup />
@@ -99,15 +99,16 @@
       </div>
       </q-card-section>
 
-      </q-card>
+
 
 </template>
 <script setup>
-import { defineAsyncComponent, ref } from 'vue'
+import { computed, ref } from 'vue'
 import {useStoreAppointments} from 'stores/storeAppointments'
 import { useStorePatients } from 'src/stores/storePatients'
 import { useStoreAuth } from 'src/stores/storeAuth'
 import { uid, useQuasar } from 'quasar'
+import { Platform } from 'quasar'
 
 /*
  Quasar Lib
@@ -233,7 +234,53 @@ doctorId:{
     status:status.value,
   })
 
+ /*
+  Submission
+ */
 
+  defineExpose({
+      submitAppointmentFormMobile
+    })
+    const formRef = ref(null)
+    function submitAppointmentFormMobile (){
+      const form = formRef.value;
+  if (form.checkValidity()) {
+    if (appointment.title === null) {
+  $q.notify({
+    message: 'Choose a Patient please.',
+    color: 'negative',
+    icon: 'report_problem',
+    actions: [
+      { label: 'Dismiss', color: 'white', handler: () => { /* console.log('wooow') */ } }
+    ]
+  });
+// } else if (!storeInvoices.workItemList|| storeInvoices.workItemList.length === 0) {
+//   $q.notify({
+//     message: 'Choose a Work please.',
+//     color: 'orange',
+//     icon: 'report_problem',
+//     actions: [
+//       { label: 'Dismiss', color: 'white', handler: () => { /* console.log('wooow') */ } }
+//     ]
+//   });
+} else {
+  submitForm();
+}
+  } else {
+
+    form.reportValidity()
+    // Handle form validation errors
+    // Example: Display error messages
+  }
+    }
+    function submitForm() {
+      // console.log('submitting')
+      //  if (storeInvoices.editInvoice) {
+      //    updateInvoice()
+      //    return
+      //  }
+      onSubmit()
+     }
   const onSubmit= ()=> {
     if (!appointment.value.title) {
     $q.notify({
@@ -243,17 +290,17 @@ doctorId:{
     return
   }
 
-  storeAppointments.loading = true
+
   console.log(appointment.value)
   storeAppointments.addAppointment(appointment.value)
   closeModal()
-  storeAppointments.loading = false
-  $q.notify({
-    icon: 'done',
-    color: 'positive',
-    message: 'Appointment Added',
-    actions: [{ label: 'Dismiss', color: 'white', handler: () => { /* ... */ } }]
-  })
+
+  // $q.notify({
+  //   icon: 'done',
+  //   color: 'positive',
+  //   message: 'Appointment Added',
+  //   actions: [{ label: 'Dismiss', color: 'white', handler: () => { /* ... */ } }]
+  // })
           }
 
        const onReset= ()=> {
@@ -305,6 +352,13 @@ const myIcons = {
       return { icon: icon }
      }
      }
+
+
+// Mobile detection
+const mobile = computed(() => {
+  return Platform.is.mobile && !Platform.is.desktop;
+})
+
 </script>
 
 <style lang="scss">

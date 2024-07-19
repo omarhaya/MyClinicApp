@@ -1,24 +1,83 @@
 <template>
-  <ion-page ref="page">
-    <ion-header color="primary" :translucent="true" collapse="fade">
-     <ion-toolbar color="success">
-      <NavigationBar
-  :selectedDate="storeAppointments.selectedDate"
-  />
-      </ion-toolbar>
-    </ion-header>
-   <AppointmentSchedule :pageRef="page"/>
-  </ion-page>
+
+    <div class="calendar-container row">
+      <!-- <div v-if="!mobile" class="col-4" >
+        <FullCalendar
+          ref="externalCalendar" id="externalCalendar"
+          class="calendar q-pa-lg"
+          :options="srcCalendarOptions"
+          @eventLeave="handleEventLeave"
+          @eventReceive="handleEventReceive"
+        />
+      </div> -->
+      <!-- {{ formattedCurrentTime }} -->
+      <!-- <q-btn @click="handleWindowResize"> hi</q-btn> -->
+      <q-dialog v-model="modals.addAppointment"  >
+        <q-card>
+     <ModalAddAppointment
+     v-if="modals.addAppointment"
+     v-model="modals.addAppointment"
+     :appointment="appointment"
+     :startTime="appointment.eventTimeStart"
+     :endTime="appointment.eventTimeEnd"
+     :doctorId="appointment.doctorId"
+     :startDate="appointment.eventDateStart"
+     :endDate="appointment.eventDateEnd"
+      /></q-card>
+    </q-dialog>
+
+    <ion-content  :fullscreen="true">
+   <FullCalendar ref="calendar" id="calendar" :options="calendarOptions" class="calendar col" >
+    <template v-slot:eventContent="arg">
+      <!-- <q-popup-proxy  v-model="popupProxy[arg.event.extendedProps.appointmentId]" transition-show="flip-up" transition-hide="flip-down">
+        <q-banner class="bg-brown text-white">
+          <template v-slot:avatar>
+            <q-icon name="signal_wifi_off" />
+          </template>
+          You have lost connection to the internet. This app is offline.
+        </q-banner>
+      </q-popup-proxy> -->
+      <!-- <q-tooltip v-if="arg.event.display!=='background'">
+          Some text as content of Tooltip
+        </q-tooltip> -->
+        <v-menu
+        v-if="arg.event.display!=='background'"
+      v-model="storeAppointments.menu[arg.event.extendedProps.appointmentId]"
+      :close-on-content-click="false"
+      location="end"
+    >
+      <template v-slot:activator="{ props }">
+
+      <div
+      @click="openAppointmentPopup(arg.event)"
+      color="indigo"
+      v-bind="props" class="event-content">
+        <div v-if="arg.event.display!=='background'"  :class="borderClasses(arg)" class="appointment-border"></div>
+      <div :class="['fc-event-main-frame', { 'short-event': isShortEvent(arg.event) }]">
+          <div class="fc-event-title-container">
+            <div v-if="arg.event.display!=='background'" class="fc-event-time"><q-icon class="q-pr-xs" name="schedule"/>{{ formatEventTime(arg.event) }}</div>
+            <q-badge v-if="arg.event.display!=='background'&&arg.event.title" :color="arg.event.extendedProps.background" class="fc-event-title fc-sticky"><q-icon class="q-pr-xs" name="person"></q-icon>{{ arg.event.title }}</q-badge>
+          </div>
+        </div>
+      </div>
+    </template>
+    <Popover v-if="!mobile" :event="arg.event"/>
+    </v-menu>
+    </template>
+      </FullCalendar>
+    </ion-content>
+    </div>
+
 </template>
 
 <script setup>
-import { ref, computed,onMounted,reactive,watch } from 'vue';
+import { ref, computed,onMounted,reactive,watch,toRefs } from 'vue';
 import FullCalendar from '@fullcalendar/vue3';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import interactionPlugin from '@fullcalendar/interaction';
 import resourceTimeGridPlugin from '@fullcalendar/resource-timegrid';
 import timeGridPlugin from '@fullcalendar/timegrid';
-import { INITIAL_EVENTS, createEventId } from './event-utils';
+import { INITIAL_EVENTS, createEventId } from '../../pages/event-utils';
 import { Platform } from 'quasar';
 import listPlugin from '@fullcalendar/list';
 import {IonList,
@@ -36,7 +95,16 @@ import Popover from 'src/components/Calendar/Popover.vue'
 import MobileInvoiceModal from 'src/components/MobileInvoiceModal.vue';
 import MobileAppointmentPopup from 'src/components/MobileAppointmentPopup.vue'
 import MobileApppointmentModal from 'src/components/MobileAppointmentModal.vue'
-import AppointmentSchedule from 'src/components/Scehduler/AppointmentSchedule.vue'
+
+/*
+   props
+*/
+const props = defineProps({
+pageRef:{
+  type: Object,
+  required: true
+},
+})
 
 const storeAppointments=useStoreAppointments()
 const storeSettings=useStoreSettings()
@@ -144,6 +212,7 @@ const calendarOptions =computed(() => {
 })),
   slotDuration: '00:15:00',
   slotLabelInterval:'01:00',
+  expandRows: true, // Expand rows to fit the content
   slotLabelFormat:[{
   hour: 'numeric',
   minute: '2-digit',
@@ -203,7 +272,9 @@ if(!mobile){
 const handleEventDragStart = (info) => {
   storeAppointments.menu[info.event.extendedProps.appointmentId]=false
 };
+const eventSelect=ref(false)
 function handleDateSelect(selectInfo) {
+   eventSelect.value=true
   const eventTimeStart = new Date(selectInfo.startStr).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })
     const eventTimeEnd = new Date(selectInfo.endStr).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })
     const eventDateStart = new Date(selectInfo.startStr).toISOString().split('T')[0];
@@ -308,7 +379,7 @@ const mobile = computed(() => {
 })
 
 function refreshCalendarView() {
-  if (calendar.value) {
+  if (calendar.value&&!storeAppointments.modal) {
     const calendarApi = calendar.value.getApi();
     calendarApi.render();
   }
@@ -343,7 +414,7 @@ setInterval(()=>{
 currentTime.value = dayjs().format('h:mm');
 document.documentElement.style.setProperty('--now-time', `"${dayjs().format('h:mm')}"`);
 refreshCalendarView()
-}, 100)
+}, 1)
 
 function  borderClasses  (arg) {
   arg.event.extendedProps.background
@@ -376,19 +447,25 @@ function   isShortEvent(event) {
 
 
 const openAppointmentPopup = async (event) => {
-   if(mobile.value){
+  if (mobile.value||storeAppointments.menu[event.extendedProps.appointmentId]==true)
+  {
+  modalController.dismiss(null, 'cancel')
+   if(storeAppointments.menu[event.extendedProps.appointmentId]!==true){
+    storeAppointments.menu[event.extendedProps.appointmentId]=true
     const modal = await modalController.create({
       component: MobileAppointmentPopup,
       componentProps: {
         event:event // Replace 'yourValue' with the value you want to pass
       },
       // presentingElement: page.value.$el,
-      isOpen: true,
-      initialBreakpoint: 0.75,
-      breakpoints: [0,0.75],
+      isOpen: storeAppointments.menu[event.extendedProps.appointmentId],
+      initialBreakpoint: 0.25,
+      breakpoints: [0,0.25, 0.5, 0.75],
       backdropDismiss: true,
-    });
+      backdropBreakpoint:0.5,
+    })
 
+    console.log(storeAppointments.menu,'hiii')
     modal.present();
     const { data, role } = await modal.onWillDismiss();
     // modal.onDidDismiss(() => storeAppointments.CLEAR_DATA());
@@ -398,24 +475,32 @@ const openAppointmentPopup = async (event) => {
       // message.value = `Hello, ${data}!`;
     }
   }
-};
-
+  }
+}
+// const closeAllEventPopups = () => {
+//   console.log('hiiiii')
+//   Object.keys(storeAppointments.menu).forEach((key) => {
+//     storeAppointments.menu[key] = false;
+//   });
+// };
+const { pageRef } = toRefs(props);
 const openAppointmentModal = async (newAppointment) => {
     const modal = await modalController.create({
       component: MobileApppointmentModal,
+      isOpen:storeAppointments.modal,
       componentProps: {
         appointment:newAppointment// Replace 'yourValue' with the value you want to pass
       },
-      presentingElement:page.value.$el,
-
+      presentingElement: pageRef.value.$el,
     });
-
+    storeAppointments.modal=true
     modal.present();
     const { data, role } = await modal.onWillDismiss();
     modal.onDidDismiss(handleEventUnselect ()
     // ||storeInvoices.CLEAR_DATA()
     )
     if (role === 'confirm') {
+      storeAppointments.modal=false
       console.log('data',data)
       // message.value = `Hello, ${data}!`;
     }
@@ -427,7 +512,9 @@ const openAppointmentModal = async (newAppointment) => {
 <style scoped lang="scss">
 
 .calendar-container {
-  width: 100%;
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
   height: 100%;
 }
 
