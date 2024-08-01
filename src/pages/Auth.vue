@@ -1,4 +1,4 @@
- <template>
+<template>
   <ion-page>
     <!-- <ion-header :translucent="true" collapse="fade">
      <ion-toolbar >
@@ -67,7 +67,7 @@
 
             <div>
             <div>
-              <q-btn color="primary" label="Register" type="submit" rounded></q-btn>
+              <q-btn :loading="storeAuth.loading"color="primary" label="Register" type="submit" rounded></q-btn>
               <q-btn label="Reset" type="reset" color="primary" flat class="q-ml-sm" />
             </div>
               <div class="text-center q-mt-sm q-gutter-lg">
@@ -102,7 +102,7 @@
                ]"/>
                <div class="text-red">{{storeAuth.errorMessageLogin}}</div>
             <div>
-              <q-btn class="full-width" color="primary" label="Login" type="submit" rounded></q-btn>
+              <q-btn :loading="storeAuth.loading" class="full-width" color="primary" label="Login" type="submit" rounded></q-btn>
               <div class="text-center q-mt-sm q-gutter-lg">
                 <router-link class="text-black" to="/login">Forgot Password?</router-link>
               </div>

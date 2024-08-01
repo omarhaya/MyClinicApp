@@ -389,4 +389,7 @@ box-sizing: border-box;
 --offset-top: 0px !important;
 // --offset-bottom: 0px !important;
 }
+.list-md {
+  background:none !important
+}
 </style>

@@ -93,9 +93,9 @@ export const useStorePatients = defineStore('storePatients', {
 
 
       async getPatientsAll(doctors) {
+        this.loading=true
         const doctorsIds=doctors.map(doctor => doctor.doctorId)
         console.log(doctors,'doctorsIds')
-        this.loading=true
         const patientsCollectionAllRef = collectionGroup(db, 'patients')
         const patientsCollectionAllQuery = query(patientsCollectionAllRef, where('uid', 'in', doctorsIds), orderBy('dateUnix', 'desc'))
 
@@ -185,12 +185,16 @@ export const useStorePatients = defineStore('storePatients', {
 
      }
     },
-    getPatient: (state)=>{
-      return (patientId) =>{
-       return state.patients.filter(patient=> patient.patientId===patientId)[0]
-
-      }
-     },
+    getPatient: (state) => {
+      return (patientId) => {
+        if (state.loading) {
+          console.log('Loading patients, please wait...');
+          return null; // Return null or a placeholder value while loading
+        }
+        console.log(state.patients, 'state.patients.filter(patient=> patient.patientId===patientId)[0]');
+        return state.patients.filter((patient) => patient.patientId === patientId)[0];
+      };
+    },
     totalPatientsCount:(state) => {
         return state.patients.length
     },

@@ -1,5 +1,16 @@
 {
   "projects": {
     "default": "myclinicapp-3202a"
-  }
+  },
+  "targets": {
+    "myclinicapp-3202a": {
+      "hosting": {
+        "myclinicapp": [
+          "myclinicapp"
+        ]
+      }
+    }
+  },
+  "etags": {},
+  "dataconnectEmulatorConfig": {}
 }

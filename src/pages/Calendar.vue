@@ -7,7 +7,9 @@
   />
       </ion-toolbar>
     </ion-header>
+    <ion-content>
    <AppointmentSchedule :pageRef="page"/>
+  </ion-content>
   </ion-page>
 </template>
 
@@ -318,26 +320,26 @@ function refreshCalendarView() {
   }
 }
 
-onMounted(() => {
-       storeAppointments.getDayAppointments(storeAppointments.selectedDate)
-         watch(selectedDate, async (newValue, oldValue) => {
-           const calendarApi = calendar.value.getApi();
-           calendarApi.gotoDate( storeAppointments.selectedDate )
-           if(!mobile){
-            const externalCalendarApi = externalCalendar.value.getApi();
-            externalCalendarApi.gotoDate( storeAppointments.selectedDate )
-           }
-         { await storeAppointments.getDayAppointments(newValue)}
-         })
-         watch(modals.addAppointment, async (newValue, oldValue) => {
-         if (newValue=false) {
-          let calendarApi = selectInfo.view.calendar
-          calendarApi.unselect()
-          console.log('hi')
-         }
-         else  console.log('hi22')
-         })
-     })
+// onMounted(() => {
+//        storeAppointments.getDayAppointments(storeAppointments.selectedDate)
+//          watch(selectedDate, async (newValue, oldValue) => {
+//            const calendarApi = calendar.value.getApi();
+//            calendarApi.gotoDate( storeAppointments.selectedDate )
+//            if(!mobile){
+//             const externalCalendarApi = externalCalendar.value.getApi();
+//             externalCalendarApi.gotoDate( storeAppointments.selectedDate )
+//            }
+//          { await storeAppointments.getDayAppointments(newValue)}
+//          })
+//          watch(modals.addAppointment, async (newValue, oldValue) => {
+//          if (newValue=false) {
+//           let calendarApi = selectInfo.view.calendar
+//           calendarApi.unselect()
+//           console.log('hi')
+//          }
+//          else  console.log('hi22')
+//          })
+//      })
 
 setInterval(()=>{
 currentTime.value = dayjs().format('h:mm');
@@ -423,187 +425,3 @@ const openAppointmentModal = async (newAppointment) => {
   };
 
 </script>
-
-<style scoped lang="scss">
-
-.calendar-container {
-  width: 100%;
-  height: 100%;
-}
-
-.calendar {
-  width: 100%;
-  height: 100%;
-}
-
-.calendar2 {
-  width: 15%;
-  height: 5%;
-}
-
-.fc .fc-view-harness,
-.fc .fc-view-harness-active {
-  min-height: 100px !important;
-}
-
-.fc .fc-toolbar {
-  display: none;
-}
-
-.fc .fc-license-message {
-  display: none;
-}
-
-.fc .fc-scroller-liquid-absolute {
-  inset: 0;
-  padding-bottom: 42px;
-}
-
-.row > .col-4, .row > .col-xs-4 {
-  height: auto;
-  width: 20.3333%;
-}
-
-</style>
-
-<style>
-.fc-license-message {
-  display: none;
-}
-
-.fc .fc-timegrid-now-indicator-line {
-  border-color: #ff00008c;
-  border-style: solid;
-  border-width: 2px 0px 0px;
-  left: 0px;
-  position: absolute;
-  right: 0px;
-  z-index: 4;
-
-}
-
-.fc .fc-timegrid-now-indicator-arrow {
-  --current-time: '210PM';
-  position: absolute;
-  z-index: 4;
-  width: 12px;
-  height: 20px;
-  background-color: var(--fc-now-indicator-color);
-  margin-top: -8px;
-  left: 0;
-  width: 79%;
-  border-radius: 4px;
-}
-
-.fc .fc-timegrid-now-indicator-arrow::before {
-    content: var(--now-time, 'default');
-    position: absolute;
-    z-index: 10000004;
-    width: 40px;
-    height: 20px;
-    background-color: var(--fc-now-indicator-color);
-    margin-top: -5px;
-    left: -3px;
-    width: 105%;
-    font-weight: 500;
-    color: white;
-    text-align: center; /* Align text inside the pseudo-element */
-}
-
-.fc .fc-timegrid-now-indicator-arrow::after {
-  content: '';
-  position: absolute;
-  width: 20px;
-  height: 20px;
-  background: var(--fc-now-indicator-color);
-  border-radius: 50% 50% 50% 0%;
-  transform: rotate(220deg);
-  top: -5px;
-  left: 78%;
-  z-index: 100;
-}
-
-
-
-.fc-timegrid-event-harness-inset .fc-timegrid-event,
-.fc-timegrid-event.fc-event-mirror,
-.fc-timegrid-more-link {
-    box-shadow:0 0px 2px 0 rgba(0, 0, 0, .14), 0 1px 10px -5px hsla(0, 0%, 60%, .4);
-    border: 0 !important;
-    /* border-left: 3px solid red !important; 2px left border */
-}
-.fc-event-content {
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  height: 100%;
-}
-
-.fc-event-title {
-  padding-bottom: 5px;
-}
-
-.fc-event-time {
-  padding-bottom: 5px;
-}
-
-.fc-event-icons {
-  display: flex;
-  justify-content: flex-end;
-  align-items: flex-end;
-  padding-top: 5px;
-}
-
-.fc-event-icons i {
-  margin-left: 5px;
-  color: #fff; /* or any color you prefer */
-}
-.event-content {
-  display: flex;
-  align-items: stretch; /* Ensure children stretch to the same height */
-  height: 100%; /* Ensures the event content takes the full height of the event slot */
-}
-
-.appointment-border {
-  margin:3px 0px 3px 3px;
-  width: 5px; /* Adjust the width as needed */
-  background-color: #000; /* Change color as needed */
-  margin-right: 8px; /* Adjust the spacing between the border and the title */
-  border-radius: 3px;
-}
-
-.fc-event-main-frame {
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-  justify-content: center;
-  padding: 2px 4px;
-}
-
-.fc-event-title-container {
-  display: flex;
-  flex-direction: column;
-}
-
-.fc-event-title {
-  font-weight: bold;
-}
-
-/* .fc-event-time {
-  color: orange;
-} */
-
-/* Adjust styles for short events */
-.short-event .fc-event-title-container {
-  flex-direction: row;
-  align-items: center;
-}
-
-.short-event .fc-event-time {
-  margin-left: 4px;
-}
-/* Custom style for the modal handle */
-ion-modal::part(handle) {
-  background-color: white;
-}
-</style>

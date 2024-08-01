@@ -1,6 +1,6 @@
 <template>
   <ion-page>
-    <ion-header v-if="mobile" :translucent="true">
+      <ion-header v-if="mobile" :translucent="true">
     <ion-toolbar>
       <ion-buttons slot="start">
         <ion-back-button :text="lastRouteText" :default-href="lastRoute"></ion-back-button>
@@ -8,12 +8,13 @@
       <ion-title>Back Button</ion-title>
     </ion-toolbar>
   </ion-header>
+    <ion-content  :fullscreen="true">
       <ion-header collapse="condense">
         <ion-toolbar>
 
         </ion-toolbar>
       </ion-header>
-    <ion-content  color="light" >
+
       <router-link v-if="!mobile" class="nav-link flex" :to="lastRoute">
       <img src="../assets/icon-arrow-left.svg" alt="" />
       Back
@@ -34,20 +35,21 @@
         </div>
         </div>
        </div>
-          <q-card class="q-ma-xs"   style="min-height: 323px">
+       <div class="sticky-tabs">
           <q-tabs
-
+              align="justify"
               v-model="tab"
               indicator-color="orange-6"
               class="bg-primary text-grey-5 shadow-2 "
               active-color="white"
             >
-              <q-tab name="appointments" icon="calendar_today" />
-              <q-tab name="payments" icon="payments" />
-              <q-tab name="invoices" icon="request_page" />
+              <q-tab name="appointments" icon="calendar_today" ><div v-if="!mobile">Appointments</div></q-tab>
+              <q-tab name="payments" icon="payments" ><div v-if="!mobile">Payments</div></q-tab>
+              <q-tab name="invoices" icon="request_page" ><div v-if="!mobile">Invoices</div></q-tab>
 
             </q-tabs>
             <q-separator />
+          </div>
 
         <q-tab-panels  v-model="tab" animated  >
         <q-tab-panel style="padding: 0px;" name="appointments">
@@ -63,7 +65,7 @@
         </q-tab-panel>
       </q-tab-panels>
 
-      </q-card>
+
     </ion-content>
     </ion-page>
 </template>
@@ -194,3 +196,10 @@ const   mobile=computed(()=>{
           }
         })
 </script>
+<style scoped>
+.sticky-tabs {
+  position: sticky;
+  top: 0;
+  z-index: 10; /* Adjust as needed to ensure it appears above other content */
+}
+</style>

@@ -135,8 +135,8 @@ export const useStorePayments= defineStore('storePayments', {
        paid:doc.data().paid,
        dateUnix:doc.data().dateUnix,
        workId:doc.data().workId,
+       patientId:doc.data().patientId,
      }
-
      this.getPaymentsForInvoice(payment.invoiceId)
      this.storeWorks.getWork(payment.workId)
      payments.push(payment)
@@ -171,6 +171,7 @@ async getIntervalPayments(startDate, endDate) {
         dateUnix: doc.data().dateUnix,
         workId: doc.data().workId,
         currency: doc.data().currency,
+        pateintId:doc.data().patientId,
       };
 
       //  this.getPaymentsForInvoice(payment.invoiceId)
