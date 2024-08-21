@@ -33,9 +33,9 @@
   </q-tr>
 </template>
 <template v-slot:top-left>
-        <q-btn color="primary" @click="newPayment">
+        <!-- <q-btn color="primary" @click="newPayment">
            New Payment
-        </q-btn>
+        </q-btn> -->
       </template>
 
       <template v-slot:top-right>

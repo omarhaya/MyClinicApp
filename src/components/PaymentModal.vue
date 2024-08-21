@@ -61,6 +61,15 @@
                   :subtitle="item.raw.index"
                 ></v-list-item>
               </template>
+              <template v-slot:append-item class="sticky-item">
+      <v-list-item
+        @click="addNewClient(storePayments.patient)"
+      >
+
+        <v-icon class="me-2">mdi-plus</v-icon>
+        Add New Client
+      </v-list-item>
+    </template>
             </v-autocomplete>
            </div>
 
@@ -413,7 +422,7 @@ const selectWorksInvoice = (option) => {
        })}
        }
        const options = ref(storePatients.patients)
-       function getPatientInvoices(){
+function getPatientInvoices(){
         if(storePayments.patient)
         storeInvoices.SET_PATIENT_INVOICES(storePayments.patient.patientId)
        }
@@ -497,6 +506,10 @@ const removeInvoice = (invoiceId) => {
     storePayments.paymentInvoices.splice(index, 1);
   }
 };
+
+function addNewClient(patientName) {
+  console.log('new User Added',patientName)
+}
 /*
     Styling
 */

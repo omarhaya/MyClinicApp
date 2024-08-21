@@ -4,7 +4,7 @@ import { getFirestore,enableIndexedDbPersistence } from 'firebase/firestore'
 import { getAuth } from 'firebase/auth'
 import { Capacitor } from '@capacitor/core';
 import { initializeAuth, indexedDBLocalPersistence } from 'firebase/auth';
-import {getFunctions} from 'firebase/functions'
+import {getFunctions,httpsCallable} from 'firebase/functions'
 
 const firebaseConfig = {
   apiKey: "AIzaSyD0kt96ogghILFaxVsub6rr2bCL7W8O7WU",

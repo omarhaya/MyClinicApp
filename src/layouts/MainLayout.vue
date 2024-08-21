@@ -1,253 +1,158 @@
 <template>
   <!-- InvoiceModal -->
   <q-dialog
-  v-if="!mobile"
-  full-width
-  full-height
-  allow-focus-outside
-  :persistent="checkContent"
-  position="left"
-  transition-duration="700"
-  @shake="closeWithcontent"
-  v-model="storeInvoices.invoiceModal"
-  class="dialog-addInvoice"
+    v-if="!mobile"
+    full-width
+    full-height
+    allow-focus-outside
+    :persistent="checkContent"
+    position="left"
+    transition-duration="700"
+    @shake="closeWithcontent"
+    v-model="storeInvoices.invoiceModal"
+    class="dialog-addInvoice"
   >
-    <q-dialog  v-model="storeInvoices.modalActive">
-                 <q-card>
-                  <q-card-section>
-                    <div class="text-h6">Second dialog</div>
-                  </q-card-section>
-                  <q-card-section class="row items-center q-gutter-sm">
-                    <q-btn v-close-popup="2" label="Close" color="red" />
-                    <q-btn v-close-popup label="Return" color="purple" />
-                  </q-card-section>
-                </q-card>
+    <q-dialog v-model="storeInvoices.modalActive">
+      <q-card>
+        <q-card-section>
+          <div class="text-h6">Second dialog</div>
+        </q-card-section>
+        <q-card-section class="row items-center q-gutter-sm">
+          <q-btn v-close-popup="2" label="Close" color="red" />
+          <q-btn v-close-popup label="Return" color="purple" />
+        </q-card-section>
+      </q-card>
     </q-dialog>
-    <InvoiceModal/>
+    <InvoiceModal />
   </q-dialog>
-  <v-bottom-sheet  v-if="mobile" v-model="storeInvoices.invoiceModal" scrollable inset>
-      <v-card
-        height="auto"
-      >
-      <InvoiceModal/>
-      </v-card>
-    </v-bottom-sheet>
+  <v-bottom-sheet v-if="mobile" v-model="storeInvoices.invoiceModal" scrollable inset>
+    <v-card height="auto">
+      <InvoiceModal />
+    </v-card>
+  </v-bottom-sheet>
   <q-dialog
-
-  full-width
-  full-height
-  allow-focus-outside
-  :persistent="checkContent"
-  position="bottom"
-  transition-duration="700"
-  @shake="closeWithcontent"
-
-  class="dialog-addInvoice"
+    full-width
+    full-height
+    allow-focus-outside
+    :persistent="checkContent"
+    position="bottom"
+    transition-duration="700"
+    @shake="closeWithcontent"
+    class="dialog-addInvoice"
   >
-    <q-dialog  v-model="storeInvoices.modalActive">
-                 <q-card>
-                  <q-card-section>
-                    <div class="text-h6">Second dialog</div>
-                  </q-card-section>
-                  <q-card-section class="row items-center q-gutter-sm">
-                    <q-btn v-close-popup="2" label="Close" color="red" />
-                    <q-btn v-close-popup label="Return" color="purple" />
-                  </q-card-section>
-                </q-card>
+    <q-dialog v-model="storeInvoices.modalActive">
+      <q-card>
+        <q-card-section>
+          <div class="text-h6">Second dialog</div>
+        </q-card-section>
+        <q-card-section class="row items-center q-gutter-sm">
+          <q-btn v-close-popup="2" label="Close" color="red" />
+          <q-btn v-close-popup label="Return" color="purple" />
+        </q-card-section>
+      </q-card>
     </q-dialog>
-    <InvoiceModal/>
+    <InvoiceModal />
   </q-dialog>
   <!-- PaymentModal -->
   <q-dialog
-  v-if="!mobile"
-  full-width
-  full-height
-  allow-focus-outside
-  :persistent="checkContent"
-  :position="$route.path === '/Treasury' ? 'right' : 'left'"
-  transition-duration="700"
-  @shake="closeWithcontent"
-  v-model="storePayments.paymentModal"
-  class="dialog-addInvoice"
+    v-if="!mobile"
+    full-width
+    full-height
+    allow-focus-outside
+    :persistent="checkContent"
+    :position="$route.path === '/Treasury' ? 'right' : 'left'"
+    transition-duration="700"
+    @shake="closeWithcontent"
+    v-model="storePayments.paymentModal"
+    class="dialog-addInvoice"
   >
-    <q-dialog  v-model="storePayments.modalActive">
-                 <q-card>
-                  <q-card-section>
-                    <div class="text-h6">Second dialog</div>
-                  </q-card-section>
-                  <q-card-section class="row items-center q-gutter-sm">
-                    <q-btn v-close-popup="2" label="Close" color="red" />
-                    <q-btn v-close-popup label="Return" color="purple" />
-                  </q-card-section>
-                </q-card>
+    <q-dialog v-model="storePayments.modalActive">
+      <q-card>
+        <q-card-section>
+          <div class="text-h6">Second dialog</div>
+        </q-card-section>
+        <q-card-section class="row items-center q-gutter-sm">
+          <q-btn v-close-popup="2" label="Close" color="red" />
+          <q-btn v-close-popup label="Return" color="purple" />
+        </q-card-section>
+      </q-card>
     </q-dialog>
-    <PaymentModal/>
+    <PaymentModal />
   </q-dialog>
 
-  <v-bottom-sheet  v-if="mobile" v-model="storePayments.paymentModal" scrollable inset>
-      <v-card
-        height="auto"
-      >
-      <PaymentModal/>
-      </v-card>
-    </v-bottom-sheet>
+  <v-bottom-sheet v-if="mobile" v-model="storePayments.paymentModal" scrollable inset>
+    <v-card height="auto">
+      <PaymentModal />
+    </v-card>
+  </v-bottom-sheet>
 
-     <!-- ExpenseModal -->
+  <!-- ExpenseModal -->
   <q-dialog
-  v-if="!mobile"
-  full-width
-  full-height
-  allow-focus-outside
-  :persistent="checkContent"
-  :position="$route.path === '/Treasury' ? 'right' : 'left'"
-  transition-duration="700"
-  @shake="closeWithcontent"
-  v-model="storeExpenses.expenseModal"
-  class="dialog-addInvoice"
+    v-if="!mobile"
+    full-width
+    full-height
+    allow-focus-outside
+    :persistent="checkContent"
+    :position="$route.path === '/Treasury' ? 'right' : 'left'"
+    transition-duration="700"
+    @shake="closeWithcontent"
+    v-model="storeExpenses.expenseModal"
+    class="dialog-addInvoice"
   >
-    <q-dialog  v-model="storeExpenses.modalActive">
-                 <q-card>
-                  <q-card-section>
-                    <div class="text-h6">Second dialog</div>
-                  </q-card-section>
-                  <q-card-section class="row items-center q-gutter-sm">
-                    <q-btn v-close-popup="2" label="Close" color="red" />
-                    <q-btn v-close-popup label="Return" color="purple" />
-                  </q-card-section>
-                </q-card>
+    <q-dialog v-model="storeExpenses.modalActive">
+      <q-card>
+        <q-card-section>
+          <div class="text-h6">Second dialog</div>
+        </q-card-section>
+        <q-card-section class="row items-center q-gutter-sm">
+          <q-btn v-close-popup="2" label="Close" color="red" />
+          <q-btn v-close-popup label="Return" color="purple" />
+        </q-card-section>
+      </q-card>
     </q-dialog>
-    <ExpenseModal/>
+    <ExpenseModal />
   </q-dialog>
 
- <!-- <ion-header :style="{ 'transform': `translateY(${storeSettings.toolbarHidden ? '-100%' : '0'})`, 'transition': 'transform 0.5s ease-in-out'}">
-    <ion-toolbar>
-
-      <q-btn
-          v-if="!mobile"
-          flat
-          dense
-          round
-          icon="menu"
-          aria-label="Menu"
-          @click="toggleLeftDrawer"
-        />
-       <q-toolbar-title>
-
+  <q-layout v-if="!mobile" view="lHh Lpr lFf">
+    <q-header>
+      <q-toolbar>
+        <q-toolbar-title>
+          <div class="row1"></div>
         </q-toolbar-title>
 
-        <q-btn round icon="dark_mode" @click="$q.dark.toggle()"></q-btn>
+        <q-btn round icon="dark_mode" @click="toggleDarkMode"></q-btn>
 
         <q-btn v-if="storeAuth.user.uid" round>
-        <q-avatar size="40px">
-          <img src="https://cdn.quasar.dev/img/boy-avatar.png" />
-          <q-menu >
-              <UserMenu
-       />
-          </q-menu>
-        </q-avatar>
-      </q-btn>
-    </ion-toolbar>
-  </ion-header> -->
-
-  <!-- <div class="app-content flex flex-column">
-        <Modal v-if="modalActive" />
-      </div> -->
-
-  <q-layout v-if="!mobile" view="lHh Lpr lFf" >
-    <!-- <ion-header :style="{ 'transform': `translateY(${storeSettings.toolbarHidden ? '-100%' : '0'})`, 'transition': 'transform 0.5s ease-in-out'}">
-    <ion-toolbar>
-
-      <q-btn
-          v-if="!mobile"
-          flat
-          dense
-          round
-          icon="menu"
-          aria-label="Menu"
-          @click="toggleLeftDrawer"
-        />
-       <q-toolbar-title>
-
-        </q-toolbar-title>
-
-        <q-btn round icon="dark_mode" @click="$q.dark.toggle()"></q-btn>
-
-        <q-btn v-if="storeAuth.user.uid" round>
-        <q-avatar size="40px">
-          <img src="https://cdn.quasar.dev/img/boy-avatar.png" />
-          <q-menu >
-              <UserMenu
-       />
-          </q-menu>
-        </q-avatar>
-      </q-btn>
-    </ion-toolbar>
-  </ion-header> -->
-    <q-header >
-      <q-toolbar >
-        <!-- <q-btn
-          v-if="!mobile"
-          flat
-          dense
-          round
-          icon="menu"
-          aria-label="Menu"
-          @click="toggleLeftDrawer"
-        /> -->
-       <q-toolbar-title>
-         <div class="row1">
-         </div>
-
-
-
-        </q-toolbar-title>
-
-        <q-btn round icon="dark_mode" @click="$q.dark.toggle()"></q-btn>
-
-        <q-btn v-if="storeAuth.user.uid" round>
-        <q-avatar size="40px">
-          <img src="https://cdn.quasar.dev/img/boy-avatar.png" />
-          <q-menu >
-              <UserMenu
-       />
-
-          </q-menu>
-        </q-avatar>
-      </q-btn>
-      <ion-label> <h6>Treasury</h6></ion-label>
+          <q-avatar size="40px">
+            <img src="https://cdn.quasar.dev/img/boy-avatar.png" />
+            <q-menu>
+              <UserMenu />
+            </q-menu>
+          </q-avatar>
+        </q-btn>
+        <ion-label>
+          <h6>Treasury</h6>
+        </ion-label>
       </q-toolbar>
     </q-header>
 
-    <!-- <q-footer v-if="mobile" reveal bordered class="bg-white text-primary">
-        <q-tabs no-caps indicator-color="transparent" class="text-grey" v-model="tab">
-          <EssentialLinkMobile
-          v-for="link in essentialLinks"
-          :key="link.title"
-          v-bind="link"
-        />
-        </q-tabs>
-      </q-footer> -->
     <q-drawer
-        v-if="!mobile"
-        v-model="leftDrawerOpen"
-         show-if-above
-        :mini="storeSettings.miniState"
-        @mouseover="checkPopup"
-        @mouseout="storeSettings.miniState = true"
-        :width="200"
-        :breakpoint="500"
-        class="bg-grey-3 drawer "
+      v-if="!mobile"
+      v-model="leftDrawerOpen"
+      show-if-above
+      :mini="storeSettings.miniState"
+      @mouseover="checkPopup"
+      @mouseout="storeSettings.miniState = true"
+      :width="200"
+      :breakpoint="500"
+      class="bg-grey-3 drawer "
     >
-            <q-scroll-area class="fit q-pt-xl">
-         <q-list padding>
-        <div v-if="storeAuth.user.uid">
-        <EssentialLink
-          v-for="link in essentialLinks"
-          :key="link.title"
-          v-bind="link"
-        />
-        </div>
-         <q-item
+      <q-scroll-area class="fit q-pt-xl">
+        <q-list padding>
+          <div v-if="storeAuth.user.uid">
+            <EssentialLink v-for="link in essentialLinks" :key="link.title" v-bind="link" />
+          </div>
+          <q-item
             v-if="!storeAuth.user.uid"
             v-ripple
             to="/auth"
@@ -255,49 +160,41 @@
             :active="$route.fullPath === '/auth'"
             active-class="my-menu-link"
           >
-              <q-item-section avatar>
-                <q-icon name="account_circle" />
-              </q-item-section>
+            <q-item-section avatar>
+              <q-icon name="account_circle" />
+            </q-item-section>
 
-              <q-item-section>
-                Login/Register
-              </q-item-section>
-            </q-item>
-            <q-separator />
-          <q-item
-              v-ripple
-              clickable
-              :active="link === '/'"
-              @click="link = 'inbox'"
-              active-class="my-menu-link"
-            >
-              <q-item-section avatar>
-                <q-icon name="settings" />
-              </q-item-section>
-
-              <q-item-section>
-                Settings
-              </q-item-section>
+            <q-item-section>
+              Login/Register
+            </q-item-section>
           </q-item>
-      </q-list>
-        </q-scroll-area>
+          <q-separator />
+          <q-item v-ripple clickable :active="link === '/'" @click="link = 'inbox'" active-class="my-menu-link">
+            <q-item-section avatar>
+              <q-icon name="settings" />
+            </q-item-section>
+
+            <q-item-section>
+              Settings
+            </q-item-section>
+          </q-item>
+        </q-list>
+      </q-scroll-area>
     </q-drawer>
     <ion-page :style="pagePadding">
-    <q-page-container >
-      <router-view />
-    </q-page-container>
+      <q-page-container>
+        <router-view />
+      </q-page-container>
     </ion-page>
   </q-layout>
-  <ion-page  v-else  ref="page">
+  <ion-page v-else ref="page">
     <ion-tabs>
       <ion-router-outlet></ion-router-outlet>
       <ion-tab-bar class="q-pb-lg" slot="bottom">
-
         <ion-tab-button tab="tab4" href="/Calendar">
           <ion-icon aria-hidden="true" :icon="calendar" />
           <ion-label>Calendar</ion-label>
         </ion-tab-button>
-
 
         <ion-tab-button tab="tab3" href="/Patients">
           <ion-icon aria-hidden="true" :icon="people" />
@@ -305,63 +202,57 @@
         </ion-tab-button>
 
         <ion-tab-button tab="tab1" href="/Treasury">
-           <q-icon class="treasury-icon" size="24px" name="fa-solid fa-vault"></q-icon>
-           <ion-label> <h6 class="ion-text">Treasury</h6></ion-label>
+          <q-icon class="treasury-icon" size="24px" name="fa-solid fa-vault"></q-icon>
+          <ion-label>
+            <h6 class="ion-text">Treasury</h6>
+          </ion-label>
         </ion-tab-button>
 
         <ion-tab-button tab="tab2" href="/Invoices">
           <ion-icon aria-hidden="true" :icon="newspaper" />
           <ion-label>Invoices</ion-label>
         </ion-tab-button>
-
       </ion-tab-bar>
     </ion-tabs>
   </ion-page>
 </template>
 
 <script setup>
-import { ref,computed,watch } from 'vue'
-import {useStoreAuth} from 'stores/storeAuth'
+import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue'
+import { useStoreAuth } from 'stores/storeAuth'
 import UserMenu from 'src/components/UserMenu.vue'
 import { Platform } from 'quasar'
 import EssentialLink from 'components/EssentialLink.vue'
 import EssentialLinkMobile from 'src/components/EssentialLinkMobile.vue'
 import { useStoreInvoices } from '../stores/storeInvoices'
-// import Modal from 'src/components/Modal.vue'
-import InvoiceModal from 'src/components/InvoiceModal.vue';
+import InvoiceModal from 'src/components/InvoiceModal.vue'
 import { useQuasar } from 'quasar'
-import ModalAddAppointment from 'src/components/PaymentsAndAppointments/ModalAddAppointment.vue'
 import PaymentModal from 'src/components/PaymentModal.vue'
 import { useStorePayments } from 'src/stores/storePayments'
-import {IonPage, IonContent,IonHeader,IonToolbar, IonTabBar, IonTabButton, IonTabs,IonMenu, IonSplitPane, IonLabel, IonIcon, IonRouterOutlet, } from '@ionic/vue';
+import { IonPage, IonContent, IonHeader, IonToolbar, IonTabBar, IonTabButton, IonTabs, IonLabel, IonIcon, IonRouterOutlet } from '@ionic/vue'
 import { useStoreSettings } from 'src/stores/storeSettings'
-import { newspaper, people, card ,calendar} from 'ionicons/icons';
+import { newspaper, people, calendar } from 'ionicons/icons'
 import { useStoreExpenses } from 'src/stores/storeExpenses'
 import ExpenseModal from 'src/components/ExpenseModal.vue'
+import { useTheme } from 'vuetify'
 
-const $q=useQuasar()
+const theme = useTheme()
+const $q = useQuasar()
 const treasuryIcon = 'src/assets/vault-solid.svg'
-/*
- store
-*/
- const storeAuth=useStoreAuth()
- const storeInvoices=useStoreInvoices()
- const storePayments=useStorePayments()
- const storeSettings=useStoreSettings()
- const storeExpenses=useStoreExpenses()
-/*
- Drawer Links
-*/
-
+const storeAuth = useStoreAuth()
+const storeInvoices = useStoreInvoices()
+const storePayments = useStorePayments()
+const storeSettings = useStoreSettings()
+const storeExpenses = useStoreExpenses()
 const essentialLinks = [
-  {
+{
     title: 'DashBoard',
     icon: 'inbox',
     link: '/'
   },
   {
-    title: 'Patients List',
-    icon: 'recent_actors',
+    title: 'Patients',
+    icon: 'people',
     link: '/Patients'
   },
   {
@@ -380,66 +271,82 @@ const essentialLinks = [
     link: '/Treasury'
   }
 ]
+const leftDrawerOpen = ref(false)
+const miniState = ref(true)
+const link = ref('')
 
-    const leftDrawerOpen = ref(false)
-    const miniState=ref(true)
-    const link = ref('')
-    const toggleLeftDrawer= ()=> {
-        leftDrawerOpen.value = !leftDrawerOpen.value
-      }
-    const checkPopup=()=>{
-      if (storeInvoices.invoiceModal||storePayments.paymentModal)
-      {storeSettings.miniState=true
-        console.log('changed')
-      }
-    else storeSettings.miniState=false
-    console.log('changed')
-      }
-      function handleToothSelected(selectedTeeth){
-        console.log('selectedTeeth',selectedTeeth)
+const toggleLeftDrawer = () => {
+  leftDrawerOpen.value = !leftDrawerOpen.value
+}
 
-      }
-      watch(() => storeInvoices.invoiceModal, (currentValue, oldValue) => {
-         if(currentValue!==true){
-          storeInvoices.CLEAR_DATA()
-         }
-     })
-     watch(() => storePayments.paymentModal, (currentValue, oldValue) => {
-         if(currentValue!==true){
-          storePayments.CLEAR_DATA()
-         }
-     })
+const checkPopup = () => {
+  if (storeInvoices.invoiceModal || storePayments.paymentModal) {
+    storeSettings.miniState = true
+  } else {
+    storeSettings.miniState = false
+  }
+}
 
+function handleToothSelected(selectedTeeth) {
+  console.log('selectedTeeth', selectedTeeth)
+}
 
-/*
- Invoice PopUp
-*/
+watch(() => storeInvoices.invoiceModal, (currentValue) => {
+  if (!currentValue) {
+    storeInvoices.CLEAR_DATA()
+  }
+})
 
-    const checkContent= computed(()=>{
-      return false
-    })
-    function closeWithcontent () {
-      if(checkContent)
-      storeInvoices.modalActive=true
-    }
+watch(() => storePayments.paymentModal, (currentValue) => {
+  if (!currentValue) {
+    storePayments.CLEAR_DATA()
+  }
+})
 
-/*
- Mobile
-*/
-   const   mobile=computed(()=>{
-          if (Platform.is.desktop){
-            return false
-          }
-          if (Platform.is.mobile){
-        return true
-          }
-        })
-  const pagePadding=computed(()=>{
-    return {
-        '--padding-bottom': mobile.value ? '0px' : '42px'
-        }
-  })
+const checkContent = computed(() => false)
+
+function closeWithcontent() {
+  if (checkContent) {
+    storeInvoices.modalActive = true
+  }
+}
+
+const mobile = computed(() => Platform.is.mobile)
+const pagePadding = computed(() => ({ '--padding-bottom': mobile.value ? '0px' : '42px' }))
+
+const prefersDark = window.matchMedia('(prefers-color-scheme: dark)')
+
+const darkMode = computed({
+  get() {
+    return $q.dark.isActive
+  },
+  set(value) {
+    $q.dark.set(value)
+    document.body.classList.toggle('dark', value)
+    document.body.classList.toggle('ion-dark', value)
+    theme.global.name.value = value ? 'dark' : 'light'
+  }
+})
+
+const toggleDarkMode = () => {
+  darkMode.value = !darkMode.value
+}
+
+const updateDarkMode = (event) => {
+  darkMode.value = event.matches
+}
+
+onMounted(() => {
+  darkMode.value = prefersDark.matches
+  prefersDark.addEventListener('change', updateDarkMode)
+})
+
+onBeforeUnmount(() => {
+  prefersDark.removeEventListener('change', updateDarkMode)
+})
+
 </script>
+
 <style lang="sass">
 
 .q-dialog__inner--minimized

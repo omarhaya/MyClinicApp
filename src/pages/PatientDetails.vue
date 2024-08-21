@@ -39,8 +39,8 @@
           <q-tabs
               align="justify"
               v-model="tab"
-              indicator-color="orange-6"
-              class="bg-primary text-grey-5 shadow-2 "
+              indicator-color="white"
+              class="bg-secondary text-grey-5 shadow-2 "
               active-color="white"
             >
               <q-tab name="appointments" icon="calendar_today" ><div v-if="!mobile">Appointments</div></q-tab>

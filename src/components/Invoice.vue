@@ -212,18 +212,17 @@ watch(() => props.invoice.deleted, (newValue) => {
   border-radius: 20px;
 
   // min-height: 100px;
-  background-color: #e1e6df;
+  background-color: #e2dfe6;
   align-items: center;
   ion-item {
     --background: #e1e6df;
     --padding-top:0px !important;
     --padding-bottom:0px !important;
 
+
   }
 
-  // .sliding-item{
-  //   background: #e1e6df;
-  // }
+
   .person {
       align-items: center;
 
@@ -277,7 +276,14 @@ watch(() => props.invoice.deleted, (newValue) => {
       max-width: 140px;
       min-width: 108px;
 }
-
+/* Dark Mode Styles */
+.ion-dark .invoice {
+  background-color: #1e3639;
+  color: #ffffff;
+  ion-item {
+    --background: #1e3539;
+  }
+}
 </style>
 
 <style lang="scss">
@@ -291,5 +297,6 @@ border-radius: 10px !important;
   opacity: 0;
   transition: opacity 0.3s ease-in-out;
 }
+
 </style>
 

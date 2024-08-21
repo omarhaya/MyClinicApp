@@ -59,10 +59,10 @@
         <div v-show="expand">
           <q-card-section >
               <div >
-             <p class="q-ma-xs">Patient No. :<q-icon color="primary" name="tag" />{{patient.index }}</p>
-              <p class="q-ma-xs" >Gender :<q-icon color="primary"  size="1.5em" :name="gender"/></p>
+             <p class="q-ma-xs">Patient No. :<q-icon color="secondary" name="tag" />{{patient.index }}</p>
+              <p class="q-ma-xs" >Gender :<q-icon color="secondary"  size="1.5em" :name="gender"/></p>
                <p class="q-ma-xs" >Age : {{patient.age}}</p>
-                 <p class="q-ma-xs" >Phone Number : {{patient.phone}} <q-icon v-if="patient.phone" color="primary" size="1.1em" name="phone_in_talk" /></p>
+                 <p class="q-ma-xs" >Phone Number : {{patient.phone}} <q-icon v-if="patient.phone" color="secondary" size="1.1em" name="phone_in_talk" /></p>
                    <p class="q-ma-xs">Date Added : {{dateFormatted}}</p>
               </div>
           </q-card-section>
@@ -71,8 +71,8 @@
 
       <q-card-actions  :props="props">
 
-        <q-btn round icon="add" @click="modals.addAppointment=true" color="primary"/>
-        <q-btn flat color="primary" label="Casesheet" />
+        <q-btn round icon="add" @click="modals.addAppointment=true" color="secondary"/>
+        <q-btn flat color="secondary" label="Casesheet" />
         <q-space />
 
         <q-btn

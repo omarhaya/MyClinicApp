@@ -23,7 +23,7 @@
          >
          <q-tab-panel class="panel-properties" name="payments">
            <div class="row">
-         <q-card class="total-card col q-ma-sm bg-grey-3 ">
+         <!-- <q-card class=" ">
            <q-card-section>
              <div v-if="totals.length<=1" class="text-h6">Total</div>
              <div v-else class="text-h6">Totals</div>
@@ -35,18 +35,42 @@
              <div class="text-h6">New</div>
              <div class="text-h5">{{payments.length}}</div>
            </q-card-section>
-         </q-card>
+         </q-card> -->
+         <ion-card class="col q-ma-xs">
+          <div>
+    <ion-card-header>
+      <ion-card-title v-if="totals.length<=1" class="text-h6">Total</ion-card-title>
+    </ion-card-header>
+  </div>
+  <div>
+    <ion-card-content class="text-green-7" v-for="total in totals"><span v-if="total.totalPaid!==0">+</span><span class="currency">{{ total.currency+' ' }}</span>{{formatMoney(total.totalPaid)}}
 
+    </ion-card-content>
+  </div>
+  </ion-card>
+  <ion-card class="col q-ma-xs">
+    <div>
+    <ion-card-header>
+      <ion-card-title>New</ion-card-title>
+    </ion-card-header>
+  </div>
+    <div>
+    <ion-card-content>
+      {{payments.length}}
+    </ion-card-content>
+  </div>
+  </ion-card>
         </div>
         <ion-card class="q-ma-xs">
        <q-table
+       grid
        :filter="filter"
        flat
        ref="tableRef"
        :rows="payments"
        class="my-sticky-header-table1 col "
        :columns="columns"
-       color="primary"
+       color="secondary"
        row-key="invoiceId"
        virtual-scroll
        :rows-per-page-options="[0]"
@@ -73,16 +97,16 @@
    </q-tr>
  </template>
  <template v-slot:top-left>
-   <q-btn v-if="!mobile" color="primary" @click="newPayment">
+   <q-btn v-if="!mobile" color="secondary" @click="newPayment">
             New Payment
          </q-btn>
-         <q-btn v-else color="primary" @click="openPaymentModal">
+         <q-btn v-else color="secondary" @click="openPaymentModal">
             New Payment
          </q-btn>
          <v-btn variant="plain" density="compact" icon="mdi-chevron-left" @click="getPreviousDay"></v-btn>
          <q-icon size="20px" name="event" class="cursor-pointer">
            <q-popup-proxy cover transition-show="scale" transition-hide="scale">
-             <q-date v-model="storePayments.selectedDate" mask="YYYY-MM-DD" range today-btn>
+             <q-date color="teal" v-model="storePayments.selectedDate" mask="YYYY-MM-DD" range today-btn>
                <div class="row items-center justify-end">
                  <q-btn v-close-popup label="Close" color="primary" flat />
                </div>
@@ -100,14 +124,14 @@
          </q-input>
          <q-btn
            class="q-mr-md q-ml-md"
-           color="primary"
+           color="secondary"
            icon-right="archive"
            no-caps
            @click="exportTable"
          />
        </template>
 
-     <template v-slot:body="props">
+       <template v-slot:item="props">
          <!-- <q-tr  :props="props" >
            <q-td  v-show="editPayments"  auto-width  key="invoiceId" :props="props">
              <q-checkbox  :model-value="props.selected" @update:model-value="(val, evt) => { Object.getOwnPropertyDescriptor(props, 'selected').set(val, evt) }" />
@@ -140,7 +164,7 @@
            <q-icon  name="delete" size="20px" @click="storePayments.deletePayment(props.row.paymentId)"/>
            </q-td>
          </q-tr> -->
-         <div class="invoice"><Payment :tableProps="props" :mobile="mobile"   @openPaymentModal="openPaymentModal" class="invoice"  :invoice="props.row" :key="index" /></div>
+         <div class="payment"><Payment :tableProps="props" :mobile="mobile"   @openPaymentModal="openPaymentModal" class="payment"  :payment="props.row" :key="index" /></div>
        </template>
 
        <template v-slot:no-data="{ icon, message, filter }">
@@ -541,6 +565,7 @@
     max-width: 250px;
     box-shadow: none;
 
+
     .text-h6 {
       font-size: 1rem !important;
       font-weight: 500;
@@ -554,7 +579,14 @@
       letter-spacing: 0.0125em;
     }
   }
+  .q-dark .panel-properties {
+    background-color:#142325;
+  }
   .panel-properties {
+    .row, .column, .flex{
+      justify-content:space-evenly;
+      align-content:stretch;
+    }
     padding: 0 !important;
     p  {
       margin:0 !important;
@@ -574,4 +606,25 @@
  --offset-top: 0px !important;
  // --offset-bottom: 0px !important;
  }
+.payment{
+  flex-wrap: nowrap;
+  width: 100%;
+  max-width: 850px;
+  margin: 5px auto;
+  height: 100% !important;
+}
+ion-card {
+    // --background: #000;
+    // --color: #9efff0;
+  }
+
+  ion-card-title {
+    // --color: #52ffe4;
+    font-size:20px;
+  }
+
+  ion-card-content {
+    --color: #19c940;
+   font-size: 20px;
+  }
   </style>

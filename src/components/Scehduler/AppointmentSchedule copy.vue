@@ -15,15 +15,9 @@
         />
       </q-card>
     </q-dialog>
-    <q-dialog v-model="storePatients.addPatientModal" persistent >
-      <ModalAddPatient
-      v-if="storePatients.addPatientModal"
-      v-model="storePatients.addPatientModal"
-       />
-     </q-dialog>
 
     <ion-content :fullscreen="true">
-
+      <div class="calendar-wrapper">
         <FullCalendar ref="calendar" id="calendar" :options="calendarOptions" class="col calendar-desktop" >
           <template v-slot:eventContent="arg">
             <v-menu
@@ -53,7 +47,7 @@
             </v-menu>
           </template>
         </FullCalendar>
-
+      </div>
     </ion-content>
   </div>
 </template>
@@ -84,8 +78,6 @@ import MobileInvoiceModal from 'src/components/MobileInvoiceModal.vue';
 import MobileAppointmentPopup from 'src/components/MobileAppointmentPopup.vue'
 import MobileApppointmentModal from 'src/components/MobileAppointmentModal.vue'
 import scrollGridPlugin from '@fullcalendar/scrollgrid';
-import ModalAddPatient from '../Patients/ModalAddPatient.vue';
-import { useStorePatients } from 'src/stores/storePatients';
 
 /*
  props
@@ -100,7 +92,6 @@ required: true
 const $q=useQuasar()
 const storeAppointments=useStoreAppointments()
 const storeSettings=useStoreSettings()
-const storePatients=useStorePatients()
 const storeAuth=useStoreAuth()
 const {  selectedDate,loadingAppointments } = storeToRefs(storeAppointments)
 const doctors=computed(()=>{ return storeAuth.doctors})
@@ -234,7 +225,7 @@ eventReceive(info) {
 eventClassNames: function(arg) {
   return  `text-red bg-${arg.event.extendedProps.background}-3`
 },
-dayMinWidth: 200,
+
   }})
 
   // Method to get the class name based on the event value
@@ -351,7 +342,7 @@ const updatedAppointment = {
     endDate: dayjs(event.endStr).format('YYYY-MM-DD'),
     startTime: dayjs(event.startStr).format('HH:mm:ss'),
     endTime: dayjs(event.endStr).format('HH:mm:ss'),
-    doctor: storeAuth.doctors.find(doc => doc.doctorId === resourceId[0]), // Example doctor, replace with actual value
+    doctorId: resourceId, // Example doctor, replace with actual value
     status: 'booked'
 };
 await storeAppointments.dropAppointment(updatedAppointment);
@@ -519,10 +510,26 @@ flex-direction: row;
 flex-wrap: wrap;
 height: 100%;
 }
+
+.calendar-wrapper {
+  width: 100%;
+  height: 100%;
+  overflow-x: auto; /* Enable horizontal scrolling */
+  overflow-y: auto; /* Enable horizontal scrolling */
+}
+
 .calendar-desktop {
+  min-width: 1200px; /* Set a minimum width for the calendar */
   height: 100%; /* Ensure the calendar takes the full height of the container */
   overflow: hidden; /* Prevent the calendar itself from scrolling */
 }
+
+.calendar-mobile {
+
+  height: 100%; /* Ensure the calendar takes the full height of the container */
+  overflow: hidden; /* Prevent the calendar itself from scrolling */
+}
+
 .calendar2 {
 width: 15%;
 height: 5%;
@@ -683,7 +690,6 @@ color: orange;
 flex-direction: row;
 align-items: center;
 }
-
 .short-event .fc-event-time {
 margin-left: 4px;
 }
@@ -691,21 +697,20 @@ margin-left: 4px;
 ion-modal::part(handle) {
 background-color: white;
 }
-
+.fc .fc-scroller::-webkit-scrollbar {
+  display: none;
+}
 /* New style to adjust the height of hour slots */
 .fc .fc-timegrid-slot {
 height: 25px !important; /* Adjust this value to change the slot height */
 }
-.fc .fc-timegrid {
-overflow-x: hidden; /* Disable horizontal scrolling */
-  overflow-y: auto; /* Enable vertical scrolling */
-  touch-action: pan-y; /* Allow only vertical touch actions */
-  overscroll-behavior: contain; /* Prevent overscrolling effects */
-}
+
 .fc .fc-timegrid-slot-lane {
 height: 25px !important; /* Adjust this value to change the slot height */
 }
-.fc .fc-scroller::-webkit-scrollbar {
-  display: none;
+.fc .fc-col-header-cell,
+.fc .fc-resource {
+  min-width: 100% !important;  /* Set the minimum width for resource columns to 300px */
 }
+
 </style>

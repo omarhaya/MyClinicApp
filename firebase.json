@@ -9,7 +9,7 @@
     "source": "functions"
   },
   "hosting": {
-     "site" : "myclinicapp",
+      "site" : "o-care",
     "public": "dist/pwa",
     "ignore": [
       "firebase.json",

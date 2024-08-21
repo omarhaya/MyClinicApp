@@ -43,13 +43,11 @@ ion-content {
 }
 
 .app {
-
-  background-color: #141625;
+  background-color: #142225;
   min-height: 100vh;
   box-sizing: border-box;
   @media (min-width: 900px) {
     flex-direction: row !important;
-
   }
 
   .app-content {
@@ -64,7 +62,7 @@ ion-content {
   justify-content: center;
   align-items: center;
   height: 100vh;
-  background-color: #141625;
+  background-color: #142325;
   color: #fff;
 
   p {
@@ -133,7 +131,7 @@ ion-content {
     padding-top: 72px;
     .button {
         padding: 8px 10px;
-        background-color:#096616;
+        background-color:#09665e;
         border-radius: 40px;
         color:#fff !important;
         cursor: pointer;
@@ -159,7 +157,7 @@ ion-content {
 
     .button {
         padding: 8px 10px;
-        background-color:#096616;
+        background-color:#09665e;
         border-radius: 40px;
         color:#fff !important;
         cursor: pointer;

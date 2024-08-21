@@ -1,26 +1,26 @@
 <template>
 
-    <ion-item-sliding class="invoice" :class="{ 'fade-out': isDeleted }" >
+    <ion-item-sliding class="payment" :class="{ 'fade-out': isDeleted }" >
 
       <!-- <ion-item-options side="start">
         <ion-item-option expandable @click="newPayment" color="success"><q-icon size="25px" name="payment"/>Pay</ion-item-option>
       </ion-item-options> -->
 
-      <ion-item v-if="invoice.patientName" lines="none" :button="true" @click="$router.push(`/Invoices/${invoice.invoiceId}`)" detail="false" class="sliding-item" >
+      <ion-item v-if="payment.patientName" lines="none" :button="true" @click="$router.push(`/Invoices/${payment.invoiceId}`)" detail="false" class="sliding-item" >
         <q-checkbox  :model-value="tableProps.selected" @update:model-value="(val, evt) => { Object.getOwnPropertyDescriptor(tableProps, 'selected').set(val, evt) }" />
         <div class="left flex q-pt-xs q-pb-xs ">
-      <span class="tracking-number">#{{ invoice.invoiceId }}</span>
+      <span class="tracking-number">#{{ payment.invoiceId }}</span>
 
       <span>
 
-        <q-avatar v-if="!isArabic(invoice.patientName)" class="q-mr-xs avatar-name" size="35px" font-size="16px" color="green-3" text-color="white"> {{getInitials( invoice.patientName) }} </q-avatar>
-              <q-avatar v-if="isArabic(invoice.patientName)" class="q-mr-xs avatar-person" font-size="42px" size="35px" color="green-3" text-color="white" icon="person"/>
-        <span class="text-bold" > {{ invoice.patientName }}</span></span>
+        <q-avatar v-if="!isArabic(payment.patientName)" class="q-mr-xs avatar-name" size="35px" font-size="16px" color="green-3" text-color="white"> {{getInitials( payment.patientName) }} </q-avatar>
+              <q-avatar v-if="isArabic(payment.patientName)" class="q-mr-xs avatar-person" font-size="42px" size="35px" color="green-3" text-color="white" icon="person"/>
+        <span class="text-bold" > {{ payment.patientName }}</span></span>
 
      </div>
      <div class="right justify-end flex row">
-      <span> <div v-if="storeWorks.invoiceWorks[invoice.invoiceId]" v-for="subtotal in storeWorks.invoiceWorks[invoice.invoiceId].subTotals" class="price center column">
-      <div  class="col flex"><span class="currency">{{(subtotal.currency)}} </span>{{formatMoney(subtotal.totalAmount) }}</div>
+      <span> <div v-if="storeWorks.invoiceWorks[payment.invoiceId]" v-for="subtotal in storeWorks.invoiceWorks[payment.invoiceId].subTotals" class="price center column">
+      <div  class="col flex text-green-7">+<span class="currency">{{(subtotal.currency)}} </span>{{formatMoney(payment.paid) }}</div>
      </div>
         <!-- <div class="center column price">
           <q-circular-progress
@@ -60,7 +60,7 @@ import { IonItem,IonActionSheet, IonItemOption, IonItemOptions, IonItemSliding, 
 
 const instance = getCurrentInstance()
 const props = defineProps({
-  invoice:{
+  payment:{
     type : Object,
     required:true
   },
@@ -87,7 +87,7 @@ const skill=ref(60)
    */
    const isDeleted = ref(false)
 
-watch(() => props.invoice.deleted, (newValue) => {
+watch(() => props.payment.deleted, (newValue) => {
   if (newValue) {
     // Add a small delay before setting isDeleted to true to allow Vue to re-render the component
     setTimeout(() => {
@@ -117,14 +117,14 @@ watch(() => props.invoice.deleted, (newValue) => {
        }
     function  newPayment() {
         storePayments.patient=storePatients.patients.find(
-        patient => patient.patientId === props.invoice.patientId)
-        storeInvoices.SET_PATIENT_INVOICES(props.invoice.patientId,props.invoice.invoiceId)
+        patient => patient.patientId === props.payment.patientId)
+        storeInvoices.SET_PATIENT_INVOICES(props.payment.patientId,props.payment.invoiceId)
         if(!props.mobile){storePayments.TOGGLE_PAYMENT()
           console.log('not mobile')}
         else {instance.emit('openPaymentModal')}
     }
-    async function deleteInvoice(docId) {
-      storeInvoices.DELETE_INVOICE(docId)
+    async function deletePayment(docId) {
+      storePayments.deletePayment(docId)
       console.log('itemDeleted')
     }
     const actionSheetButtons =ref([
@@ -135,20 +135,14 @@ watch(() => props.invoice.deleted, (newValue) => {
             action: 'delete',
           },
           handler: () => {
-          // console.log(props.invoice.invoiceId,isOpen.value)
-          // const index = storeInvoices.invoiceData.findIndex(item => item.invoiceId === props.invoice.invoiceId);
 
-          // if (index !== -1) {
-          //   // If the item is found, update the property
-          //   storeInvoices.invoiceData[index].deleted = true;
-          // }
           isDeleted.value = true
           setTimeout(() => {
-            storeInvoices.DELETE_INVOICE(props.invoice.docId)
+            storePayments.deletePayment(props.payment.paymentId)
           }, 280)
 
-          const slidingItem = document.querySelector('.invoice')
-          slidingItem.closeOpened()
+          // const slidingItem = document.querySelector('.payment')
+          // slidingItem.closeOpened()
         }
         },
         {
@@ -164,7 +158,7 @@ watch(() => props.invoice.deleted, (newValue) => {
             action: 'cancel',
           },
           handler: () => {
-          const slidingItem = document.querySelector('.invoice')
+          const slidingItem = document.querySelector('.payment')
           slidingItem.closeOpened()
         }
         },
@@ -173,7 +167,7 @@ watch(() => props.invoice.deleted, (newValue) => {
 </script>
 
 <style lang="scss" scoped>
-.invoice {
+.payment {
   text-decoration: none;
   cursor: pointer;
   // gap: 16px;
@@ -190,7 +184,9 @@ watch(() => props.invoice.deleted, (newValue) => {
     --padding-bottom:0px !important;
 
   }
-
+.q-checkbox {
+  box-sizing: border-box !important;
+}
   // .sliding-item{
   //   background: #e1e6df;
   // }
@@ -247,7 +243,13 @@ watch(() => props.invoice.deleted, (newValue) => {
       max-width: 140px;
       min-width: 108px;
 }
-
+.ion-dark .payment {
+  background-color: #1e3639;
+  color: #ffffff;
+  ion-item {
+    --background: #1e3639;
+  }
+}
 </style>
 
 <style lang="scss">

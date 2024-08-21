@@ -21,6 +21,7 @@ export const useStorePatients = defineStore('storePatients', {
        loadingAppointments:false,
        doctors:[],
        storeAuth:useStoreAuth(),
+       addPatientModal:false,
 
     }
   },

@@ -9,6 +9,10 @@ import {today} from '@quasar/quasar-ui-qcalendar/src/index.js'
 import dayjs from 'dayjs';
 import {modalController, } from '@ionic/vue';
 import { useQuasar } from 'quasar'
+import { functions } from 'src/js/firebase'
+import { httpsCallable } from 'firebase/functions';
+import 'dayjs/locale/ar' // Import Arabic locale
+import customParseFormat from 'dayjs/plugin/customParseFormat';
 
 let appointmentsCollectionRef
 let appointmentsCollectionQuery
@@ -99,10 +103,10 @@ export const useStoreAppointments= defineStore('storeAppointments', {
         rrule: {
           freq: 'weekly',
           byweekday: ['mo', 'tu', 'we', 'th', 'fr', 'sa', 'su'],
-          dtstart: dayjs().format('YYYY-MM-DDT15:00:00'),
+          dtstart: dayjs().format('YYYY-MM-DDT11:00:00'),
           until: false,
         },
-        duration: '06:00',
+        duration: '10:00',
         resourceIds: this.storeAuth.doctors.map(doctor => doctor.doctorId),
         color: '#257e4a',
       };
@@ -184,46 +188,89 @@ console.log(defaultEvent,'default event')
   //   }
   // },
    // Add Appointment
-    async addAppointment (newAppointmentDetails) {
-      this.loading=true
-      console.log(this.loading,'ading')
-      let currentDate = new Date().getTime(),
-          date = currentDate.toString()
-        // Find the doctor with the matching ID
-    await addDoc(appointmentsCollectionRef, {
-      start: newAppointmentDetails.startDate+'T'+newAppointmentDetails.startTime,
-      end:newAppointmentDetails.startDate+'T'+newAppointmentDetails.endTime,
-      patientDetails: newAppointmentDetails.title,
-      doctorId:newAppointmentDetails.doctor.doctorId,
-      appointmentdate:dayjs(newAppointmentDetails.startDate).format('YYYY-MM-DD'),
-      // patientId:newAppointmentDetails.title.patientId,
+   async addAppointment(newAppointmentDetails) {
+    this.loading = true;
 
-      // duration: newAppointmentDetails.duration,
-      // details:newAppointmentDetails.details,
-      // appointmentdate: newAppointmentDetails.startDate,
-      // status:newAppointmentDetails.status,
-      // bgcolor: newAppointmentDetails.bgcolor,
-      date,
+    try {
+      // Add appointment to Firestore
+      await addDoc(appointmentsCollectionRef, {
+        start: newAppointmentDetails.startDate + 'T' + newAppointmentDetails.startTime,
+        end: newAppointmentDetails.startDate + 'T' + newAppointmentDetails.endTime,
+        patientDetails: newAppointmentDetails.title,
+        doctorId: newAppointmentDetails.doctor.doctorId,
+        appointmentdate: dayjs(newAppointmentDetails.startDate).format('YYYY-MM-DD'),
+        date: new Date().getTime().toString(),
+      });
 
-    })
-    modalController.dismiss(null, 'confirm');
-    console.log(newAppointmentDetails,'newAppointmentDetails')
-    console.log(this.loading,'added')
-    this.$q.notify({
-      icon: 'done',
-      color: 'positive',
-      message: 'Appointment Added',
-      actions: [{ label: 'Dismiss', color: 'white', handler: () => { /* ... */ } }]
-    })
-    this.loading=false
-    },
+      modalController.dismiss(null, 'confirm');
+
+      this.$q.notify({
+        icon: 'done',
+        color: 'positive',
+        message: 'Appointment Added',
+        actions: [{ label: 'Dismiss', color: 'white', handler: () => {} }],
+      });
+      // Sending WhatsApp Message
+      if (newAppointmentDetails.title.phone !==null&&newAppointmentDetails.title.phone!==''){
+        dayjs.extend(customParseFormat)
+        const time = dayjs(newAppointmentDetails.startTime,'HH:mm').locale('ar')
+        const timeArabic=time.format('hh:mm A').replace('ص', 'صباحاً').replace('م', 'مساءً');
+        const dayArabic=dayjs(time).locale('ar').format('dddd')
+        const sendWhatsAppMessage = httpsCallable(functions, 'sendWhatsAppMessage')
+        const result = await sendWhatsAppMessage({
+          to: `whatsapp:${newAppointmentDetails.title.phone}`,  // Recipient's WhatsApp number
+          message: `مرحبا بك في عيادة لوسيل التخصصية لطب الاسنان، تم حجز موعدك عند الدكتور ${newAppointmentDetails.doctor.name}، في تمام الساعة ${timeArabic}، ليوم ${dayArabic} المصادف ${newAppointmentDetails.startDate}`,  // Your message
+        });
+        console.log('Message sent:', result.data);
+      }
+    } catch (error) {
+      console.error('Error:', error);
+    } finally {
+      this.loading = false;
+    }
+  },
     clearAppointments(){
       this.appointments=[]
       console.log(this.appointments,'cleared')
       if (getAppointmentsSnapshot) getAppointmentsSnapshot() //unsubscribe from any active listener
     },
-    async deleteAppointment(idToDelete) {
-      await deleteDoc(doc(appointmentsCollectionRef, idToDelete))
+    async deleteAppointment(appointmentDetails) {
+      this.loading = true;
+      try {
+        // Delete appointment to Firestore
+        await deleteDoc(doc(appointmentsCollectionRef, appointmentDetails.extendedProps.appointmentId))
+
+        this.$q.notify({
+          icon: 'done',
+          color: 'negative',
+          message: 'Appointment deleted',
+          actions: [{ label: 'Dismiss', color: 'white', handler: () => {} }],
+        });
+
+
+
+        // Sending WhatsApp Message
+        if (appointmentDetails.extendedProps.patientDetails.phone !==null&&appointmentDetails.extendedProps.patientDetails.phone!==''){
+          dayjs.extend(customParseFormat)
+          appointmentDetails.doctor=this.storeAuth.doctors.find(doc => doc.doctorId === appointmentDetails._def.resourceIds[0])
+
+          const time = dayjs(appointmentDetails.startStr)
+          const timeArabic=time.format('hh:mm A').replace('ص', 'صباحاً').replace('م', 'مساءً');
+          const dayArabic=dayjs(time).locale('ar').format('dddd')
+          const date = dayjs(time).locale('ar').format('YYYY-MM-DD')
+          const sendWhatsAppMessage = httpsCallable(functions, 'sendWhatsAppMessage')
+          const result = await sendWhatsAppMessage({
+            to: `whatsapp:${appointmentDetails.extendedProps.patientDetails.phone}`,  // Recipient's WhatsApp number
+            message: `مرحبا بك في عيادة لوسيل التخصصية لطب الاسنان، لقد تم الغاء حجز موعدك عند الدكتور ${appointmentDetails.doctor.name}، المصادف الساعة ${timeArabic}، ليوم ${dayArabic} في ${date}`,  // Your message
+          });
+          console.log('Message sent:', result.data);
+        }
+      } catch (error) {
+        console.error('Error:', error);
+      } finally {
+        this.loading = false;
+      }
+
     },
     // async updateAppointment(id,appointment){
     //   await updateDoc(doc(appointmentsCollectionRef, id), {
@@ -240,19 +287,48 @@ console.log(defaultEvent,'default event')
     //   })
     // },
     async dropAppointment(appointment){
+      this.loading=true
       try {
-      console.log(appointment.doctorId)
-      await updateDoc(doc(appointmentsCollectionRef, appointment.appointmentId), {
-      start: appointment.startDate+'T'+appointment.startTime,
-      end:appointment.startDate+'T'+appointment.endTime,
-      patientDetails: appointment.patientDetails,
-      appointmentdate:dayjs(appointment.startDate).format('YYYY-MM-DD'),
-      doctorId: appointment.doctorId,
-      })
+        console.log(appointment,'appointmed dropped')
+        await updateDoc(doc(appointmentsCollectionRef, appointment.appointmentId), {
+        start: appointment.startDate+'T'+appointment.startTime,
+        end:appointment.startDate+'T'+appointment.endTime,
+        patientDetails: appointment.patientDetails,
+        appointmentdate:dayjs(appointment.startDate).format('YYYY-MM-DD'),
+        doctorId: appointment.doctor.doctorId,
+        })
+        this.$q.notify({
+          icon: 'done',
+          color: 'positive',
+          message: 'Appointment Re-Scheduled',
+          actions: [{ label: 'Dismiss', color: 'white', handler: () => {} }],
+        });
+
+        // Sending WhatsApp Message
+        if (appointment.patientDetails.phone !==null&&appointment.patientDetails.phone!==''){
+          dayjs.extend(customParseFormat)
+          const time = dayjs(appointment.startTime,'HH:mm').locale('ar')
+          const timeArabic=time.format('hh:mm A').replace('ص', 'صباحاً').replace('م', 'مساءً');
+          const dayArabic=dayjs(time).locale('ar').format('dddd')
+          const sendWhatsAppMessage = httpsCallable(functions, 'sendWhatsAppMessage')
+          const result = await sendWhatsAppMessage({
+            to: `whatsapp:${appointment.patientDetails.phone}`,  // Recipient's WhatsApp number
+            message: `مرحبا بك في عيادة لوسيل التخصصية لطب الاسنان، تغير وقت حجز موعدك عند الدكتور ${appointment.doctor.name}، الى تمام الساعة ${timeArabic}، ليوم ${dayArabic} المصادف ${appointment.startDate}`,  // Your message
+          });
+          console.log('Message sent:', result.data);
+        }
+      } catch (error) {
+        console.error('Error:', error);
+      } finally {
+        this.loading = false;
+      }
+      try {
+
     } catch (error) {
       console.error('Error updating appointment: ', error);
     }
     }
+
   },
 
 

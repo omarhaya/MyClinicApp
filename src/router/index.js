@@ -30,7 +30,7 @@ export default route(function (/* { store, ssrContext } */) {
     if (!storeAuth.user.uid && to.name !== 'auth') {
       next({ name: 'auth' })
     } else if (storeAuth.user.uid && to.name === 'auth') {
-      next(false)
+      next({ name: 'dashboard' })
     } else {
       next()
     }

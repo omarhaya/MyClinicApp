@@ -28,8 +28,8 @@
             v-model="tab"
             dense
             class="text-grey"
-            active-color="primary"
-            indicator-color="primary"
+            active-color="secondary"
+            indicator-color="secondary"
             align="justify"
             narrow-indicator
           >
@@ -67,8 +67,8 @@
 
             <div>
             <div>
-              <q-btn :loading="storeAuth.loading"color="primary" label="Register" type="submit" rounded></q-btn>
-              <q-btn label="Reset" type="reset" color="primary" flat class="q-ml-sm" />
+              <q-btn :loading="storeAuth.loading"color="secondary" label="Register" type="submit" rounded></q-btn>
+              <q-btn label="Reset" type="reset" color="secondary" flat class="q-ml-sm" />
             </div>
               <div class="text-center q-mt-sm q-gutter-lg">
                 <router-link class="text-white" to="/login">Esqueceu a senha?</router-link>
@@ -102,7 +102,7 @@
                ]"/>
                <div class="text-red">{{storeAuth.errorMessageLogin}}</div>
             <div>
-              <q-btn :loading="storeAuth.loading" class="full-width" color="primary" label="Login" type="submit" rounded></q-btn>
+              <q-btn :loading="storeAuth.loading" class="full-width" color="secondary" label="Login" type="submit" rounded></q-btn>
               <div class="text-center q-mt-sm q-gutter-lg">
                 <router-link class="text-black" to="/login">Forgot Password?</router-link>
               </div>
@@ -122,7 +122,7 @@
 </ion-page>
 </template>
 <script setup>
-    import { ref,reactive } from 'vue'
+    import { ref,reactive,onMounted } from 'vue'
     import { useQuasar } from 'quasar'
     import {useStoreAuth} from 'stores/storeAuth'
     import {IonPage, IonHeader, IonToolbar, IonTitle, IonContent ,IonButtons, IonButton} from '@ionic/vue';
@@ -135,6 +135,9 @@
     const accept = ref(false)
 
     const tab = ref('login')
+
+
+
     /*
       credentials
     */

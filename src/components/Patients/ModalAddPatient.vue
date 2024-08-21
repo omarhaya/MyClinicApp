@@ -1,6 +1,6 @@
 <template>
  <q-card>
-   <q-toolbar class="bg-primary text-white" style="min-width: 340px;,background-color=red;">
+   <q-toolbar class="bg-secondary text-white" style="min-width: 340px;,background-color=red;">
             <q-toolbar-title >
               Add New Patient
             </q-toolbar-title>
@@ -45,8 +45,21 @@
           />
         </div>
             <div class="row justify-around">
+              <MazPhoneNumberInput
+                v-model="Patient.phone"
+                countrySelectorWidth="110px"
+                size="3px"
+                :translations="{
+                countrySelector: {
+                  placeholder: 'Country',
+                  },
+                }"
 
-            <q-input
+                listPosition="top"
+
+                fetchCountry
+              />
+            <!-- <q-input
               dense
               class="col q-ml-sm"
               ref="phoneRef"
@@ -63,7 +76,7 @@
                   <q-tooltip class="bg-grey-8" anchor="top left" self="bottom left" :offset="[0, 8]">Patient's Mobile Number</q-tooltip>
                 </div>
               </template>
-              </q-input>
+              </q-input> -->
             </div>
 
           <q-btn-toggle
@@ -74,7 +87,7 @@
               glossy
               spread
 
-              toggle-color="primary"
+              toggle-color="secondary"
               :options="[
                 {value: 'Male', slot: 'male'},
                 {value: 'Female', slot: 'female'}
@@ -99,9 +112,9 @@
             </q-btn-toggle>
 
       <div>
-        <q-btn :disable="storePatients.loading" color="primary" label="Submit" type="submit" />
-        <q-btn label="Reset"  type="reset" color="primary" flat class="q-ml-sm" />
-        <q-btn  flat label="Cancel" color="primary" @click="closeModal" />
+        <q-btn :disable="storePatients.loading" color="secondary" label="Submit" type="submit" />
+        <q-btn label="Reset"  type="reset" color="secondary" flat class="q-ml-sm" />
+        <q-btn  flat label="Cancel" color="secondary" @click="closeModal" />
       </div>
     </form>
   </div>
@@ -113,6 +126,9 @@
 import { ref } from 'vue'
 import {useStorePatients} from 'stores/storePatients'
 import { useQuasar,uid } from 'quasar'
+import MazPhoneNumberInput from 'maz-ui/components/MazPhoneNumberInput'
+import 'maz-ui/css/main.css'
+
 
 /*
  Quasar Lib

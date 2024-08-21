@@ -6,7 +6,7 @@
             <q-toolbar-title >
               <!-- Add New Appointment -->
             </q-toolbar-title>
-            <q-btn flat round color="white" icon="delete"   @click=" storeAppointments.deleteAppointment(event.extendedProps.appointmentId)"/>
+            <q-btn flat round color="white" icon="delete"   @click=" storeAppointments.deleteAppointment(event)"/>
             <q-btn flat round color="white" icon="edit"   @click="storeAppointments.menu[event.extendedProps.appointmentId] = false"/>
           </q-toolbar>
                   <div class="row">

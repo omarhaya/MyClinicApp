@@ -4,7 +4,7 @@
     <ion-toolbar>
       <ion-title>Invoices</ion-title>
       <ion-buttons :collapse="true" slot="end">
-        <q-btn round color="primary" @click="openInvoiceModal" size="10px" icon="add"/>
+        <q-btn round color="secondary" @click="openInvoiceModal" size="10px" icon="add"/>
       </ion-buttons>
     </ion-toolbar>
   </ion-header>
@@ -15,7 +15,7 @@
             <!-- Header -->
 
 
-            <q-btn slot="end"  round flat color="primary" icon="filter_alt">
+            <q-btn slot="end"  round flat color="secondary" icon="filter_alt">
   <q-menu :offset="[-10, 0]"   auto-close>
     <q-list class="filter-menu"  style="min-width: 100px">
       <q-item  @click="filteredInvoices" clickable>
@@ -41,7 +41,7 @@
   </q-menu>
   </q-btn>
         <ion-buttons :collapse="true" slot="end">
-          <q-btn round color="primary" @click="openInvoiceModal" icon="add"/>
+          <q-btn round color="secondary" @click="openInvoiceModal" icon="add"/>
         </ion-buttons>
 
         <span class=" header m2">There are {{ invoiceData.length }} total invoices</span>
@@ -279,7 +279,6 @@ const openInvoiceModal = async () => {
 
 <style lang="scss" scoped>
 .home {
-  color: #000000;
 box-sizing: border-box;
   .header {
     margin-bottom: 65px;
