@@ -39,7 +39,21 @@
           />
         </div>
             <div class="row justify-around">
+              <MazPhoneNumberInput
+                v-model="Patient.phone"
+                countrySelectorWidth="110px"
+                size="3px"
+                :translations="{
+                countrySelector: {
+                  placeholder: 'Country',
+                  },
+                }"
 
+                listPosition="top"
+
+                fetchCountry
+              />
+<!--
             <q-input
               dense
               class="col q-ml-sm"
@@ -57,7 +71,7 @@
                   <q-tooltip class="bg-grey-8" anchor="top left" self="bottom left" :offset="[0, 8]">Patient's Mobile Number</q-tooltip>
                 </div>
               </template>
-              </q-input>
+              </q-input> -->
             </div>
 
           <q-btn-toggle
@@ -108,6 +122,8 @@ import {ref,onMounted} from 'vue'
 import { useRoute,useRouter } from 'vue-router'
 import { useQuasar } from 'quasar'
 import {useStorePatients} from 'stores/storePatients'
+import MazPhoneNumberInput from 'maz-ui/components/MazPhoneNumberInput'
+import 'maz-ui/css/main.css'
 
 
 /*
