@@ -1,5 +1,5 @@
 <template>
-  <ion-page>
+  <ion-page ref="page">
       <ion-header v-if="mobile" :translucent="true">
     <ion-toolbar>
       <ion-buttons slot="start">
@@ -61,7 +61,7 @@
         <PaymentsPatientView  :patientId="patientId"></PaymentsPatientView>
         </q-tab-panel>
         <q-tab-panel style="padding: 0px;" name="invoices">
-       <InvoicesPatientView @openPaymentModal="openPaymentModal"  :patientId="patientId"></InvoicesPatientView>
+       <InvoicesPatientView :pageRef="page" @openPaymentModal="openPaymentModal"  :patientId="patientId"></InvoicesPatientView>
         </q-tab-panel>
       </q-tab-panels>
 
@@ -81,6 +81,7 @@ import Patient from 'src/components/Patients/Patient.vue'
 import { IonAccordion, IonAccordionGroup, IonItem, IonLabel, IonPage, IonHeader, IonToolbar, IonTitle, IonContent , IonBackButton, IonButtons, } from '@ionic/vue';
 import { Platform } from 'quasar'
 
+ const page=ref()
  const tab=ref('payments')
 /*
  Quasar Lib

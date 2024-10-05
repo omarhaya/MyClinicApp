@@ -21,7 +21,7 @@
         </q-input>
       </template>
       <template v-slot:item="props" v-if="storeInvoices.patientInvoices.length &&!loading">
-        <div class="invoice"><Invoice :mobile="mobile"   @openPaymentModal="openPaymentModal" class="invoice"  :invoice="props.row" :key="index" /></div>
+        <div class="invoice"><Invoice :pageRef="pageRef" :mobile="mobile"     @openPaymentModal="openPaymentModal" class="invoice"  :invoice="props.row" :key="index" /></div>
       </template>
     </q-table>
 
@@ -47,9 +47,9 @@
 
          </template>
           <template  v-else-if="!loading &&patientInvoices && !patientInvoices.length">
-            <h5 style="height:410px;" class="text-center q-pt-xl q-ml-md q-mr-md  text-grey ">Patient has no added Invoices Yet. </h5>
+            <h5 style="height:410px;" class="text-center q-pt-xl q-ml-md q-mr-md text-grey ">Patient has no added Invoices Yet. </h5>
          </template>
-         <template v-else>
+         <template v-else >
 <q-card class="card-appointment q-mb-md" flat bordered >
       <q-item>
         <q-item-section>
@@ -73,7 +73,7 @@
 
 <script setup>
 
- import {ref,getCurrentInstance, computed} from 'vue'
+ import {ref,getCurrentInstance, computed,toRefs} from 'vue'
  import { useStoreAppointments } from 'src/stores/storeAppointments'
  import { date } from 'quasar'
  import { useRouter } from 'vue-router'
@@ -82,6 +82,11 @@ import { storeToRefs } from 'pinia'
 import Invoice from "src/components/Invoice.vue"
 import invoiceLoading from "src/components/InvoiceLoading.vue"
 import { Platform } from 'quasar'
+import MobileInvoiceModal from '../MobileInvoiceModal.vue'
+import {  modalController } from '@ionic/vue';
+import MobilePaymentModal from '../MobilePaymentModal.vue'
+import { useStorePayments } from 'src/stores/storePayments'
+
 
 /*
  Mobile
@@ -102,14 +107,19 @@ const props = defineProps({
     patientId:{
       type: String,
       required:true
-    }
+    },
+    pageRef:{
+     type: Object,
+     required: true
+  },
 })
-
+const { pageRef } = toRefs(props);
 /*
 store
 */
 
 const storeInvoices=useStoreInvoices()
+const storePayments=useStorePayments()
 const {  patientInvoices,loading } = storeToRefs(storeInvoices)
 
 /*
@@ -122,12 +132,50 @@ const {  patientInvoices,loading } = storeToRefs(storeInvoices)
       { name: 'date',label: 'date',field: 'date',},
     ]
     const instance = getCurrentInstance()
-const openPaymentModal = async () => {
-  instance.emit('openPaymentModal')
+
+
+
+
+    const openInvoiceModal = async () => {
+    const modal = await modalController.create({
+      component: MobileInvoiceModal,
+      presentingElement:pageRef.value.$el,
+
+    });
+
+    modal.present();
+    const { data, role } = await modal.onWillDismiss();
+    modal.onDidDismiss(storeInvoices.CLEAR_DATA())
+    if (role === 'confirm') {
+      console.log('data',data)
+      // message.value = `Hello, ${data}!`;
+    }
+
+  };
+
+
+  const openPaymentModal = async () => {
+    const modal = await modalController.create({
+      component: MobilePaymentModal,
+      presentingElement:pageRef.value.$el,
+    });
+
+    modal.present();
+    const { data, role } = await modal.onWillDismiss();
+    modal.onDidDismiss( storePayments.CLEAR_DATA())
+    if (role === 'confirm') {
+      console.log('data',data)
+      // message.value = `Hello, ${data}!`;
+    }
   };
 </script>
 <style lang="scss" scoped>
+.card-appointment {
 
+  .row{
+    align-content:flex-start !important;
+  }
+}
 .invoice{
   flex-wrap: nowrap;
   width: 100%;

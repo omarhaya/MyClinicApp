@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
 import {
   collection, onSnapshot,where,
-  query,orderBy,addDoc,deleteDoc,doc,updateDoc,limit,getDocs,collectionGroup,writeBatch,deleteField
+  query,orderBy,setDoc,deleteDoc,doc,updateDoc,limit,getDocs,collectionGroup,writeBatch,deleteField
 } from 'firebase/firestore'
 import {db} from '/src/js/firebase'
 import { useStoreAuth } from './storeAuth'
@@ -9,15 +9,28 @@ import { uid } from 'uid'
 import { getFunctions, httpsCallable } from "firebase/functions"
 import { useStoreWorks } from './storeWorks'
 import { useStorePayments } from './storePayments'
-import { reactive } from 'vue'
+import { reactive,computed } from 'vue'
 import {modalController, } from '@ionic/vue';
+import { Platform } from 'quasar';
+
 
 let invoicesCollectionRef
 let invoicesCollectionQuery
 let getInvoicesSnapshot=null
 
 export const useStoreInvoices = defineStore('storeInvoices', {
+
   state: () => {
+    const mobile = computed(() => {
+      if (Platform.is.desktop) {
+        return false;
+      }
+      if (Platform.is.mobile) {
+        return true;
+      }
+      // Default to false if neither
+      return false;
+    })
     return {
       invoiceData: [],
       patientInvoices:[],
@@ -35,7 +48,9 @@ export const useStoreInvoices = defineStore('storeInvoices', {
       storePayments:useStorePayments(),
       storeAuth:useStoreAuth(),
       limit:10,
-      moreDataAvailable: true // Flag to track if more data is available
+      moreDataAvailable: true, // Flag to track if more data is available
+      mobile,
+      loadingInvoices:null,
     }
   },
 
@@ -47,8 +62,14 @@ export const useStoreInvoices = defineStore('storeInvoices', {
       else {invoicesCollectionRef = collection(db, 'users',this.storeAuth.user.uid,'invoices')
      }
    },
-    TOGGLE_INVOICE() {
-      this.invoiceModal = !this.invoiceModal
+    TOGGLE_INVOICE(invoiceId) {
+      if (!this.mobile){this.invoiceModal = !this.invoiceModal}
+      if (invoiceId) {
+        this.currentInvoiceArray=this.invoiceData.find(doc => doc.invoiceId === invoiceId)||this.patientInvoices.find(doc => doc.invoiceId === invoiceId)
+        this.currentInvoiceArray.workItemList=this.storeWorks.invoiceWorks[invoiceId]
+        console.log(this.invoiceData,'currentinvoice')
+      }
+
     },
     CLEAR_DATA(){
       this.paymentItemList=[]
@@ -70,40 +91,40 @@ export const useStoreInvoices = defineStore('storeInvoices', {
     //  this.patientInvoices=this.GET_PATIENT_INVOICES(clientId)
 
     //  },
-    async updateInvoices() {
-      try {
-        // const doctorsIds = doctors.map(doctor => doctor.doctorId);
-        const invoicesCollectionAllRef = collectionGroup(db, 'invoices');
-        const invoicesCollectionAllQuery = query(invoicesCollectionAllRef, );
+    // async updateInvoices() {
+    //   try {
+    //     // const doctorsIds = doctors.map(doctor => doctor.doctorId);
+    //     const invoicesCollectionAllRef = collectionGroup(db, 'invoices');
+    //     const invoicesCollectionAllQuery = query(invoicesCollectionAllRef, );
 
-        const snapshot = await getDocs(invoicesCollectionAllQuery);
+    //     const snapshot = await getDocs(invoicesCollectionAllQuery);
 
-        const batch =  writeBatch(db) // Use the batch function from Firestore
+    //     const batch =  writeBatch(db) // Use the batch function from Firestore
 
-        snapshot.forEach(doc => {
-          const invoiceData = doc.data();
+    //     snapshot.forEach(doc => {
+    //       const invoiceData = doc.data();
 
-          if (invoiceData) {
-            const updatedData = {
-              ...invoiceData,
-              deletedDateUnix:null,
-              // patientName:invoiceData.clientName,
-              // // id: patientData.id,
-              // clientId: deleteField(), // Remove the 'id' field
-              // clientName: deleteField() // Remove the 'id' field
-              deleted:deleteField()
-            };
-            const invoiceRef = doc.ref;
-            batch.update(invoiceRef, updatedData);
-          }
-        });
+    //       if (invoiceData) {
+    //         const updatedData = {
+    //           ...invoiceData,
+    //           deletedDateUnix:null,
+    //           // patientName:invoiceData.clientName,
+    //           // // id: patientData.id,
+    //           // clientId: deleteField(), // Remove the 'id' field
+    //           // clientName: deleteField() // Remove the 'id' field
+    //           deleted:deleteField()
+    //         };
+    //         const invoiceRef = doc.ref;
+    //         batch.update(invoiceRef, updatedData);
+    //       }
+    //     });
 
-        await batch.commit();
-        console.log('Updated invoice data successfully');
-      } catch (error) {
-        console.error('Error updating invoice data:', error);
-      }
-    },
+    //     await batch.commit();
+    //     console.log('Updated invoice data successfully');
+    //   } catch (error) {
+    //     console.error('Error updating invoice data:', error);
+    //   }
+    // },
     SET_CURRENT_INVOICE(invoiceId) {
       this.loading=true
       const q =  query(invoicesCollectionRef,where('invoiceId' ,'==',invoiceId))
@@ -177,7 +198,7 @@ export const useStoreInvoices = defineStore('storeInvoices', {
     },
     async SET_PATIENT_INVOICES(patientId, invoiceId) {
       try {
-        this.loading = true; // Set loading state to true when data fetching begins
+        this.loadingInvoices = true; // Set loading state to true when data fetching begins
         console.log(this.loading, 'loading');
 
         const invoicesCollectionQuery = query(invoicesCollectionRef, where('patientId', '==', patientId), where("deletedDateUnix", "==", null), orderBy('invoiceDateUnix', 'desc'));
@@ -224,11 +245,11 @@ export const useStoreInvoices = defineStore('storeInvoices', {
           this.storePayments.paymentInvoices = reactive(updatedPaymentInvoices);
         }
 
-        this.loading = false; // Clear loading state when data fetching completes
+        this.loadingInvoices = false; // Clear loading state when data fetching completes
         console.log(this.loading, 'loading');
       } catch (error) {
         console.error("Error fetching invoices:", error);
-        this.loading = true; // Clear loading state if an error occurs
+        this.loadingInvoices = true; // Clear loading state if an error occurs
       }
     },
     async GET_INVOICES_NEXT()  {
@@ -377,20 +398,28 @@ export const useStoreInvoices = defineStore('storeInvoices', {
     async addInvoice(data) {
       try {
         this.loadingModal = true;
-        const addDocPromise = addDoc(invoicesCollectionRef, {
+
+        // Create a reference to the document with the specified invoiceId
+        const invoiceDocRef = doc(invoicesCollectionRef, data.invoiceId);
+
+        // Create the data object to be added to Firestore
+        const invoiceData = {
           invoiceId: data.invoiceId,
           patientName: data.patientDetails.namef,
-          patientId:data.patientDetails.patientId,
+          patientId: data.patientDetails.patientId,
           invoiceDate: data.invoiceDate,
           invoiceDateUnix: data.invoiceDateUnix,
           // paymentItemList: this.paymentItemList,
-          // workItemList:this.workItemList,
+          // workItemList: this.workItemList,
           // invoicePending: data.invoicePending,
           invoiceDraft: data.invoiceDraft,
-          deletedDateUnix:null,
+          deletedDateUnix: null,
           // invoicePaid: null,
-          uid:this.storeAuth.user.uid,
-        });
+          uid: this.storeAuth.user.uid,
+        };
+
+        // Set the document in Firestore with the specified docId
+        const setDocPromise = setDoc(invoiceDocRef, invoiceData);
 
         // Set a timeout to check if the Firestore operation completes within a certain time
         const timeoutDuration = 5000; // Timeout duration in milliseconds (adjust as needed)
@@ -399,7 +428,7 @@ export const useStoreInvoices = defineStore('storeInvoices', {
         });
 
         // Wait for either the Firestore write operation or the timeout to complete
-        const isOperationCompleted = await Promise.race([addDocPromise, timeoutPromise]);
+        const isOperationCompleted = await Promise.race([setDocPromise, timeoutPromise]);
 
         if (isOperationCompleted === false) {
           // If the timeout occurs and the operation hasn't completed, treat it as an error
@@ -409,8 +438,8 @@ export const useStoreInvoices = defineStore('storeInvoices', {
         // If the operation completes successfully or within the timeout, proceed to toggle the invoice
         modalController.dismiss(null, 'confirm');
         this.loadingModal = false;
-        this.invoiceModal=false;
-        this.CLEAR_DATA()
+        this.invoiceModal = false;
+        this.CLEAR_DATA();
         this.moreDataAvailable = true; // If the invoice is added, set moreDataAvailable to true
 
       } catch (error) {
@@ -419,39 +448,61 @@ export const useStoreInvoices = defineStore('storeInvoices', {
         // Handle error here
         modalController.dismiss(null, 'confirm');
         this.loadingModal = false;
-        this.invoiceModal=false; // Ensure TOGGLE_INVOICE is called even in offline scenarios
-        this.CLEAR_DATA()
-
+        this.invoiceModal = false; // Ensure TOGGLE_INVOICE is called even in offline scenarios
+        this.CLEAR_DATA();
       }
     },
-    async updateInvoice(data){
-      this.loading=true
-      await updateDoc(doc(invoicesCollectionRef, data.docId), {
-        // invoiceId: uid(6),
-        typeOfWork: data.work.workType,
-        billerCity: data.billerCity,
-        billerZipCode: data.billerZipCode,
-        billerCountry: data.billerCountry,
-        clientName: data.clientDetails.namef,
-        clientId:data.clientDetails.id,
-        clientEmail: data.clientEmail,
-        clientCity: data.clientCity,
-        clientCountry: data.clientCountry,
-        invoiceDate: data.invoiceDate,
-        invoiceDateUnix: data.invoiceDateUnix,
-        paymentTerms: data.paymentTerms,
-        paymentDueDate: data.paymentDueDate,
-        paymentDueDateUnix: data.paymentDueDateUnix,
-        productDescription: data.productDescription,
-        paymentItemList: this.paymentItemList,
-        invoiceTotal: data.invoiceTotal,
-        workDescription: data.workDescription,
-        doctorTreated: data.doctorTreated,
-        updatedDateUnix:Date.now(),
-        updatedDate: invoiceDate.value = new Date().toLocaleDateString("en-us", { year: "numeric", month: "short", day: "numeric" })
-      })
-      this.loading=false
-      this.TOGGLE_INVOICE()
+    async updateInvoice(data) {
+      try {
+        this.loadingModal = true;
+
+        // Get a reference to the existing document using its invoiceId
+        const invoiceDocRef = doc(invoicesCollectionRef, data.docId);
+
+        // Prepare the update data object
+        const updateData = {
+          patientName: data.patientDetails.namef,
+          patientId: data.patientDetails.patientId,
+          invoiceDate: data.invoiceDate,
+          invoiceDateUnix: data.invoiceDateUnix,
+          invoiceDraft: data.invoiceDraft,
+          deletedDateUnix: null,
+          uid: this.storeAuth.user.uid,
+        };
+
+        // Set a timeout to check if the Firestore operation completes within a certain time
+        const timeoutDuration = 5000; // Timeout duration in milliseconds (adjust as needed)
+        const timeoutPromise = new Promise((resolve) => {
+          setTimeout(() => resolve(false), timeoutDuration);
+        });
+
+        // Perform the update operation
+        const updateDocPromise = updateDoc(invoiceDocRef, updateData);
+
+        // Wait for either the Firestore update operation or the timeout to complete
+        const isOperationCompleted = await Promise.race([updateDocPromise, timeoutPromise]);
+
+        if (isOperationCompleted === false) {
+          // If the timeout occurs and the operation hasn't completed, treat it as an error
+          throw new Error('Timeout: Unable to update invoice');
+        }
+
+        // If the operation completes successfully or within the timeout, proceed to toggle the invoice
+        modalController.dismiss(null, 'confirm');
+        this.loadingModal = false;
+        this.invoiceModal = false;
+        this.CLEAR_DATA();
+        this.moreDataAvailable = true; // If the invoice is updated, set moreDataAvailable to true
+
+      } catch (error) {
+        console.error('Error updating invoice:', error);
+
+        // Handle error here
+        modalController.dismiss(null, 'confirm');
+        this.loadingModal = false;
+        this.invoiceModal = false; // Ensure TOGGLE_INVOICE is called even in offline scenarios
+        this.CLEAR_DATA();
+      }
     },
     clearInvoices(){
       this.invoiceData=[]

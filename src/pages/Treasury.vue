@@ -71,7 +71,7 @@
        class="my-sticky-header-table1 col "
        :columns="columns"
        color="secondary"
-       row-key="invoiceId"
+       row-key="paymentId"
        virtual-scroll
        :rows-per-page-options="[0]"
        selection="multiple"
@@ -164,7 +164,8 @@
            <q-icon  name="delete" size="20px" @click="storePayments.deletePayment(props.row.paymentId)"/>
            </q-td>
          </q-tr> -->
-         <div class="payment"><Payment :tableProps="props" :mobile="mobile"   @openPaymentModal="openPaymentModal" class="payment"  :payment="props.row" :key="index" /></div>
+         <div class="payment">
+          <Payment :tableProps="props" :mobile="mobile"   @openPaymentModal="openPaymentModal" class="payment"  :payment="props.row" :key="props.row.paymentId" :pageRef="page" /></div>
        </template>
 
        <template v-slot:no-data="{ icon, message, filter }">
@@ -281,7 +282,7 @@
       selectedPayments.forEach(payment => {
        const patient = storePatients.patients.find(patient => patient.patientId === payment.patientId);
        if (patient) {
-             payment.patientName = patient.name;
+        payment.patientName = patient.namef;
            }
         if (payment && storeWorks.paymentsWorks[payment.workId]) {
           const workDetails = storeWorks.paymentsWorks[payment.workId];
@@ -404,7 +405,7 @@
     if (payments && payments.length > 0) {
       const totalByCurrency = payments.reduce((totals, payment) => {
         const { currency, paid } = payment;
-
+        console.log(payments,'totalByCurrency')
         const currencyIndex = totals.findIndex(item => item.currency === currency);
 
         if (currencyIndex !== -1) {

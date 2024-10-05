@@ -15,6 +15,13 @@
       :patient="patient.namef"
     />
     </q-dialog>
+    <q-dialog v-model="modals.editPatient" persistent >
+      <ModalEditPatient
+      :patientId="patient.patientId"
+      v-if="modals.editPatient"
+      v-model="modals.editPatient"
+       />
+     </q-dialog>
 
     <q-card  class="my-card">
                   <div class="row">
@@ -40,7 +47,7 @@
                  self="top left" >
                 <q-list>
                   <q-item clickable>
-                   <q-item-section @click.prevent="editpatient(patient.patientId)" > Edit Details</q-item-section>
+                   <q-item-section @click.prevent="modals.editPatient=true" > Edit Details</q-item-section>
                   </q-item>
                    <q-item clickable>
                     <q-item-section @click.prevent="modals.deletePatient=true">Delete Patient</q-item-section>
@@ -96,20 +103,13 @@
  import { date } from 'quasar'
  import { useRouter } from 'vue-router'
  import ModalAddAppointment from '../PaymentsAndAppointments/ModalAddAppointment.vue'
+ import ModalEditPatient from './ModalEditPatient.vue'
 /*
  props
 */
 const props = defineProps({
-  patient:{
-    type : Object,
-    required:true
-  },
     patientId:{
       type: String,
-    },
-    patient:{
-      type:Boolean,
-      default:false
     }
 })
 
@@ -128,9 +128,11 @@ const storePatients=useStorePatients()
   Patient
 */
 
- const patient = ref('')
+ const patient = computed (()=>{
+  return storePatients.getPatient(props.patientId)
+ })
  const expand=ref(false)
- patient.value=storePatients.getPatient(props.patientId)
+//  patient.value=storePatients.getPatient(props.patientId)
  const editpatient=(patientId)=>{
   router.push(`/EditPatient/${patientId}`)
  }
@@ -151,7 +153,8 @@ charechter length
 */
  const modals = reactive({
   deletePatient:false,
-  addAppointment:false
+  addAppointment:false,
+  editPatient:false,
  })
 
  /*
@@ -180,6 +183,7 @@ const gender= computed(()=>{
     return 'woman'
   }
 })
+
 
 </script>
 <style lang="sass" scoped>

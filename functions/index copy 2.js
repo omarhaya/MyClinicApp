@@ -6,13 +6,8 @@ const twilio = require('twilio');
 initializeApp()
 const admin = require('firebase-admin')
 const db = admin.firestore()
-const dayjs = require('dayjs');
-require('dayjs/locale/ar'); // Import the Arabic locale
-const localeData = require('dayjs/plugin/localeData');
-const customParseFormat = require ('dayjs/plugin/customParseFormat')
-dayjs.extend(localeData)
-dayjs.locale('ar') // Set the locale to Arabic
-// Initialize Firestore
+const dayjs = require('dayjs')
+
 // On sign up.
 exports.processSignUp = functions.auth.user().onCreate(async (user) => {
   // Check if user meets role criteria.
@@ -129,7 +124,6 @@ exports.sendWhatsAppCancel = functions.https.onCall((data, context) => {
 //appointment_reservation
 exports.sendWhatsAppReservatiion = functions.https.onCall((data, context) => {
   const to = data.to; // e.g., 'whatsapp:+1234567890'
-
   const message = data.message; // e.g., 'Hello from my app!'
 
   return client.messages.create({
@@ -158,17 +152,20 @@ exports.sendWhatsAppReservatiion = functions.https.onCall((data, context) => {
 // Scheduled function to check Firestore for messages to send
 
 exports.scheduleWhatsAppMessages = onSchedule("every 1 minutes", async (event) => {
-  const now = new Date();
-  const todayDate = now.toISOString().split('T')[0];
-  const nowUnix = Math.floor(now.getTime() / 1000);
+  const now = new Date();  // Current time
+  const todayDate = now.toISOString().split('T')[0];  // YYYY-MM-DD
+  const nowUnix = Math.floor(now.getTime() / 1000);  // Current time in Unix timestamp
 
+  // Define fixed time for processing: 11:00 AM today
   const fixedTime = new Date();
-  fixedTime.setHours(8, 0, 0, 0);
-  const fixedTimeUnix = Math.floor(fixedTime.getTime() / 1000);
+  fixedTime.setHours(9, 0, 0, 0);
+  const fixedTimeUnix = Math.floor(fixedTime.getTime() / 1000);  // Fixed time in Unix timestamp
 
-  const startOfWindowUnix = fixedTimeUnix;
-  const endOfWindowUnix = fixedTimeUnix + 60 * 60;
+  // Define the window for processing: 11:01 AM to 11:02 AM today
+  const startOfWindowUnix = fixedTimeUnix // 11:01 AM
+  const endOfWindowUnix = fixedTimeUnix+ (10 * 60) // 11:02 AM
 
+  // Check if current time is within the specified window
   if (nowUnix > startOfWindowUnix && nowUnix < endOfWindowUnix) {
     console.log('Processing appointments for fixed time window');
 
@@ -177,9 +174,6 @@ exports.scheduleWhatsAppMessages = onSchedule("every 1 minutes", async (event) =
 
       userDocs.forEach(async (userDoc) => {
         const userId = userDoc.id;
-        const userData = userDoc.data();
-        const userRole = userData.role;
-
         console.log(`Checking appointments for user: ${userId}`);
 
         const appointmentsCollectionRef = db.collection('users').doc(userId).collection('appointments');
@@ -197,78 +191,34 @@ exports.scheduleWhatsAppMessages = onSchedule("every 1 minutes", async (event) =
               console.log(`Processing appointment: ${appointmentId} for user: ${userId}`);
               const appointmentData = doc.data();
 
-              const { patientDetails, start, doctorId } = appointmentData;
-              dayjs.extend(customParseFormat);
-              const startTime = start.split('T')[1].slice(0, 5);
-              const startDate = start.slice(0, 10);
-              const time = dayjs(startTime, 'HH:mm').locale('ar');
-              const timeArabic = time.format('hh:mm A').replace('ص', 'صباحاً').replace('م', 'مساءً');
-              const dayArabic = dayjs(startDate).locale('ar').format('dddd');
-              const type = 'حجز';
-              console.log(startTime,'startTime',startDate,'startDate',timeArabic,'timeArabic',dayArabic,'dayArabic')
-              // Check if userData.doctors is an array
-              const doctorInfo = (() => {
-                const doctorsArray = Object.values(userData.doctors); // Convert the doctors object to an array
-
-                if (userRole.clinicId !== '') {
-                  const clinicDoctor = doctorsArray.find(doctor => doctor.doctorId === userRole.clinicId);
-                  const assignedDoctor = doctorsArray.find(doctor => doctor.doctorId === doctorId);
-                  return {
-                    clinicName: clinicDoctor ? clinicDoctor.name : 'Unknown Clinic',
-                    doctorName: assignedDoctor ? assignedDoctor.name : 'Unknown Doctor'
-                  };
-                } else {
-                  if (doctorsArray.length > 1) {
-                    const clinicDoctor = doctorsArray.find(doctor => doctor.doctorId === userId);
-                    const assignedDoctor = doctorsArray.find(doctor => doctor.doctorId === doctorId);
-                    return {
-                      clinicName: clinicDoctor ? clinicDoctor.name : 'Unknown Clinic',
-                      doctorName: assignedDoctor ? assignedDoctor.name : 'Unknown Doctor'
-                    };
-                  } else {
-                    const clinicDoctor = doctorsArray.find(doctor => doctor.doctorId === userId);
-                    const assignedDoctor = doctorsArray.find(doctor => doctor.doctorId === doctorId);
-                    return {
-                      clinicName: clinicDoctor ? clinicDoctor.name : 'Unknown Clinic',
-                      doctorName: assignedDoctor ? assignedDoctor.name : 'Unknown Doctor'
-                    };
-                  }
-                }
-              })();
-               console.log(doctorInfo,'doctorInfo')
-              const messageContent = {
-                startDate: startDate,
-                clinicName: doctorInfo.clinicName,
-                doctorName: doctorInfo.doctorName,
-                timeArabic,
-                dayArabic,
-                type
-              };
-                console.log(messageContent,'messageContent')
+              // Extract necessary information for the WhatsApp message
+              const { patientDetails,message} = appointmentData;
+              const messageContent=message
+              // Ensure patientDetails exists and extract the phone number
               const phone = patientDetails ? patientDetails.phone : null;
-              const patientName = patientDetails.namef;
+              const patientName=patientDetails.namef
 
-              if (phone) {
+              if (phone) { // Ensure phone number exists
                 try {
-                  console.log(messageContent);
+                  // Send WhatsApp message using Twilio
                   const message = await client.messages.create({
-                    contentSid: "HXf77adb5996726eb9c862715219723c0f",
+                    contentSid: "HXf77adb5996726eb9c862715219723c0f", // Use your own contentSid
                     contentVariables: JSON.stringify({
                       1: patientName,
-                      2: messageContent.clinicName,
+                      2: messageContent.doctorInfo.clinicName,
                       3: messageContent.timeArabic,
                       4: messageContent.dayArabic,
-                      5: messageContent.doctorName,
                     }),
-                    from: 'whatsapp:+9647511431331',
+                    from: 'whatsapp:+9647511431331', // Your Twilio WhatsApp-enabled number
                     to: `whatsapp:${phone}`,
                   });
 
                   console.log(`WhatsApp message sent: ${message.sid}`);
 
+                  // Update Firestore document to reflect that the message was sent and schedule was updated
                   await appointmentsCollectionRef.doc(appointmentId).update({
-                    sendWhatsAppReminder: false,
-                    messageSentAt: dayjs().unix(),
+                    sendWhatsAppReminder: false,  // Disable further messages for this appointment
+                    messageSentAt: dayjs().unix(),  // Log the send time as Unix timestamp
                   });
 
                 } catch (error) {
@@ -295,30 +245,4 @@ exports.scheduleWhatsAppMessages = onSchedule("every 1 minutes", async (event) =
   }
 });
 
-// Incoming WhatsApp message handler
-exports.incomingWhatsAppMessage = functions.https.onRequest(async (req, res) => {
-  const messageSid = req.body.MessageSid;
-  const from = req.body.From; // The sender (e.g., 'whatsapp:+1234567890')
-  const to = req.body.To;     // Your Twilio WhatsApp number
-  const body = req.body.Body; // The incoming message body
 
-  console.log(`Received WhatsApp message from ${from}: ${body}`);
-
-  try {
-    // Store the incoming message in Firestore
-    await db.collection('whatsappMessages').add({
-      messageSid: messageSid,
-      from: from,
-      to: to,
-      body: body,
-      receivedAt: admin.firestore.FieldValue.serverTimestamp(),
-    });
-
-    // Send a response back to Twilio
-    // res.status(200).send('<Response><Message>Message received!</Message></Response>');
-
-  } catch (error) {
-    console.error('Error saving message to Firestore:', error);
-    res.status(500).send('Error processing incoming message');
-  }
-});

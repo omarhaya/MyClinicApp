@@ -7,7 +7,8 @@
       </ion-buttons>
       <ion-title>Add Invoice</ion-title>
       <ion-buttons slot="end">
-        <ion-button v-if="!storeInvoices.loadingModal" @click="confirm" :strong="true">Add</ion-button>
+        <ion-button v-if="!storeInvoices.loadingModal&&!storeInvoices.editInvoice" @click="confirm" :strong="true">Add</ion-button>
+        <ion-button v-else-if="!storeInvoices.loadingModal&&storeInvoices.editInvoice" @click="confirm" :strong="true">Update</ion-button>
         <ion-spinner v-else></ion-spinner>
       </ion-buttons>
     </ion-toolbar>

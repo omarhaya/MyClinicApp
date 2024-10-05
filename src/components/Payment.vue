@@ -42,7 +42,7 @@
       </ion-item>
 
       <ion-item-options side="end">
-        <ion-item-option ><q-icon size="25px" name="edit"/> Edit</ion-item-option>
+        <ion-item-option  @click="handleClick()" ><q-icon size="25px" name="edit"/> Edit</ion-item-option>
         <ion-item-option @click="isOpen=true" expandable color="danger"><q-icon size="25px" name="delete"/>Delete</ion-item-option>
       </ion-item-options>
     </ion-item-sliding>
@@ -54,9 +54,9 @@ import { useStorePayments } from 'src/stores/storePayments'
 import { useStoreWorks } from 'src/stores/storeWorks'
 import { useStorePatients } from 'src/stores/storePatients'
 import { useStoreInvoices } from 'src/stores/storeInvoices'
-import { ref,watch,getCurrentInstance,computed } from 'vue'
-import { IonItem,IonActionSheet, IonItemOption, IonItemOptions, IonItemSliding, IonLabel, IonList } from '@ionic/vue';
-
+import { ref,watch,getCurrentInstance,toRefs } from 'vue'
+import { IonItem,IonActionSheet, IonItemOption, IonItemOptions, IonItemSliding, modalController, IonList } from '@ionic/vue';
+import MobilePaymentModal from './MobilePaymentModal.vue'
 
 const instance = getCurrentInstance()
 const props = defineProps({
@@ -71,8 +71,17 @@ const props = defineProps({
   tableProps:{
     type : Object,
     required:true
-  }
+  },
+  mobile:{
+    type : Boolean,
+    required:true
+  },
+  pageRef:{
+  type: Object,
+  required: true
+  },
 })
+const { pageRef } = toRefs(props);
 const isOpen=ref(false)
 /*
  Stores
@@ -164,6 +173,42 @@ watch(() => props.payment.deleted, (newValue) => {
         },
       ])
 
+ function handleClick () {
+    if (!props.mobile) {
+      // Actions for non-mobile devices
+      storePayments.editPayment = true;
+      storePayments.TOGGLE_PAYMENT(props.payment.paymentId);
+      console.log(storePayments.editPayment,'storePayments.editPayment = true;')
+    } else {
+      // Actions for mobile devices
+      console.log('im on mobile')
+      storePayments.TOGGLE_PAYMENT(props.payment.paymentId)
+      openPaymentModal()
+      storePayments.editPayment = true; // Example of different action
+      // Add any other mobile-specific actions here
+    }
+  }
+
+/*
+  Modal
+*/
+
+const openPaymentModal = async () => {
+    const modal = await modalController.create({
+      component: MobilePaymentModal,
+      presentingElement:pageRef.value.$el,
+
+    });
+
+    modal.present();
+    const { data, role } = await modal.onWillDismiss();
+    modal.onDidDismiss(storePayments.CLEAR_DATA())
+    if (role === 'confirm') {
+      console.log('data',data)
+      // message.value = `Hello, ${data}!`;
+    }
+
+  };
 </script>
 
 <style lang="scss" scoped>

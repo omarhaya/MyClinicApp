@@ -76,7 +76,7 @@
       </ion-item>
 
       <ion-item-options side="end">
-        <ion-item-option ><q-icon size="25px" name="edit"/> Edit</ion-item-option>
+        <ion-item-option  @click="handleClick()"><q-icon size="25px" name="edit"/> Edit</ion-item-option>
         <ion-item-option @click="isOpen=true" expandable color="danger"><q-icon size="25px" name="delete"/>Delete</ion-item-option>
       </ion-item-options>
     </ion-item-sliding>
@@ -88,9 +88,9 @@ import { useStorePayments } from 'src/stores/storePayments'
 import { useStoreWorks } from 'src/stores/storeWorks'
 import { useStorePatients } from 'src/stores/storePatients'
 import { useStoreInvoices } from 'src/stores/storeInvoices'
-import { ref,watch,getCurrentInstance,computed } from 'vue'
-import { IonItem,IonActionSheet, IonItemOption, IonItemOptions, IonItemSliding, IonLabel, IonList } from '@ionic/vue';
-
+import { ref,watch,getCurrentInstance,toRefs } from 'vue'
+import { IonItem,IonActionSheet, IonItemOption, IonItemOptions, IonItemSliding, IonLabel, modalController } from '@ionic/vue';
+import MobileInvoiceModal from 'src/components/MobileInvoiceModal.vue'
 
 const instance = getCurrentInstance()
 const props = defineProps({
@@ -101,8 +101,13 @@ const props = defineProps({
   mobile:{
     type : Boolean,
     required:true
-  }
+  },
+  pageRef:{
+type: Object,
+required: true
+},
 })
+const { pageRef } = toRefs(props);
 const isOpen=ref(false)
 /*
  Stores
@@ -200,6 +205,41 @@ watch(() => props.invoice.deleted, (newValue) => {
         },
       ])
 
+
+function handleClick () {
+    if (!props.mobile) {
+      // Actions for non-mobile devices
+      storeInvoices.editInvoice = true;
+      storeInvoices.TOGGLE_INVOICE(props.invoice.invoiceId);
+    } else {
+      // Actions for mobile devices
+      storeInvoices.TOGGLE_INVOICE(props.invoice.invoiceId)
+      openInvoiceModal()
+      storeInvoices.editInvoice = true; // Example of different action
+      // Add any other mobile-specific actions here
+    }
+  }
+/*
+  Modal
+*/
+
+
+const openInvoiceModal = async () => {
+    const modal = await modalController.create({
+      component: MobileInvoiceModal,
+      presentingElement:pageRef.value.$el,
+
+    });
+
+    modal.present();
+    const { data, role } = await modal.onWillDismiss();
+    modal.onDidDismiss(storeInvoices.CLEAR_DATA())
+    if (role === 'confirm') {
+      console.log('data',data)
+      // message.value = `Hello, ${data}!`;
+    }
+
+  };
 </script>
 
 <style lang="scss" scoped>

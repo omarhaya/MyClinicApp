@@ -127,6 +127,7 @@
   :invoice="invoice"
   :mobile="mobile"
   :key="invoice.invoiceId"
+  :pageRef="page"
 
         />
      </div>
@@ -390,5 +391,16 @@ box-sizing: border-box;
 }
 .list-md {
   background:none !important
+}
+
+</style>
+<style scoped>
+.invoice-wrap {
+  /* Adjust modal styling */
+  z-index: 9998; /* Ensure the modal's z-index is lower than the action sheet */
+}
+
+ion-action-sheet {
+  z-index: 9999 !important; /* Ensure the action sheet appears above the modal */
 }
 </style>

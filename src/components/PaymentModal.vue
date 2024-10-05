@@ -33,7 +33,7 @@
              <label for="patient">Patient's Name</label>
              <!-- <q-btn @click="console1">hi</q-btn> -->
              <v-autocomplete
-              :disabled="storeInvoices.loading||storePayments.loading||storeWorks.loading"
+              :disabled="storeInvoices.loadingInvoices||storePayments.loading||storeWorks.loading"
               v-model="storePayments.patient"
               @update:model-value="getPatientInvoices"
               :items="options"
@@ -87,8 +87,8 @@
              <label for="type">Invoice Number</label>
              <v-select
               required
-              :disabled="storeInvoices.loading||storePayments.loading||!storePayments.patient||storeWorks.loading"
-              :loading="storeInvoices.loading||storePayments.loading||storeWorks.loading"
+              :disabled="storeInvoices.loadingInvoices||storePayments.loading||!storePayments.patient||storeWorks.loading"
+              :loading="storeInvoices.loadingInvoices||storePayments.loading||storeWorks.loading"
               v-model="storePayments.paymentInvoices"
               :items="patientInvoices"
               chips
@@ -104,7 +104,7 @@
             >
               <template v-slot:chip="{ props, item }">
 
-                <q-card v-if="storeInvoices.loading||storePayments.loading" class="card-invoice" flat bordered>
+                <q-card v-if="storeInvoices.loadingInvoices||storePayments.loading" class="card-invoice" flat bordered>
           <q-card-section>
         <div  class="row items-center no-wrap">
           <div class="text-overline q-pl-md col"><q-item-label caption>
@@ -148,7 +148,7 @@
       </q-card-section>
 
       <q-list>
-        <q-item v-bind="props" :disable="work.paidPercentage==100" @click.stop.prevent v-for="work in item.raw.works" :class="`${work.selected ? `bg-${work.color}-1` : ''}`" clickable @click="selectWork(work,item.raw.works)">
+        <q-item v-bind="props" :disable="work.paidPercentage==100" @click.stop.prevent v-for="work in item.raw.works" :class="`${work.selected ? `bg-${work.color}-1 selected` : 'non-selected'}`" clickable @click="selectWork(work,item.raw.works)">
           <q-item-section avatar>
             <q-circular-progress
       show-value
@@ -167,7 +167,7 @@
           </q-item-section>
           <q-item-section>
             <q-item-label :class="`q-mt-xs text-${work.color} text-bold`">{{ work.label }}</q-item-label>
-            <q-item-label caption><div class="text-black">Total: <span class="currency">{{work.currency }}</span>{{ formatMoney(work.price-work.discount) }}</div> <div class="text-orange">Remaining: <span class="currency">{{work.currency }}</span>{{ formatMoney(work.price-work.discount-work.allPaid) }}</div></q-item-label>
+            <q-item-label caption><div class="total">Total: <span class="currency">{{work.currency }}</span>{{ formatMoney(work.price-work.discount) }}</div> <div class="remaining text-orange">Remaining: <span class="currency">{{work.currency }}</span>{{ formatMoney(work.price-work.discount-work.allPaid) }}</div></q-item-label>
           </q-item-section>
         </q-item>
       </q-list>
@@ -230,7 +230,7 @@
                           </template>
                        </q-input> -->
 
-                       <v-text-field   :disabled="storeInvoices.loading||storePayments.loading||storeWorks.loading"  required autofocus  density="compact" @input="calculatePercentage2(paymentItemList[currency])" color="primary" :prefix="currency" dense  type="tel" v-model="paymentItemList[currency].paid" >
+                       <v-text-field   :disabled="storeInvoices.loadingInvoices||storePayments.loading||storeWorks.loading"  required autofocus  density="compact" @input="calculatePercentage2(paymentItemList[currency])" color="primary" :prefix="currency" dense  type="tel" v-model="paymentItemList[currency].paid" >
                          <template v-slot:append>
                           </template>
                        </v-text-field>
@@ -265,7 +265,7 @@
  import { useStoreWorks } from 'src/stores/storeWorks'
  import { storeToRefs } from 'pinia'
  import { useStorePatients } from 'src/stores/storePatients'
- import { ref,computed,reactive,watch } from 'vue'
+ import { ref,computed,onMounted,watch } from 'vue'
 import { useStoreInvoices } from 'src/stores/storeInvoices'
 import { useQuasar } from 'quasar'
 import { uid } from 'uid'
@@ -339,6 +339,9 @@ const selectWorksInvoice = (option) => {
     }
   });
 };
+function comeflywithme() {
+  console.log(storePayments.paymentInvoices,'comeflywithme()')
+}
  function closePayment() {
        storePayments.TOGGLE_PAYMENT()
        if (storePayments.editInvoice) {
@@ -422,13 +425,84 @@ const selectWorksInvoice = (option) => {
        })}
        }
        const options = ref(storePatients.patients)
-function getPatientInvoices(){
+async function getPatientInvoices(invoiceId){
         if(storePayments.patient)
         storeInvoices.SET_PATIENT_INVOICES(storePayments.patient.patientId)
+      if (invoiceId) {
+       console.log(storeInvoices.GET_PATIENT_INVOICES(storePayments.patient.patientId)||[],'patientIVOICES')
+      }
        }
 const selectWork=(work,works)=>{
   work.selected=!work.selected
 }
+/*
+ Edit Modal Data
+ */
+
+onMounted(async () => {
+  if (storePayments.editPayment) {
+    const currentPayment = storePayments.currentPaymentArray;
+
+    // Set the patient from the payment information
+    storePayments.patient = storePatients.patients.find(doc => doc.patientId === currentPayment.patientId);
+
+    // Call getPatientInvoices and wait for it to finish
+    await getPatientInvoices();
+
+    // Use a watcher to wait until patientInvoices is populated
+    watch(
+      () => storeInvoices.patientInvoices,
+      (newPatientInvoices) => {
+        // Find the current invoice based on the currentPayment.invoiceId
+        const currentInvoice = newPatientInvoices.find(
+          doc => doc.invoiceId === currentPayment.invoiceId
+        );
+
+        // If the currentInvoice is found
+        if (currentInvoice) {
+          // Clear the paymentInvoices array before adding the new invoice
+          storePayments.paymentInvoices = [];
+
+          // Create a new works array where the work with the same workId is marked as selected
+          const updatedWorks = currentInvoice.works.map(work => {
+            return {
+              ...work,
+              selected: work.workId === currentPayment.workId // Set selected to true if workId matches
+            };
+          });
+
+          // Update the currentInvoice with the updated works
+          const updatedInvoice = {
+            ...currentInvoice,
+            works: updatedWorks
+          };
+
+          // Push the updated invoice into the reactive array
+          storePayments.paymentInvoices.push(updatedInvoice);
+
+          console.log(updatedInvoice, storePayments.paymentInvoices, 'currentInvoice added to paymentInvoices');
+        }
+      },
+      { immediate: true }
+    );
+
+    // Use a watcher to wait until patientInvoices is populated
+    watch(
+      () => uniqueCurrencies.value,
+      (newCurrency) => {
+
+        paymentItemList.value[newCurrency] = {
+      ...paymentItemList.value[newCurrency],
+      paid: formatMoney(currentPayment.paid)
+    };
+
+      },
+      { immediate: true }
+    );
+
+
+  }
+});
 /*
  Submission
 */
@@ -496,7 +570,47 @@ function submitForm() {
 
      function updatePayment() {
 
-       storeInvoices.updateInvoice(data)
+      const worksByCurrency = {}
+      storePayments.paymentInvoices.forEach(paymentInvoice => {
+        paymentInvoice.works.forEach(work => {
+          if (!worksByCurrency[work.currency]) {
+            worksByCurrency[work.currency] = []
+          }
+       worksByCurrency[work.currency].push(work)
+        })
+      })
+      Object.keys(worksByCurrency).forEach(currency => {
+        const works = worksByCurrency[currency]
+        console.log(works,'works')
+        // Filter the 'works' array to get only the objects where 'selected' is true
+        const selectedWorks = works.filter(work => work.selected === true)
+        // Check the length of the filtered array
+        console.log(paymentItemList.value[currency].paid,'paid')
+        if (selectedWorks.length === 1&&paymentItemList.value[currency].paid!==0) {
+          const work=({
+           paymentItemList:paymentItemList.value[currency],
+           currency,
+           workId:selectedWorks[0].workId,
+           invoiceId:selectedWorks[0].invoiceId,
+           doctor:selectedWorks[0].doctor,
+           patientDetails:storePayments.patient,
+         })
+            storePayments.updatePayment(work)
+        }
+        else{
+          if(paymentItemList.value[currency].paid<1){
+            $q.notify({
+          type: 'orange',
+          message: 'Please add Value to Pay!'
+        })
+          }
+          else
+          $q.notify({
+          type: 'negative',
+          message: 'You Cant Choose Two Works to Pay!'
+        })
+        }
+        });
      }
 const removeInvoice = (invoiceId) => {
 
@@ -532,7 +646,13 @@ function addNewClient(patientName) {
  </script>
 
 <style lang="scss" scoped>
-
+.dark .payment-wrap{
+  background-color: #142325;
+  .payment-content{
+  background-color: #142325;
+  color: #fff;
+  }
+}
 .payment-wrap {
   position:static;
   top: 0;
@@ -791,6 +911,10 @@ function addNewClient(patientName) {
              background-color: #e2e4f0;
              transition: box-shadow 0.36s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.36s cubic-bezier(0.4, 0, 0.2, 1);
           }
+          .dark .v-input, .dark .q-field  {
+        background-color: black !important;
+        color: white;
+       }
 .work-card {
     margin-left: -57px !important;
     margin-bottom:-4px;
@@ -813,8 +937,11 @@ function addNewClient(patientName) {
 }
 .close-button {
          padding: 0 !important;
-         margin-top:5px
+         margin-top:5px;
         }
+.dark .close-button {
+  color:white !important;
+}
  .close-icon:hover {
    cursor: pointer;
 }
@@ -829,7 +956,12 @@ function addNewClient(patientName) {
   margin-top: 0px;
   margin-bottom: 6px;
 }
-
+.selected {
+  color: black !important;
+  .total{
+    color:black !important
+  }
+}
 </style>
 <style lang="scss">
 .v-field__overlay{

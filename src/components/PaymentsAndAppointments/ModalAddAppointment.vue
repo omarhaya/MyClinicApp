@@ -89,6 +89,11 @@
           <q-tab v-for="doctor in storeAuth.doctors" :name= doctor><div>Dr.{{ doctor.name }}</div></q-tab>
         </q-tabs>
         </q-card-section>
+        <div class="column">
+          <q-toggle class="col" v-model="appointment.sendWhatsAppMessage"   label="Send WhatsApp Message"></q-toggle>
+          <q-toggle class="col" v-model="appointment.sendWhatsAppReminder"   label="Send Sameday Reminder(At 12:00 PM)"></q-toggle>
+        </div>
+
 
         <q-card-actions v-if="!mobile" align="left" class="text-primary">
           <q-btn  label="Add Appointment" color="primary" type="submit" />
@@ -232,6 +237,8 @@ doctorId:{
     content: 'Endo.',
     doctor:storeAuth.doctors.find(doc => doc.doctorId === props.doctorId),
     status:status.value,
+    sendWhatsAppMessage:false,
+    sendWhatsAppReminder:false,
   })
 
  /*
@@ -292,15 +299,18 @@ doctorId:{
 
 
   console.log(appointment.value)
+  if (appointment.value.sendWhatsAppReminder==true&&!appointment.value.title.phone||appointment.value.sendWhatsAppMessage==true&&!appointment.value.title.phone
+  ) {
+    $q.notify({
+      color: 'negative',
+      message: 'Patient Has No Phone Number assigned.',
+    })
+    appointment.value.sendWhatsAppReminder==false
+
+  }
   storeAppointments.addAppointment(appointment.value)
   closeModal()
 
-  // $q.notify({
-  //   icon: 'done',
-  //   color: 'positive',
-  //   message: 'Appointment Added',
-  //   actions: [{ label: 'Dismiss', color: 'white', handler: () => { /* ... */ } }]
-  // })
           }
 
        const onReset= ()=> {
@@ -312,6 +322,8 @@ doctorId:{
         appointment.value.details = 'Check up'
         appointment.value.doctor = ''
         appointment.value.bgcolor = 'orange'
+        appointment.value.sendWhatsAppMessage=false
+        appointment.value.sendWhatsAppReminder=false
         // moneyhavetopayRef.value.resetValidation()
         // moneypaidRef.value.resetValidation()
         // detailsRef.value.resetValidation()

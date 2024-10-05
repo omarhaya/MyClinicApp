@@ -1,5 +1,5 @@
 <template>
-  <ion-page>
+  <ion-page ref="page">
     <ion-header v-if="mobile" :translucent="true">
     <ion-toolbar>
       <ion-buttons slot="start">
@@ -58,7 +58,7 @@
         </div>
       </div>
       <div class="right flex">
-        <button v-if="$q.screen.gt.xs" @click="toggleEditInvoice" class="grey">Edit</button>
+        <button v-if="$q.screen.gt.xs" @click="handleClick()" class="grey">Edit</button>
         <q-btn v-else color="grey-7" round flat icon="more_vert">
           <v-menu activator="parent">
         <v-list>
@@ -73,7 +73,7 @@
             <v-list-item-title  >Delete</v-list-item-title>
           </v-list-item>
             <v-list-item
-            @click="toggleEditInvoice"
+            @click="handleClick()"
           >
             <v-list-item-title>Edit</v-list-item-title>
           </v-list-item>
@@ -277,7 +277,7 @@
           <td><span class="currency">{{(subtotal.currency)}} </span>{{formatMoney(subtotal.subTotal)}}</td>
         </tr>
         <tr  v-if="subtotal.totalDiscount>0" class="text-red ">
-          <td >Discount ({{(subtotal.totalDiscount/subtotal.subTotal)*100}}%)</td>
+          <td >Discount ({{((subtotal.totalDiscount/subtotal.subTotal)*100).toFixed(2)}}%)</td>
           <td>  -<span class="currency">{{(subtotal.currency)}} </span>{{formatMoney(subtotal.totalDiscount)}}</td>
         </tr>
         <tr  >
@@ -323,9 +323,13 @@ import { useStorePayments } from 'src/stores/storePayments'
 import { useStoreWorks } from 'src/stores/storeWorks';
 import {computed,ref,onMounted,watch} from 'vue'
 import { useRoute,useRouter } from "vue-router";
-import { IonAccordion, IonAccordionGroup, IonItem, IonLabel, IonPage, IonHeader, IonToolbar, IonTitle, IonContent , IonBackButton, IonButtons, } from '@ionic/vue';
+import { IonAccordion, IonAccordionGroup, IonItem, IonLabel, IonPage, IonHeader, IonToolbar, IonTitle, IonContent , IonBackButton, IonButtons,modalController} from '@ionic/vue';
 import { Platform } from 'quasar'
+import MobileInvoiceModal from 'src/components/MobileInvoiceModal.vue'
+import MobilePaymentModal from 'src/components/MobilePaymentModal.vue'
+
 const $=useQuasar()
+const page=ref()
 /*
   Stores
 */
@@ -398,13 +402,9 @@ onMounted(() => {
         storePayments.patient=storePatients.patients.find(
         patient => patient.patientId === currentInvoice.value.patientId)
         storeInvoices.SET_PATIENT_INVOICES(currentInvoice.value.patientId,currentInvoice.value.invoiceId)
-    //     storePayments.paymentInvoices=storeInvoices.GET_PATIENT_INVOICES(storePayments.patient.id).filter(invoice=>invoice.invoiceId==currentInvoice.value.invoiceId)
-    //     console.log(storeInvoices.GET_PATIENT_INVOICES(storePayments.patient.id).filter(invoice=>invoice.invoiceId==currentInvoice.value.invoiceId))
-    //     storePayments.paymentInvoices.forEach(paymentInvoice=>{paymentInvoice.works.forEach(work=>{ if (parseInt(work.paidPercentage) !== 100) {
-    //  work.selected=true
-    // }})})
-
-      storePayments.TOGGLE_PAYMENT()
+        if(!mobile.value){storePayments.TOGGLE_PAYMENT()
+          console.log('not mobile')}
+        else {openPaymentModal()}
     }
  const   tableData= [
         ['Content 1', 'Content 2'],
@@ -449,6 +449,56 @@ onMounted(() => {
       }
     });
 
+function handleClick () {
+    if (!mobile.value) {
+      // Actions for non-mobile devices
+      storeInvoices.TOGGLE_INVOICE(currentInvoice.value.invoiceId);
+      storeInvoices.editInvoice = true;
+    } else {
+      // Actions for mobile devices
+      storeInvoices.TOGGLE_INVOICE(currentInvoice.value.invoiceId)
+      openInvoiceModal()
+      storeInvoices.editInvoice = true; // Example of different action
+      // Add any other mobile-specific actions here
+    }
+  }
+
+/*
+  Modal
+*/
+
+
+const openInvoiceModal = async () => {
+    const modal = await modalController.create({
+      component: MobileInvoiceModal,
+      presentingElement:page.value.$el,
+
+    });
+
+    modal.present();
+    const { data, role } = await modal.onWillDismiss();
+    modal.onDidDismiss(storeInvoices.CLEAR_DATA())
+    if (role === 'confirm') {
+      console.log('data',data)
+      // message.value = `Hello, ${data}!`;
+    }
+
+  };
+
+const openPaymentModal = async () => {
+    const modal = await modalController.create({
+      component: MobilePaymentModal,
+      presentingElement:page.value.$el,
+    });
+
+    modal.present();
+    const { data, role } = await modal.onWillDismiss();
+    modal.onDidDismiss( storePayments.CLEAR_DATA())
+    if (role === 'confirm') {
+      console.log('data',data)
+      // message.value = `Hello, ${data}!`;
+    }
+  };
 /*
  Mobile
 */

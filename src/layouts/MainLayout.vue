@@ -116,6 +116,7 @@
   <q-layout v-if="!mobile" view="lHh Lpr lFf">
     <q-header>
       <q-toolbar>
+        <q-btn flat @click="toggleLeftDrawer()" round dense icon="menu" />
         <q-toolbar-title>
           <div class="row1"></div>
         </q-toolbar-title>
@@ -131,10 +132,15 @@
           </q-avatar>
         </q-btn>
         <ion-label>
-          <h6>Treasury</h6>
+          <!-- <h6>Treasury</h6> -->
         </ion-label>
       </q-toolbar>
+
     </q-header>
+
+    <ion-page :style="pagePadding">
+
+      <q-page-container>
 
     <q-drawer
       v-if="!mobile"
@@ -181,8 +187,6 @@
         </q-list>
       </q-scroll-area>
     </q-drawer>
-    <ion-page :style="pagePadding">
-      <q-page-container>
         <router-view />
       </q-page-container>
     </ion-page>
@@ -271,6 +275,7 @@ const essentialLinks = [
     link: '/Treasury'
   }
 ]
+const drawer= ref(true)
 const leftDrawerOpen = ref(false)
 const miniState = ref(true)
 const link = ref('')
@@ -354,7 +359,7 @@ onBeforeUnmount(() => {
    padding-left: 57px !important
 
 .dialog-addInvoice
-   z-index: 101
+   z-index: 1
    box-shadow: 10px 4px 6px -1px rgba(0, 0, 0, 0.2), 0 2px 4px -1px rgba(0, 0, 0, 0.06) !important
    button,
     .button
@@ -371,10 +376,8 @@ onBeforeUnmount(() => {
     border-radius: 0px
     box-shadow: 10px 4px 6px -1px rgba(0, 0, 0, 0.2), 0 2px 4px -1px rgba(0, 0, 0, 0.06)
 
-
 .drawer
    box-sizing: border-box
-   z-index: 100!important
 .header
    z-index: 10
    box-sizing: border-box
@@ -388,4 +391,21 @@ onBeforeUnmount(() => {
    padding-top:5px
 .ion-page
    padding-bottom: var(--padding-bottom)
+.q-drawer
+    position: absolute
+    top: 0
+    bottom: 0
+    background: #fff
+    z-index: 0
+
+</style>
+<style scoped>
+.dialog-addInvoice {
+  /* Adjust modal styling */
+  z-index: 9998 !important; /* Ensure the modal's z-index is lower than the action sheet */
+}
+
+ion-action-sheet {
+  z-index: 9999 !important; /* Ensure the action sheet appears above the modal */
+}
 </style>

@@ -59,38 +59,38 @@ export const useStorePatients = defineStore('storePatients', {
       })
       console.log(this.patients,'PA')
      },
-     async updatePatientsIdToPatientId(doctors) {
-      try {
-        const doctorsIds = doctors.map(doctor => doctor.doctorId);
+    //  async updatePatientsIdToPatientId(doctors) {
+    //   try {
+    //     const doctorsIds = doctors.map(doctor => doctor.doctorId);
 
-        const patientsCollectionAllRef = collectionGroup(db, 'patients');
-        const patientsCollectionAllQuery = query(patientsCollectionAllRef, where('uid', 'in', doctorsIds), orderBy('date', 'desc'));
+    //     const patientsCollectionAllRef = collectionGroup(db, 'patients');
+    //     const patientsCollectionAllQuery = query(patientsCollectionAllRef, where('uid', 'in', doctorsIds), orderBy('date', 'desc'));
 
-        const snapshot = await getDocs(patientsCollectionAllQuery);
+    //     const snapshot = await getDocs(patientsCollectionAllQuery);
 
-        const batch =  writeBatch(db) // Use the batch function from Firestore
+    //     const batch =  writeBatch(db) // Use the batch function from Firestore
 
-        snapshot.forEach(doc => {
-          const patientData = doc.data();
+    //     snapshot.forEach(doc => {
+    //       const patientData = doc.data();
 
-          if (patientData) {
-            const updatedData = {
-              ...patientData,
-              // id: patientData.id,
-              patient: deleteField() // Remove the 'id' field
-            };
+    //       if (patientData) {
+    //         const updatedData = {
+    //           ...patientData,
+    //           // id: patientData.id,
+    //           patient: deleteField() // Remove the 'id' field
+    //         };
 
-            const patientRef = doc.ref;
-            batch.update(patientRef, updatedData);
-          }
-        });
+    //         const patientRef = doc.ref;
+    //         batch.update(patientRef, updatedData);
+    //       }
+    //     });
 
-        await batch.commit();
-        console.log('Updated patient IDs successfully');
-      } catch (error) {
-        console.error('Error updating patient IDs:', error);
-      }
-    },
+    //     await batch.commit();
+    //     console.log('Updated patient IDs successfully');
+    //   } catch (error) {
+    //     console.error('Error updating patient IDs:', error);
+    //   }
+    // },
 
 
       async getPatientsAll(doctors) {

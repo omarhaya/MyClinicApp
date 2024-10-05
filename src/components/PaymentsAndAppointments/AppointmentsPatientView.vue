@@ -153,4 +153,5 @@ const pageStyleFn = (offset, height) =>{
     scroll-margin-top: 48px
 .my-card-style
   min-height: 410px !important
+  box-sizing: border-box
 </style>

@@ -45,7 +45,18 @@
                         <q-icon class="q-pr-xs" name="person" />
                         {{ arg.event.title }}
                       </q-badge>
+
                     </div>
+                    <div class="absolute-bottom-right">
+                    <q-btn  size="9px" round v-if="arg.event.extendedProps.sendWhatsAppReminder" dense color="green" icon="mdi-whatsapp" class="footer-button q-ml-xs">
+                      <q-badge floating><q-icon size="12px" name="timer"/></q-badge>
+                      <q-tooltip color="green" transparent text-color="white" floating>Automatic Reminder will be at 12:00 PM.</q-tooltip>
+                  </q-btn>
+                  <q-btn  size="8px" round v-if="arg.event.extendedProps.sendWhatsAppMessage" dense color="green" icon="mdi-whatsapp" class="footer-button q-ml-xs">
+                      <q-badge color="green" floating><q-icon size="12px" name="check"/></q-badge>
+                      <q-tooltip color="green" transparent text-color="white" floating>Whatsapp Message Sent.</q-tooltip>
+                  </q-btn>
+                </div>
                   </div>
                 </div>
               </template>
@@ -443,6 +454,7 @@ Modal
 
 
 const openAppointmentPopup = async (event) => {
+  console.log(event,'evento')
 if (mobile.value||storeAppointments.menu[event.extendedProps.appointmentId]==true)
 {
 modalController.dismiss(null, 'cancel')
@@ -687,6 +699,9 @@ align-items: center;
 .short-event .fc-event-time {
 margin-left: 4px;
 }
+.short-event .fc-event-title {
+margin-left: 4px;
+}
 /* Custom style for the modal handle */
 ion-modal::part(handle) {
 background-color: white;
@@ -707,5 +722,14 @@ height: 25px !important; /* Adjust this value to change the slot height */
 }
 .fc .fc-scroller::-webkit-scrollbar {
   display: none;
+}
+.footer-button {
+  height:20px;
+  width:20px;
+}
+.footer-button .q-badge {
+
+  padding:0px 0px;
+  font-size: 8px;
 }
 </style>

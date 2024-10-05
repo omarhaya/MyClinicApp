@@ -8,8 +8,9 @@
    <ion-title>Add Payment
    </ion-title>
    <ion-buttons slot="end">
-     <ion-button v-if="!storePayments.loadingModal" @click="confirm" :strong="true">Pay</ion-button>
-     <ion-spinner v-else></ion-spinner>
+    <ion-button v-if="!storePayments.loadingModal&&!storePayments.editPayment" @click="confirm" :strong="true">Pay</ion-button>
+        <ion-button v-else-if="!storePayments.loadingModal&&storePayments.editPayment" @click="confirm" :strong="true">Update</ion-button>
+        <ion-spinner v-else></ion-spinner>
    </ion-buttons>
  </ion-toolbar>
 </ion-header>

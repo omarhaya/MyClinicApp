@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
 import {
   collection, onSnapshot,where,
-  query,orderBy,addDoc,writeBatch,getDocs,collectionGroup,deleteField
+  query,doc,addDoc,writeBatch,getDocs,collectionGroup,updateDoc,deleteDoc
 } from 'firebase/firestore'
 import {db} from '/src/js/firebase'
 import { useStoreAuth } from './storeAuth'
@@ -68,10 +68,59 @@ export const useStoreWorks = defineStore('storeWorks', {
       console.error('Error updating invoice data:', error);
     }
   },
-    // Add Invoice
-    async addWork (work) {
+    // Add Work
+    async addWork(work) {
+      this.loading = true;
+
+      // Create the work object
+      const newWork = {
+        color: work.color,
+        description: work.description,
+        price: work.price.replace(/\,/g, ''),
+        currency: work.currency,
+        discount: work.discount.replace(/\,/g, ''),
+        doctor: work.doctor,
+        workId: work.workId,
+        invoiceId: work.invoiceId,
+        label: work.label,
+        paymentDueDateUnix: work.paymentDueDateUnix,
+        paymentTerms: work.paymentTerms,
+        patientDetails: work.patientDetails,
+        teeth: work.teeth,
+        uid: this.storeAuth.user.uid,
+      };
+
+      // Update the local state immediately
+      if (!this.invoiceWorks[work.invoiceId]) {
+        this.invoiceWorks[work.invoiceId] = [];
+      }
+      this.invoiceWorks[work.invoiceId].push({
+        ...newWork,
+        docId: null, // You can update this when online and get the actual doc ID
+      });
+
+      try {
+        // Add to Firestore
+        const docRef = await addDoc(worksCollectionRef, newWork);
+        // Update the docId in local state with the actual doc ID from Firestore
+        const addedWork = this.invoiceWorks[work.invoiceId].find(item => item.workId === work.workId);
+        if (addedWork) {
+          addedWork.docId = docRef.id;
+        }
+      } catch (error) {
+        console.error('Error adding work:', error);
+        // Handle error appropriately
+      } finally {
+        this.loading = false;
+      }
+    },
+     // Update Work
+     async updateWork (work) {
       this.loading=true
-    await addDoc(worksCollectionRef, {
+
+        // Get a reference to the existing document using its invoiceId
+        const workDocRef = doc(worksCollectionRef, work.docId);
+    await updateDoc(workDocRef, {
          color:work.color,
          description:work.description,
          price:work.price.replace(/\,/g,''),
@@ -85,9 +134,19 @@ export const useStoreWorks = defineStore('storeWorks', {
          paymentTerms:work.paymentTerms,
          patientDetails:work.patientDetails,
          teeth:work.teeth,
-         uid:this.storeAuth.user.uid,
+         uidUpdated:this.storeAuth.user.uid,
     })
     this.loading=false
+    },
+    async deleteWork (workId) {
+      console.log('delettting')
+      try {
+        await deleteDoc(doc(worksCollectionRef, workId));
+        console.log('Payment successfully deleted');
+      } catch (error) {
+        console.error('Error deleting payment:', error);
+        // Handle error here
+      }
     },
     async getWorksForInvoice(invoiceId) {
       this.loading=true
@@ -97,6 +156,7 @@ export const useStoreWorks = defineStore('storeWorks', {
        const works=[]
        querySnapshot.forEach((doc) => {
        let work={
+         docId: doc.id,
          workId:doc.data().workId,
          color:doc.data().color,
          description:doc.data().description,
@@ -259,6 +319,7 @@ const modifiedArray = manipulateRepeatedDoctorLabels(works)
    })
 this.loading=false
 },
+
 clearWorks(){
   this.invoiceWorks=[]
   this.paymentsWorks=[]

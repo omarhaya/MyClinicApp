@@ -1,5 +1,18 @@
 <template>
-  <div class="invoice-wrap flex flex-column">
+    <q-dialog v-model="deleteAll.itemsToDelete" persistent>
+      <q-card>
+        <q-card-section class="row items-center">
+          <q-avatar icon="delete" color="red" text-color="white" />
+          <span class="q-ml-sm">You are currently about to delete some works.</span>
+        </q-card-section>
+
+        <q-card-actions align="right">
+          <q-btn flat label="Cancel" color="primary" v-close-popup />
+          <q-btn :loading="storeWorks.loading" @click="handleDeleteItems(dataToDelete,deleteAll)" flat label="Proceed" color="red"  />
+        </q-card-actions>
+      </q-card>
+    </q-dialog>
+  <div ref="modalRef" class="invoice-wrap flex flex-column">
      <Loading v-if="!mobile" v-show="loadingModal" />
      <form ref="formRef" id="form" name="name" @submit.prevent="submitForm" >
       <!-- <v-banner
@@ -96,7 +109,7 @@
                   removable
                   dense
                   :color="item.raw.color"
-                  @remove="deleteWorkItem(item.raw.workId)"
+                  @remove="deleteWorkItem(item.raw.workId,item.raw.docId)"
                 >
                 <q-avatar class="absolute" font-size="15px" color="white" text-color="black" icon="medical_services" />
              <div class="q-ml-md">{{ item.raw.label }}</div>
@@ -137,7 +150,7 @@
          <q-card v-for="(workItem,index) in storeInvoices.workItemList" :key="index" :class="workCardClass(workItem)" class="work-card no-warp">
 
           <div class="work-item" >
-            <div class="row"> <h3 class="col"  :style="`color:${workItem.color}`">{{ workItem.label }}</h3><q-btn flat round :color="workItem.color" icon="close"  class="justify-end close-button" @click="deleteWorkItem(workItem.workId)"/></div>
+            <div class="row"> <h3 class="col"   :class="`text-${workItem.color}-${isDarkMode ? 2 : 10}`">{{ workItem.label }}</h3><q-btn flat round :color="workItem.color" icon="close"  class="justify-end close-button" @click="deleteWorkItem(workItem.workId,workItem.docId)"/></div>
             <q-chip  clickable @click="storeInvoices.TOGGLE_TEETHSELECTION(index)">Add Teeth +
               <v-overlay
               :key="'dialog_' + index"
@@ -349,6 +362,7 @@
       </div>
      </form>
    </div>
+
  </template>
 
  <script setup>
@@ -363,14 +377,19 @@
  import { useStorePayments } from 'src/stores/storePayments'
  import { useStoreWorks } from 'src/stores/storeWorks'
  import TeethSelectionModal from 'src/components/TeethSelectionModal.vue'
+ import { actionSheetController } from '@ionic/vue';
  import { Platform } from 'quasar'
  const $q=useQuasar()
+
+// Check if dark mode is enabled
+ const isDarkMode = computed(() => $q.dark.isActive)
+
  const storeInvoices=useStoreInvoices()
  const storePatients=useStorePatients()
  const storeAuth=useStoreAuth()
  const storePayments=useStorePayments()
  const storeWorks=useStoreWorks()
- const { paymentItemList,loadingModal,currencies,workItemList} = storeToRefs(storeInvoices)
+ const { paymentItemList,loadingModal,currencies,currentInvoiceArray} = storeToRefs(storeInvoices)
 
   const     dateOptions= { year: "numeric", month: "short", day: "numeric" }
   const     docId= ref(null)
@@ -386,8 +405,10 @@
   const     invoiceDraft= ref(null)
   const     invoiceWrap=ref(null)
   const     paymentTotal=ref(0)
-
-const     customFilter= (itemTitle, queryText, item)=> {
+  const     modalRef = ref()
+  const     deleteAll=ref([])
+  const     dataToDelete=ref()
+  const     customFilter= (itemTitle, queryText, item)=> {
         const textOne = item.raw.label.toLowerCase()
         // const textTwo = item.raw.abbr.toLowerCase()
         const searchText = queryText.toLowerCase()
@@ -710,6 +731,7 @@ const    handleWorkItemChange=(value)=> {
    Claculate DueDate
 */
     const calculateDueDate =  (item) => {
+      console.log(item)
       if (item.paymentTerms!=='Immediate Payment'){
       const futureDate = new Date()
       item.paymentDueDateUnix = futureDate.setDate(futureDate.getDate() + parseInt(item.paymentTerms))
@@ -724,28 +746,71 @@ const    handleWorkItemChange=(value)=> {
  Edit Modal Data
  */
    if (storeInvoices.editInvoice) {
-     console.log(storeInvoices.currentInvoiceArray[0],'currentinvoicearray00')
-       const currentInvoice = storeInvoices.currentInvoiceArray[0]
+    //  console.log(storeInvoices.currentInvoiceArray[0],'currentinvoicearray00')
+       const currentInvoice = storeInvoices.currentInvoiceArray
        docId.value = currentInvoice.docId
-       work.value.type = currentInvoice.type;
-       billerCity.value = currentInvoice.billerCity;
-       billerZipCode.value = currentInvoice.billerZipCode;
-       billerCountry.value = currentInvoice.billerCountry;
-       patient.value = storePatients.patients.filter(v => v.patientId==(currentInvoice.patientId) )[0]
-       patientEmail.value = currentInvoice.patientEmail;
-       workDescription.value = currentInvoice.workDescription;
-       patientCity.value = currentInvoice.patientCity;
-       doctorTreated.value = currentInvoice.doctorTreated;
-       patientCountry.value = currentInvoice.patientCountry;
-       invoiceDateUnix.value = currentInvoice.invoiceDateUnix;
-       invoiceDate.value = currentInvoice.invoiceDate;
-       paymentTerms.value = currentInvoice.paymentTerms;
-       paymentDueDateUnix.value = currentInvoice.paymentDueDateUnix;
-       paymentDueDate.value = currentInvoice.paymentDueDate;
-       invoicePending.value = currentInvoice.invoicePending;
-       invoiceDraft.value = currentInvoice.invoiceDraft;
-       paymentItemList.value = currentInvoice.paymentItemList;
-       paymentTotal.value = currentInvoice.paymentTotal;
+       patient.value=storePatients.patients.find(doc => doc.patientId === currentInvoice.patientId)
+       invoiceDate.value=currentInvoice.invoiceDate
+       invoiceDateUnix.value =currentInvoice.invoiceDateUnix
+       let workItemList = []
+       currentInvoice.workItemList.forEach(work =>{
+      let  workItem={}
+        workItem.label=work.label
+        workItem.color=work.color
+        workItem.price=work.price.replace(/\B(?=(\d{3})+(?!\d))/g, ',')
+        workItem.discount=work.discount.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',')
+        workItem.currency=work.currency
+        workItem.percent=(work.discount/work.price*100).toFixed(2)
+        workItem.description=work.description
+        workItem.doctor=work.doctor
+        workItem.teeth=work.teeth
+        workItem.paymentTerms=work.paymentTerms
+        workItem.workId=work.workId
+        workItem.invoiceId=work.invoiceId
+        workItem.paymentDueDate=new Date(work.paymentDueDateUnix).toLocaleDateString("en-us", dateOptions)
+        workItem.paymentDueDateUnix=work.paymentDueDateUnix
+        workItem.docId=work.docId
+        // workItem.patientDetails=patient.value
+
+        workItemList.push(workItem)
+      })
+      console.log(workItemList,'workke')
+      storeInvoices.workItemList=workItemList
+      // storeInvoices.workItemList=workItemList
+//       storeInvoices.workItemList= [{   label:'Fixed Applaince',
+//    color:'green',
+//    price:"1000000",
+//    discount:'0',
+//    currency:'IQD',
+//    description:[],
+//    doctor: '',
+//    teeth:[],
+//    workId:uid(),
+//    paymentTerms:"Immediate Payment",
+//    invoiceId:"fae171",
+// doctor:{class:"split1",
+// color:"#5a4d4dd4",
+// doctorId:"e1Q5Eg5McWZjGjmuZpDeJCC3bkB3",
+// name:"Omar Jasim"}
+//    }]
+      //  billerCity.value = currentInvoice.billerCity;
+      //  billerZipCode.value = currentInvoice.billerZipCode;
+      //  billerCountry.value = currentInvoice.billerCountry;
+      //  patient.value = storePatients.patients.filter(v => v.patientId==(currentInvoice.patientId) )[0]
+      //  patientEmail.value = currentInvoice.patientEmail;
+      //  workDescription.value = currentInvoice.workDescription;
+      //  patientCity.value = currentInvoice.patientCity;
+      //  doctorTreated.value = currentInvoice.doctorTreated;
+      //  patientCountry.value = currentInvoice.patientCountry;
+      //  invoiceDateUnix.value = currentInvoice.invoiceDateUnix;
+      //  invoiceDate.value = currentInvoice.invoiceDate;
+      //  paymentTerms.value = currentInvoice.paymentTerms;
+      //  paymentDueDateUnix.value = currentInvoice.paymentDueDateUnix;
+      //  paymentDueDate.value = currentInvoice.paymentDueDate;
+      //  invoicePending.value = currentInvoice.invoicePending;
+      //  invoiceDraft.value = currentInvoice.invoiceDraft;
+      //  paymentItemList.value = currentInvoice.paymentItemList;
+      //  paymentTotal.value = currentInvoice.paymentTotal;
      }
  /*
   invoice functions
@@ -787,9 +852,14 @@ const    handleWorkItemChange=(value)=> {
      function deletePaymentItem(index) {
        storeInvoices.workItemList[index].paymentItemList = null
      }
-     function deleteWorkItem(workId) {
+     async function deleteWorkItem(workId,docId) {
+
+
        storeInvoices.workItemList = storeInvoices.workItemList.filter((item) => item.workId !== workId)
+
+
      }
+
      function calPaymentTotal() {
        paymentTotal.value = 0
        paymentItemList.value.forEach((item) => {
@@ -870,32 +940,107 @@ const    handleWorkItemChange=(value)=> {
       })
 
      }
-     function updateInvoice() {
-        calPaymentTotal()
-         const data=({
-         docId:docId.value,
-         work:work.value,
-         billerCity:billerCity.value,
-         billerZipCode:billerZipCode.value,
-         billerCountry:billerCountry.value,
-         patientDetails:patient.value,
-         patientEmail:patientEmail.value,
-         workDescription:workDescription.value,
-         patientCity:patientCity.value,
-         doctorTreated:doctorTreated.value,
-         patientCountry:patientCountry.value,
-         invoiceDateUnix:invoiceDateUnix.value,
-         invoiceDate:invoiceDate.value,
-         paymentTerms:paymentTerms.value,
-         paymentDueDateUnix:paymentDueDateUnix.value,
-         paymentDueDate:paymentDueDate.value,
-         invoicePending:invoicePending.value,
-         invoiceDraft:invoiceDraft.value,
-         paymentTotal:paymentTotal.value,
-         invoiceWrap:invoiceWrap.value,
-         })
-       storeInvoices.updateInvoice(data)
-     }
+     async function updateInvoice() {
+  const data = {
+    appointmentDate: appointmentDate.value,
+    patientDetails: patient.value,
+    invoiceDateUnix: invoiceDateUnix.value,
+    invoiceDate: invoiceDate.value,
+    invoicePending: invoicePending.value,
+    invoiceDraft: invoiceDraft.value,
+    invoiceId: storeInvoices.currentInvoiceArray.invoiceId,
+    docId: docId.value
+  };
+
+  const workIdsInWorkItemList = new Set(storeInvoices.workItemList.map(item => item.workId));
+  const currentWorkItems = storeInvoices.currentInvoiceArray.workItemList;
+  console.log(currentWorkItems, 'currentWorkItems');
+
+  // Find items in currentWorkItems that are not in workItemList based on workId
+  const itemsToDelete = currentWorkItems.filter(item => !workIdsInWorkItemList.has(item.workId));
+
+  // If there are items to delete, show a single action sheet
+  if (itemsToDelete.length > 0&&mobile.value) {
+    const actionSheet = await actionSheetController.create({
+      header: 'Are you sure you want to delete these work items?',
+      buttons: [
+        {
+          text: 'Delete All',
+          role: 'destructive',
+          handler: async () => {
+            // Perform delete operation for each unmatched item
+           await handleDeleteItems(data,itemsToDelete)
+          }
+        },
+        {
+          text: 'Cancel',
+          role: 'cancel',
+          handler: () => {
+            // Handle the cancel action
+            console.log('Deletion canceled');
+          }
+        }
+      ],
+      presentingElement: modalRef.value.$el,
+    });
+
+    // Present the action sheet
+    await actionSheet.present();
+  }
+  else if (itemsToDelete.length > 0&&!mobile.value) {
+    itemsToDelete.itemsToDelete=true
+      deleteAll.value=itemsToDelete
+      dataToDelete.value=data
+      console.log(deleteAll.value,'itemsToDelete')
+  }
+   else {
+    // No items to delete, proceed with updating the invoice
+    storeInvoices.updateInvoice(data);
+    await handleWorkUpdates(data);
+  }
+}
+async function handleDeleteItems (data,itemsToDelete) {
+  storeWorks.loading=true
+  storeInvoices.loading=true
+  console.log(itemsToDelete)
+  for (const item of itemsToDelete) {
+              await storeWorks.deleteWork(item.docId)
+              console.log(`Deleted work item with docId: ${item.docId}`)
+            }
+            // Update the invoice in storeInvoices after deletion
+            storeInvoices.updateInvoice(data);
+
+            // Proceed with updating/adding works and payments
+            await handleWorkUpdates(data);
+}
+// Function to handle work updates and additions
+async function handleWorkUpdates(data) {
+  // Iterate through each work in storeInvoices.workItemList
+  for (const work of storeInvoices.workItemList) {
+    console.log(storeInvoices.workItemList, 'workkk');
+    work.patientDetails = patient.value; // Update patientDetails for each work
+
+    // Check if work.workId exists in storeInvoices.currentInvoiceArray.workItemList
+    const matchingWork = storeInvoices.currentInvoiceArray.workItemList.find(
+      currentWork => currentWork.workId === work.workId
+    )
+
+    // If a matching workId is found, trigger storeWorks.updateWork()
+    if (matchingWork) {
+      await storeWorks.updateWork(work);
+      console.log(work, 'workMatch');
+    } else {
+      work.invoiceId = data.invoiceId;
+      await storeWorks.addWork(work);
+      console.log(work, 'workExtra');
+    }
+
+    // If paymentItemList exists and is paid, trigger storePayments.addPayment()
+    if (work.paymentItemList && work.paymentItemList.paid !== 0) {
+      await storePayments.addPayment(work);
+    }
+  }
+}
     /*
     Mobile
     */
@@ -910,11 +1055,14 @@ const    handleWorkItemChange=(value)=> {
    /*
     Styling
    */
-       function  workCardClass  (work) {
-         if (work.color)
-         return {[ `bg-${ work.color }-1` ]: true }
-       else return
-       }
+        const workCardClass = computed(() => (work) => {
+        if (work.color && !isDarkMode.value) {
+          return { [`bg-${work.color}-1`]: true }
+        } else if (work.color && isDarkMode.value) {
+          return { [`bg-${work.color}-10`]: true }
+        }
+        return {}
+      })
        const formatMoney = (value) => {
          const stringValue = value.toString()
          return stringValue.replace(/\B(?=(\d{3})+(?!\d))/g, ',')
@@ -938,17 +1086,65 @@ const    handleWorkItemChange=(value)=> {
       }
       return true
       }
+
+      const actionSheetButtonsWork =ref([
+        {
+          text: 'Delete',
+          role: 'destructive',
+          data: {
+            action: 'delete',
+          },
+          handler: () => {
+          // console.log(props.invoice.invoiceId,isOpen.value)
+          // const index = storeInvoices.invoiceData.findIndex(item => item.invoiceId === props.invoice.invoiceId);
+
+          // if (index !== -1) {
+          //   // If the item is found, update the property
+          //   storeInvoices.invoiceData[index].deleted = true;
+          // }
+          isDeleted.value = true
+          setTimeout(() => {
+            storeInvoices.DELETE_()
+          }, 280)
+
+          const slidingItem = document.querySelector('.invoice')
+          slidingItem.closeOpened()
+        }
+        },
+        {
+          text: 'Archive',
+          data: {
+            action: 'archive',
+          },
+        },
+        {
+          text: 'Cancel',
+          role:'cancel',
+          data: {
+            action: 'cancel',
+          },
+          handler: () => {
+          const slidingItem = document.querySelector('.invoice')
+          slidingItem.closeOpened()
+        }
+        },
+      ])
  </script>
 
  <style lang="scss" scoped>
-
+.dark .invoice-wrap{
+  background-color: #142325;
+  .invoice-content{
+  background-color: #142325;
+  color: #fff;
+  }
+}
  .invoice-wrap {
    position:static;
    top: 0;
    left: 0;
    width: 100%;
    height: 100vh;
-
    background-color:white;
    &::-webkit-scrollbar {
      display: none;
@@ -1056,7 +1252,11 @@ const    handleWorkItemChange=(value)=> {
               background-color: #e2e4f0;
               transition: box-shadow 0.36s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.36s cubic-bezier(0.4, 0, 0.2, 1);
            }
-
+//Dark Mode Input field Colors
+.dark .v-input, .dark .q-field  {
+        background-color: black !important;
+        color: white;
+       }
  .work-card {
      margin-bottom:-4px;
      @media (min-width: 900px) {
@@ -1075,8 +1275,9 @@ const    handleWorkItemChange=(value)=> {
      position: relative;
 
        .v-input{
-                   background-color: #fff !important;
+                   background-color: #fff ;
                  }
+
        .payment-items {
          .item-list {
            width: 100%;
@@ -1156,9 +1357,12 @@ const    handleWorkItemChange=(value)=> {
          }
  }
  .close-button {
-          padding: 0 !important;
-          margin-top:5px
+    margin: 11px 0 11px 0 !important;
+    padding: 0px;
+    border-radius: 100%;
+
          }
+
   .close-icon:hover {
     cursor: pointer;
 }
@@ -1198,8 +1402,13 @@ const    handleWorkItemChange=(value)=> {
   margin-top: 0px;
   margin-bottom: 6px;
 }
+
  </style>
  <style lang="scss">
+.dark .v-input input {
+  background-color: black !important;
+  color: white;
+}
 .v-field__overlay{
     background-color: none ;
     opacity: 0 !important;
@@ -1232,4 +1441,5 @@ const    handleWorkItemChange=(value)=> {
 .v-card {
   border-radius: 15px 15px 0px 0px !important; /* Adjust the radius according to your preference */
 }
+
 </style>
