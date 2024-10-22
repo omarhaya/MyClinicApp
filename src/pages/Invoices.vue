@@ -218,7 +218,9 @@ const $q=useQuasar()
       await storeInvoices.GET_INVOICES_NEXT()
       setTimeout(() => ev.target.complete(), 50);
 }
-storeInvoices.GET_INVOICES_NEXT()
+if(!storeInvoices.invoiceData.length)
+{storeInvoices.GET_INVOICES()}
+
 // storeInvoices.GET_INVOICES_NEXT()
     // async function  onLoad (index, done) {
     //   setTimeout(() => {

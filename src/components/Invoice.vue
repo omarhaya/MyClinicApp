@@ -80,7 +80,7 @@
         <ion-item-option @click="isOpen=true" expandable color="danger"><q-icon size="25px" name="delete"/>Delete</ion-item-option>
       </ion-item-options>
     </ion-item-sliding>
-    <ion-action-sheet   @didDismiss="isOpen=false" :is-open="isOpen"  header="Actions" :buttons="actionSheetButtons"/>
+    <ion-action-sheet   @didDismiss="isOpen=false" :is-open="isOpen"  header="Delete The Following Invoice?" :buttons="actionSheetButtons"/>
 </template>
 
 <script setup>
@@ -185,12 +185,6 @@ watch(() => props.invoice.deleted, (newValue) => {
           const slidingItem = document.querySelector('.invoice')
           slidingItem.closeOpened()
         }
-        },
-        {
-          text: 'Archive',
-          data: {
-            action: 'archive',
-          },
         },
         {
           text: 'Cancel',

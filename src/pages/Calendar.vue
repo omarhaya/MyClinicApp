@@ -1,8 +1,10 @@
 <template>
   <ion-page ref="page">
-    <ion-header color="primary" :translucent="true" collapse="fade">
-     <ion-toolbar color="success">
-      <NavigationBar
+
+
+       <ion-header :translucent="true">
+      <ion-toolbar class="toolbar-container ">
+        <NavigationBar  v-if="!mobile"
   :selectedDate="storeAppointments.selectedDate"
   />
       </ion-toolbar>
@@ -10,6 +12,9 @@
     <ion-content>
    <AppointmentSchedule :pageRef="page"/>
   </ion-content>
+  <NavigationBar v-if="mobile"
+  :selectedDate="storeAppointments.selectedDate"
+  />
   </ion-page>
 </template>
 
@@ -425,3 +430,13 @@ const openAppointmentModal = async (newAppointment) => {
   };
 
 </script>
+
+<style scoped>
+ /* ion-toolbar {
+  --padding-end:0px;
+  --padding-start:0px;
+  --padding-top: 0px;
+  --padding-bottom: 0px;
+  } */
+
+</style>

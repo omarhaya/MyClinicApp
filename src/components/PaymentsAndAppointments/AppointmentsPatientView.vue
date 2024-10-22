@@ -2,7 +2,6 @@
   <template   v-if="appointments[patientId]&&appointments[patientId].length&&!loading">
     <q-table
       grid
-      title="Appointments"
       class="appointments-table"
       :rows="appointments[patientId]"
       :columns="columns"
@@ -12,14 +11,16 @@
       virtual-scroll
       card-container-class="my-card-style"
       :rows-per-page-options="[0]"
+      dense
+      hide-bottom
     >
-      <template v-slot:top-right>
+      <!-- <template v-slot:top-right>
         <q-input borderless dense debounce="300" v-model="filter" placeholder="Search">
           <template v-slot:append>
             <q-icon name="search" />
           </template>
         </q-input>
-      </template>
+      </template> -->
       <template v-slot:item="props" v-if="appointments[patientId].length &&!storeAppointments.loading">
         <div class="q-pa-xs col-xs-12 col-sm-6 col-md-4">
 
@@ -42,22 +43,13 @@
             <h5 style="height:410px;" class="text-center q-pt-xl q-ml-md q-mr-md  text-grey ">Patient has no added Appointments Yet. </h5>
          </template>
          <template v-else>
-<q-card class="card-appointment q-mb-md" flat bordered >
-      <q-item>
-        <q-item-section>
-          <q-item-label>
-            <q-skeleton width="10%"  type="text" class="text-subtitle2" animation="fade" />
-          </q-item-label>
-          <q-item-label caption>
-            <q-skeleton width="50%" type="text" class="text-subtitle2" animation="fade" />
-          </q-item-label>
-        </q-item-section>
-      </q-item>
-      <q-card-section>
-        <q-skeleton type="text" width="25%" class="text-subtitle2" animation="fade" />
-        <q-skeleton type="text" width="25%" class="text-subtitle2" animation="fade" />
-      </q-card-section>
-    </q-card>
+          <q-spinner-ball
+          color="teal"
+          size="8em"
+          class="q-pt-xl"
+          transition-show="fade"
+          transition-hide="fade"
+        />
 
   </template>
 </template>
@@ -130,7 +122,8 @@ const pageStyleFn = (offset, height) =>{
 </script>
 
 <style lang="sass">
-.appointments-table
+.dark .appointments-table
+  background-color: #142325
   /* height or max-height is important */
   .q-table__top,
   .q-table__bottom,

@@ -451,7 +451,7 @@ onMounted(async () => {
 
     // Use a watcher to wait until patientInvoices is populated
     watch(
-      () => storeInvoices.patientInvoices,
+      () => storeInvoices.patientInvoices[currentPayment.patientId],
       (newPatientInvoices) => {
         // Find the current invoice based on the currentPayment.invoiceId
         const currentInvoice = newPatientInvoices.find(

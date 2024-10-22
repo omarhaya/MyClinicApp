@@ -350,20 +350,20 @@ doctorId:{
 */
 
 
-const myIcons = {
-  'IQD': 'img:/currency/IQD.svg',
-  '$': 'attach_money',
-  'IQD_choose': 'img:/currency/IQD_choose.svg',
-  'price_change_green': 'img:/currency/price_change_green.svg',
-  'price_change_red': 'img:/currency/price_change_red.svg'
-  }
+// const myIcons = {
+//   'IQD': 'img:/currency/IQD.svg',
+//   '$': 'attach_money',
+//   'IQD_choose': 'img:/currency/IQD_choose.svg',
+//   'price_change_green': 'img:/currency/price_change_green.svg',
+//   'price_change_red': 'img:/currency/price_change_red.svg'
+//   }
 
-     $q.iconMapFn = (iconName) => {
-    const icon = myIcons[iconName]
-    if (icon !== void 0) {
-      return { icon: icon }
-     }
-     }
+//      $q.iconMapFn = (iconName) => {
+//     const icon = myIcons[iconName]
+//     if (icon !== void 0) {
+//       return { icon: icon }
+//      }
+//      }
 
 
 // Mobile detection

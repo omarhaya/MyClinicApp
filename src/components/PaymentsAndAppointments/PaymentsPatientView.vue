@@ -1,97 +1,74 @@
 <template>
-  <template  v-if="payments">
-  <q-table
-      :filter="filter"
-      flat
-      ref="tableRef"
-      :rows="payments"
-      :columns="columns"
-      class="payments-table"
-      row-key="paymentId"
-      virtual-scroll
-      :rows-per-page-options="[0]"
-      selection="multiple"
-      v-model:selected="selected"
-
-      @selection="handleSelection"
-
+   <template v-if="payments.length&&!storePayments.loadingPayments">
+    <q-table
+       grid
+       :filter="filter"
+       ref="tableRef"
+       :rows="payments"
+       class="PaymentsTable col "
+       :columns="columns"
+       color="secondary"
+       row-key="paymentId"
+       virtual-scroll
+       :rows-per-page-options="[0]"
+       selection="multiple"
+       v-model:selected="selected"
+       dense
+       @selection="handleSelection"
+       :visible-columns="visibleColumns"
+       hide-bottom
     >
-
-
-    <template v-slot:header="props">
-  <q-tr :props="props">
-    <q-th v-show="editPayments">
-      <q-checkbox v-model="props.selected" />
-    </q-th>
-    <q-th
-            v-for="col in props.cols"
-            :key="col.name"
-            :props="props"
-          >
-         {{ col.label }}
-          </q-th>
-  </q-tr>
-</template>
-<template v-slot:top-left>
-        <!-- <q-btn color="primary" @click="newPayment">
-           New Payment
-        </q-btn> -->
-      </template>
-
-      <template v-slot:top-right>
+      <!-- <template v-slot:top-right>
         <q-input borderless dense debounce="300" v-model="filter" placeholder="Search">
           <template v-slot:append>
             <q-icon name="search" />
           </template>
         </q-input>
-        <q-btn
-          class="q-mr-md q-ml-md"
-          color="primary"
-          icon-right="archive"
-          no-caps
-          @click="exportTable"
-        />
-      </template>
-
-    <template v-slot:body="props">
-        <q-tr  :props="props" >
-          <q-td  v-show="editPayments"  auto-width  key="invoiceId" :props="props">
-            <q-checkbox  :model-value="props.selected" @update:model-value="(val, evt) => { Object.getOwnPropertyDescriptor(props, 'selected').set(val, evt) }" />
-          </q-td>
-          <q-td key="paid"  :props="props">
-            <div><span  class="text-green paid-row">+<span class="currency text-bold">{{ props.row.currency }}</span><span class="text-bold"> {{ formatMoney(props.row.paid)}}</span></span></div>
-            Dr. {{ props.row.doctor }}
-          </q-td>
-          <q-td key="doctor" :props="props">
-              Dr. {{ props.row.doctor }}
-          </q-td>
-          <q-td key="date" :props="props">
-            {{ formatDate(props.row.dateUnix)}}
-          </q-td>
-          <q-td  key="invoiceId" :props="props">
-            <router-link  v-if="props.row.invoiceId" :to="{ name: 'Invoice', params: { invoiceId: props.row.invoiceId } }">{{'#'+ props.row.invoiceId }}</router-link>
-          </q-td>
-          <q-td key="buttons" :props="props">
-            {{ props.row.buttons}}
-          </q-td>
-        </q-tr>
-      </template>
-
-      <template v-slot:no-data="{ icon, message, filter }">
-        <div class="full-width row flex-center text-orange q-gutter-sm">
-          <q-icon size="2em" name="sentiment_dissatisfied" />
-          <span>
-             {{ message }}
-          </span>
-          <q-icon size="2em" :name="filter ? 'filter_b_and_w' : icon" />
-        </div>
+      </template> -->
+      <template v-slot:item="props">
+        <div class="payment"> <Payment  :tableProps="props" :mobile="mobile"  class="payment"  :payment="props.row" :key="props.row.paymentId"  :pageRef="pageRef" /></div>
       </template>
     </q-table>
+
+  <!-- <q-card
+        v-for="appointment in appointments"
+        :key="appointment.id"
+        class="card-appointment q-mb-md"
+        flat
+        container
+        bordered>
+
+    <q-card-section>
+        <div class="row appointmentCard">
+        <div class="col "><div><div class="text-weight-bold">Tooth:</div> {{appointment.tooth}} <q-badge color="primary" v-if="appointment.doctor!==''" class="absolute-top-right badge-doctor">{{DoctorFilter(appointment.doctor)}}</q-badge></div>
+        <span v-if="$q.screen.gt.sm" style="width:470px; word-wrap:break-word; display:inline-block;"><div class="text-weight-bold">Work Done:</div> {{appointment.details }}</span>
+        <span v-else-if="$q.screen.gt.xs" style="width:500px; word-wrap:break-word; display:inline-block;"><div class="text-weight-bold">Work Done:</div> {{appointment.details }}</span>
+         <span v-else style="width:290px; word-wrap:break-word; display:inline-block;"><div class="text-weight-bold">Work Done:</div> {{appointment.details }}</span>
+        </div>
+    </div>
+        <div class="text-caption text-right text-grey">{{(dateFormatted(appointment.date))}}</div>
+      </q-card-section>
+    </q-card> -->
+
+         </template>
+          <template  v-else-if="!storePayments.loadingPayments &&payments && !payments.length">
+            <h5 style="height:410px;" class="text-center q-pt-xl q-ml-md q-mr-md text-grey ">Patient has no added Invoices Yet. </h5>
+         </template>
+         <template v-else >
+          <q-spinner-ball
+          color="teal"
+          size="8em"
+          class="q-pt-xl"
+          transition-show="fade"
+          transition-hide="fade"
+        />
+
   </template>
+
 </template>
 
 <script setup>
- import {ref,reactive,toRaw, nextTick,computed} from 'vue'
+ import {ref,reactive,toRaw, nextTick,computed,toRefs} from 'vue'
  import { storeToRefs } from 'pinia'
  import { useStorePayments } from 'src/stores/storePayments'
  import { colors, date } from 'quasar'
@@ -99,7 +76,8 @@
 import { useStoreWorks } from 'src/stores/storeWorks'
 import { useStorePatients } from 'src/stores/storePatients'
 import { useStoreInvoices } from 'src/stores/storeInvoices'
-
+import Payment from '../Payment.vue'
+import { Platform } from 'quasar';
  const { getPaletteColor } = colors
 /*
  props
@@ -112,7 +90,13 @@ const props = defineProps({
   appointmentdate:{
     type: String,
     },
+    pageRef:{
+     type: Object,
+     required: true
+  },
 })
+
+const { pageRef } = toRefs(props);
 
 /*
 store
@@ -122,7 +106,7 @@ const storeWorks=useStoreWorks()
 const storePatients=useStorePatients()
 const storeInvoices=useStoreInvoices()
 const { loading } = storeToRefs(storePayments)
-
+const tableRef= ref()
 /*
  Router
 */
@@ -133,27 +117,35 @@ const { loading } = storeToRefs(storePayments)
 */
   storePayments.getPayments(props.patientId)
   const payments=computed(()=>{
-  const payments=storePayments.payments[props.patientId]
 
-  if(payments){
-    payments.forEach(payment=>{
-      if(payment)
-      if(storeWorks.paymentsWorks[payment.workId]){
-     payment.work=storeWorks.paymentsWorks[payment.workId].label
-     payment.color=storeWorks.paymentsWorks[payment.workId].color
-     payment.workTotal=storeWorks.paymentsWorks[payment.workId].price-storeWorks.paymentsWorks[payment.workId].discount
-     payment.patientName=storeWorks.paymentsWorks[payment.workId].patientName
-     payment.currency=storeWorks.paymentsWorks[payment.workId].currency
-     payment.doctor=storeWorks.paymentsWorks[payment.workId].doctor
-     payment.remaining=payment.workTotal-storeWorks.paymentsWorks[payment.workId].allPaid
-      }
-      console.log(payments,'computed')
-    })
-     // Sort payments by payment.date in descending order
-     payments.sort((a, b) => (b.dateUnix) - (a.dateUnix))
-    return payments
-  }
-  else return []
+    const selectedPayments = storePayments.payments[props.patientId]
+
+if (selectedPayments) {
+  selectedPayments.forEach(payment => {
+   const patient = storePatients.patients.find(patient => patient.patientId === props.patientId);
+   console.log(patient,'patient1')
+   if (patient) {
+    payment.patientName = patient.namef;
+       }
+    if (payment && storeWorks.paymentsWorks[payment.workId]) {
+      const workDetails = storeWorks.paymentsWorks[payment.workId];
+      payment.work = workDetails.label;
+      payment.color = workDetails.color;
+      payment.workTotal = workDetails.price - workDetails.discount;
+      payment.patientName = patient.namef;
+      payment.currency = workDetails.currency;
+      payment.doctor = workDetails.doctor;
+      payment.remaining = payment.workTotal - workDetails.allPaid;
+    }
+  });
+
+  // Sort payments by payment.dateUnix in descending order
+  selectedPayments.sort((a, b) => b.dateUnix - a.dateUnix);
+
+  return selectedPayments;
+} else {
+  return [];
+}
 })
 
 //  const editpatient=(id)=>{
@@ -174,48 +166,47 @@ let storedSelectedRow
 
 
 function handleSelection ({ rows, added, evt }) {
-  // ignore selection change from header of not from a direct click event
-  if (rows.length !== 1 || evt === void 0) {
-    return
-  }
+          // ignore selection change from header of not from a direct click event
+          if (rows.length !== 1 || evt === void 0) {
+            return
+          }
 
-  const oldSelectedRow = storedSelectedRow
-  const [newSelectedRow] = rows
-  const { ctrlKey, shiftKey } = evt
+          const oldSelectedRow = storedSelectedRow
+          const [newSelectedRow] = rows
+          const { ctrlKey, shiftKey } = evt
 
-  if (shiftKey !== true) {
-    storedSelectedRow = newSelectedRow
-  }
+          if (shiftKey !== true) {
+            storedSelectedRow = newSelectedRow
+          }
 
-  // wait for the default selection to be performed
-  nextTick(() => {
-    if (shiftKey === true) {
-      const tableRows = tableRef.value.filteredSortedRows
-      let firstIndex = tableRows.indexOf(oldSelectedRow)
-      let lastIndex = tableRows.indexOf(newSelectedRow)
+          // wait for the default selection to be performed
+          nextTick(() => {
+            if (shiftKey === true) {
+              const tableRows = tableRef.value.filteredSortedRows
+              let firstIndex = tableRows.indexOf(oldSelectedRow)
+              let lastIndex = tableRows.indexOf(newSelectedRow)
 
-      if (firstIndex < 0) {
-        firstIndex = 0
-      }
+              if (firstIndex < 0) {
+                firstIndex = 0
+              }
 
-      if (firstIndex > lastIndex) {
-        [ firstIndex, lastIndex ] = [ lastIndex, firstIndex ]
-      }
+              if (firstIndex > lastIndex) {
+                [ firstIndex, lastIndex ] = [ lastIndex, firstIndex ]
+              }
 
-      const rangeRows = tableRows.slice(firstIndex, lastIndex + 1)
-      // we need the original row object so we can match them against the rows in range
-      const selectedRows = selected.value.map(toRaw)
+              const rangeRows = tableRows.slice(firstIndex, lastIndex + 1)
+              // we need the original row object so we can match them against the rows in range
+              const selectedRows = selected.value.map(toRaw)
 
-      selected.value = added === true
-        ? selectedRows.concat(rangeRows.filter(row => selectedRows.includes(row) === false))
-        : selectedRows.filter(row => rangeRows.includes(row) === false)
-    }
-    else if (ctrlKey !== true && added === true) {
-      selected.value = [newSelectedRow]
-    }
-  })
-}
-
+              selected.value = added === true
+                ? selectedRows.concat(rangeRows.filter(row => selectedRows.includes(row) === false))
+                : selectedRows.filter(row => rangeRows.includes(row) === false)
+            }
+            else if (ctrlKey !== true && added === true) {
+              selected.value = [newSelectedRow]
+            }
+          })
+        }
 function exportTable () {
   // naive encoding to csv format
   const content = [columns.map(col => wrapCsvValue(col.label))].concat(
@@ -385,33 +376,35 @@ const formatDate= (value) => {
   const dateFormatted = date.toISOString().split('T')[0];
   return timeFormatted +' '+dateFormatted
 }
+
+ /*
+  Mobile
+ */
+ const   mobile=computed(()=>{
+           if (Platform.is.desktop){
+             return false
+           }
+           if (Platform.is.mobile){
+         return true
+           }
+         })
 </script>
 
-<style lang="sass">
-.payments-table
-  /* height or max-height is important */
-  min-height: 410px !important
+<style lang="scss" scoped>
+.card-appointment {
 
-  .q-table__top,
-  .q-table__bottom,
-  thead tr:first-child th /* bg color is important for th; just specify one */
-    background-color: #fff !important
-
-  thead tr th
-    position: sticky
-    z-index: 1
-  /* this will be the loading indicator */
-  thead tr:last-child th
-    /* height of all previous header rows */
-    top: 48px
-  thead tr:first-child th
-    top: 0
-
-  /* prevent scrolling behind sticky top row on focus */
-  tbody
-    /* height of all previous header rows */
-    scroll-margin-top: 48px
-.paid-row
-  font-size: large
-
+  .row{
+    align-content:flex-start !important;
+  }
+}
+.payment{
+  flex-wrap: nowrap;
+  width: 100%;
+  max-width: 850px;
+  margin: 5px auto;
+  height: 100% !important;
+}
+.dark .PaymentsTable {
+  background-color: #142325;
+}
 </style>

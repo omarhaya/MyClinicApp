@@ -65,7 +65,11 @@ export const useStoreInvoices = defineStore('storeInvoices', {
     TOGGLE_INVOICE(invoiceId) {
       if (!this.mobile){this.invoiceModal = !this.invoiceModal}
       if (invoiceId) {
-        this.currentInvoiceArray=this.invoiceData.find(doc => doc.invoiceId === invoiceId)||this.patientInvoices.find(doc => doc.invoiceId === invoiceId)
+        this.currentInvoiceArray=this.invoiceData.find(doc => doc.invoiceId === invoiceId)||Object.keys(this.patientInvoices)  // Get all the patientId keys
+        .reduce((acc, patientId) => {
+          const invoice = this.patientInvoices[patientId].find(doc => doc.invoiceId === invoiceId);
+          return invoice ? invoice : acc;  // If found, return it, otherwise keep searching
+        }, null);  // Start with null as the default value
         this.currentInvoiceArray.workItemList=this.storeWorks.invoiceWorks[invoiceId]
         console.log(this.invoiceData,'currentinvoice')
       }
@@ -152,14 +156,9 @@ export const useStoreInvoices = defineStore('storeInvoices', {
     */
 
     async GET_INVOICES()  {
-      console.log('LOADINGNEXT')
+      console.log('LOADING hii')
       this.loading=true
-      // if (!this.moreDataAvailable) {
-      //   // If no more data is available, stop fetching
-      //   this.loading=false
-      //   return
-      // }
-      const invoicesCollectionQuery = query(invoicesCollectionRef,orderBy("invoiceDateUnix","desc"),where("deletedDateUnix", "==", null),limit(10))
+      const invoicesCollectionQuery =  query(invoicesCollectionRef,orderBy("invoiceDateUnix","desc"),this.limit ? limit(this.limit) : undefined)
       getInvoicesSnapshot=onSnapshot(invoicesCollectionQuery, (querySnapshot) => {
     const fbInvoices = []
     querySnapshot.forEach((doc) => {
@@ -180,20 +179,24 @@ export const useStoreInvoices = defineStore('storeInvoices', {
             // invoicePending: doc.data().invoicePending,
             invoiceDraft: doc.data().invoiceDraft,
             // invoicePaid: doc.data().invoicePaid,
-            deleted:doc.data().deleted,
           }
           fbInvoices.push(invoice)
        })
-
+      //  if (querySnapshot.size < this.limit) {
+      //   // If the number of retrieved documents is less than the requested limit,
+      //   // it means no more data is available
+      //   this.moreDataAvailable = false;
+      // } else {
+      //   this.limit += 2; // Increase the limit for the next query
+      // }
         // Fetch payments and works for each invoice
         fbInvoices.forEach(invoice=>{
           this.storePayments.getPaymentsForInvoice(invoice.invoiceId)
         }
         )
        this.invoiceData = fbInvoices
-
+       console.log(this.invoiceData,'LOADED')
      })
-     console.log(this.invoiceData,'invoiceData')
      this.loading=false
 
     },
@@ -225,7 +228,7 @@ export const useStoreInvoices = defineStore('storeInvoices', {
           await this.storePayments.getPaymentsForInvoice(invoice.invoiceId);
         }
 
-        this.patientInvoices = fbInvoices;
+        this.patientInvoices[patientId] = fbInvoices;
         console.log(this.patientInvoices, 'fetched invoices');
 
         // Update payment invoices if invoiceId is provided
@@ -253,7 +256,6 @@ export const useStoreInvoices = defineStore('storeInvoices', {
         this.loadingInvoices = true; // Clear loading state if an error occurs
       }
     },
-
     async GET_INVOICES_NEXT()  {
 
       console.log('LOADINGNEXT')
@@ -520,16 +522,22 @@ export const useStoreInvoices = defineStore('storeInvoices', {
        return state.invoiceData.filter(invoice=> invoice.invoiceId===patientId)[0]
       }
      },
-     GET_PATIENT_INVOICES: (state)=>{
-      return (patientId) =>{
-       const patientInvoices=state.patientInvoices.filter(invoice=> invoice.patientId===patientId)
+     GET_PATIENT_INVOICES: (state) => {
+      return (patientId) => {
+        // Check if patientInvoices exists for the given patientId
+        const patientInvoices = state.patientInvoices[patientId]
+          ? state.patientInvoices[patientId].filter(invoice => invoice.patientId === patientId)
+          : [];  // Return an empty array if undefined
 
-       patientInvoices.forEach(patientInvoice=>{patientInvoice.works=state.storeWorks.invoiceWorks[patientInvoice.invoiceId]
-        console.log(patientInvoice.works,'XXXX')
-      })
-       return patientInvoices
+        // Iterate over each patient invoice and assign works, if any
+        patientInvoices.forEach(patientInvoice => {
+          // Check if works exist for the invoiceId in state.storeWorks.invoiceWorks
+          patientInvoice.works = state.storeWorks.invoiceWorks[patientInvoice.invoiceId] || [];
+          console.log(patientInvoice.works, 'XXXX');
+        });
+        return patientInvoices;
       }
-     },
+    },
   }
 
 })

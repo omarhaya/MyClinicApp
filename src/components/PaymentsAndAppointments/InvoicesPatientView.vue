@@ -1,27 +1,30 @@
 <template>
-   <template   v-if="patientInvoices&&patientInvoices.length&&!loading">
+   <template   v-if="invoices.length&&!loadingInvoices||storePayments.paymentModal">
     <q-table
-      grid
-      title="Invoices"
-      class="invoices-table"
-      card-container-class="my-card-style"
-      :rows="patientInvoices"
-      :columns="columns"
-      row-key="invoiceId"
-      :filter="filter"
-      hide-header
-      virtual-scroll
-      :rows-per-page-options="[0]"
+    grid
+       :filter="filter"
+       ref="tableRef"
+       :rows="invoices"
+       class="InvoicesTable col "
+       :columns="columns"
+       color="secondary"
+       row-key="paymentId"
+       virtual-scroll
+       :rows-per-page-options="[0]"
+       selection="multiple"
+       v-model:selected="selected"
+       dense
+       hide-bottom
     >
-      <template v-slot:top-right>
+      <!-- <template v-slot:top-right>
         <q-input borderless dense debounce="300" v-model="filter" placeholder="Search">
           <template v-slot:append>
             <q-icon name="search" />
           </template>
         </q-input>
-      </template>
-      <template v-slot:item="props" v-if="storeInvoices.patientInvoices.length &&!loading">
-        <div class="invoice"><Invoice :pageRef="pageRef" :mobile="mobile"     @openPaymentModal="openPaymentModal" class="invoice"  :invoice="props.row" :key="index" /></div>
+      </template> -->
+      <template v-slot:item="props">
+        <div   class="invoice "><Invoice :pageRef="pageRef" :mobile="mobile"     @openPaymentModal="openPaymentModal" class="invoice"  :invoice="props.row" :key="index" /></div>
       </template>
     </q-table>
 
@@ -46,27 +49,17 @@
     </q-card> -->
 
          </template>
-          <template  v-else-if="!loading &&patientInvoices && !patientInvoices.length">
+          <template  v-else-if="!loadingInvoices&&invoices &&!invoices.length">
             <h5 style="height:410px;" class="text-center q-pt-xl q-ml-md q-mr-md text-grey ">Patient has no added Invoices Yet. </h5>
          </template>
-         <template v-else >
-<q-card class="card-appointment q-mb-md" flat bordered >
-      <q-item>
-        <q-item-section>
-          <q-item-label>
-            <q-skeleton width="10%"  type="text" class="text-subtitle2" animation="fade" />
-          </q-item-label>
-          <q-item-label caption>
-            <q-skeleton width="50%" type="text" class="text-subtitle2" animation="fade" />
-          </q-item-label>
-        </q-item-section>
-      </q-item>
-      <q-card-section>
-        <q-skeleton type="text" width="25%" class="text-subtitle2" animation="fade" />
-        <q-skeleton type="text" width="25%" class="text-subtitle2" animation="fade" />
-      </q-card-section>
-    </q-card>
-
+         <template v-else>
+          <q-spinner-ball
+          color="teal"
+          size="8em"
+          class="q-pt-xl"
+          transition-show="fade"
+          transition-hide="fade"
+        />
   </template>
 
 </template>
@@ -120,11 +113,23 @@ store
 
 const storeInvoices=useStoreInvoices()
 const storePayments=useStorePayments()
-const {  patientInvoices,loading } = storeToRefs(storeInvoices)
+const {  loadingInvoices } = storeToRefs(storeInvoices)
 
 /*
-  Appointments
+  Invoices
 */
+
+  const invoices=computed(()=>{
+
+    const patientInvoices = storeInvoices.patientInvoices
+
+if (patientInvoices) {
+  return patientInvoices;
+} else {
+  return [];
+}
+})
+
   storeInvoices.SET_PATIENT_INVOICES(props.patientId)
   const filter=ref('')
   const columns = [
@@ -170,6 +175,12 @@ const {  patientInvoices,loading } = storeToRefs(storeInvoices)
   };
 </script>
 <style lang="scss" scoped>
+.dark .InvoicesTable {
+  background-color: #142325;
+}
+.dark .invoiceContainer{
+  background-color: #142325;
+}
 .card-appointment {
 
   .row{
@@ -182,6 +193,14 @@ const {  patientInvoices,loading } = storeToRefs(storeInvoices)
   max-width: 850px;
   margin: 5px auto;
   height: 100% !important;
+  min-height: auto !important;
+
+}
+.invoiceLoading {
+  margin-top:10px;
 }
 
+.invoiceLoad{
+  margin-top:25px;
+}
 </style>

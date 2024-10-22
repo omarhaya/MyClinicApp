@@ -1,6 +1,14 @@
 <template>
     <ion-app>
-      <ion-router-outlet />
+      <ion-router-outlet v-if="!storeAuth.loadingApp"/>
+      <q-layout v-else>
+      <q-page-container class="center">
+        <div class="spinner-container ">
+          <q-spinner color="secondary"class="loading-spinner" />
+          <p class="loading-text text-secondary">Loading...</p>
+        </div>
+      </q-page-container>
+    </q-layout>
   </ion-app>
 </template>
 
@@ -21,9 +29,15 @@ import { IonApp, IonRouterOutlet } from '@ionic/vue';
   mounted
 */
 
-onMounted(()=>{
-storeAuth.init()
-})
+onMounted(async () => {
+  try {
+    console.log("Initializing...");
+    await storeAuth.init();
+    console.log("Initialization complete");
+  } catch (error) {
+    console.error("Error during initialization:", error);
+  }
+});
 </script>
 
 <style lang="scss">
@@ -280,7 +294,24 @@ ion-content {
     font-size: 11px !important;
   }
 }
+.spinner-container {
+  display: flex;
+  flex-direction: column; /* Ensures vertical stacking */
+  justify-content: center;
+  align-items: center;
+  height: 100vh; /* Center vertically */
+}
 
+.loading-spinner {
+  width: 15%;
+  height: 15%;
+  margin-bottom: 10px; /* Space between spinner and text */
+}
+
+.loading-text {
+  font-size: 18px;
+  color: #000;
+}
 </style>
 
 

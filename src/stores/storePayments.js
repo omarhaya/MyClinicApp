@@ -45,6 +45,7 @@ export const useStorePayments= defineStore('storePayments', {
        loading:null,
        currentPaymentArray:[],
        mobile,
+       loadingPayments:null,
     }
   },
 
@@ -58,7 +59,30 @@ export const useStorePayments= defineStore('storePayments', {
    TOGGLE_PAYMENT(paymentId) {
     if (!this.mobile){this.paymentModal = !this.paymentModal}
     if (paymentId) {
-      this.currentPaymentArray = this.dayPayments[this.selectedDate].find(payment => payment.paymentId === paymentId)||this.invoicePayments.find(doc => doc.paymentId === paymentId)
+      // Search in all dayPayments by iterating over each date
+    this.currentPaymentArray = Object.keys(this.dayPayments).reduce((acc, date) => {
+      const foundPayment = this.dayPayments[date].find(payment => payment.paymentId === paymentId);
+      return foundPayment ? foundPayment : acc;  // If found, return it, otherwise keep searching
+    }, null);
+
+    // If payment is not found in dayPayments, search in invoicePayments
+    if (!this.currentPaymentArray) {
+      this.currentPaymentArray = this.invoicePayments.find(doc => doc.paymentId === paymentId);
+    }
+
+    // If payment is not found in invoicePayments, search in payments
+    if (!this.currentPaymentArray) {
+      this.currentPaymentArray = Object.keys(this.payments).reduce((acc, patientId) => {
+        const foundPayment = this.payments[patientId].find(payment => payment.paymentId === paymentId);
+        return foundPayment ? foundPayment : acc;  // If found, return it, otherwise keep searching
+      }, null);
+    }
+
+    // If no payment is found in any of the sources, you can handle adding a new payment or return null.
+    if (!this.currentPaymentArray) {
+      console.log("Payment not found in dayPayments, invoicePayments, or payments.");
+      // Optionally, handle the case where no payment is found, e.g., add a new payment
+    }
       // this.currentPaymentArray.workItemList=this.storeWorks.invoiceWorks[invoiceId]
       console.log(this.currentPaymentArray,'currentPayment')
     }
@@ -214,7 +238,7 @@ async getIntervalPayments(startDate, endDate) {
   this.loading = false;
 },
 async getPayments(patientId) {
-  this.loading=true
+  this.loadingPayments=true
  const paymentsCollectionQuery = query(paymentsCollectionRef,where("patientId", "==", patientId),orderBy('dateUnix','desc'));
  getPaymentsSnapshot=onSnapshot(paymentsCollectionQuery, (querySnapshot) => {
    const payments=[]
@@ -225,6 +249,7 @@ async getPayments(patientId) {
      paid:doc.data().paid,
      dateUnix:doc.data().dateUnix,
      workId:doc.data().workId,
+     patientId:doc.data().patientId,
    }
    this.getPaymentsForInvoice(payment.invoiceId)
    this.storeWorks.getWork(payment.workId)
@@ -233,7 +258,7 @@ async getPayments(patientId) {
    this.payments[patientId]=payments
    console.log(this.payments[patientId],'paymentssss')
 })
-this.loading=false
+this.loadingPayments=false
 },
     async addPayment (work) {
       try {

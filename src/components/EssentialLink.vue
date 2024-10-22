@@ -34,19 +34,6 @@ import treasury from 'src/assets/vault-solid.svg';
 import { useQuasar } from 'quasar'
 import { Platform } from 'quasar';
 
-const myIcons = {
-  'treasury': 'img:/src/assets/vault-solid.svg',
-}
-
-// ...
-const $q = useQuasar()
-
-$q.iconMapFn = (iconName) => {
-  const icon = myIcons[iconName]
-  if (icon !== undefined) {
-    return { icon }
-  }
-}
 const route = useRoute();
 
 const active = (link) => {
@@ -96,18 +83,29 @@ const   mobile=computed(()=>{
 </script>
 <style lang="scss">
  .q-drawer .q-item {
-    color: white;
+    // color: black;
 }
  .q-scrollarea {
   //background: linear-gradient(to left, black, #0c0f0cea);
-  background:#008e91;
+
 }
  .q-drawer .q-separator {
     background: #74685661;
 }
 .my-menu-link {
-    color: #008e91 !important;
-    background: white;
+  color: #008e91 !important;
+  position: relative; /* Needed for positioning the pseudo-element */
+}
+
+.my-menu-link::after {
+  content: '';
+  position: absolute;
+  right: 0;
+  top: 7px; /* 1px space from the top */
+  bottom: 7px; /* 1px space from the bottom */
+  width: 3px; /* Thickness of the line */
+  background-color: #008e91; /* Line color */
+  border-radius: 10px; /* Makes the top and bottom of the line rounded */
 }
 .treasury-icon-desktop {
   margin-left :4px;

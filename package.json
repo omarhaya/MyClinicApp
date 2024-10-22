@@ -1,8 +1,8 @@
 {
-  "name": "myclinicapp",
+  "name": "O-Care",
   "version": "0.0.1",
   "description": "Easiest and Powerfull App to Manage Your Clinic",
-  "productName": "MyClinicApp",
+  "productName": "O-Care",
   "author": "Omar",
   "private": true,
   "scripts": {
@@ -43,6 +43,7 @@
     "libphonenumber-js": "^1.11.7",
     "maz-ui": "^3.45.1",
     "moment": "^2.30.1",
+    "numeral": "^2.0.6",
     "pinia": "^2.0.16",
     "quasar": "^2.14.0",
     "rrule": "^2.8.1",
@@ -62,8 +63,7 @@
     "@quasar/app-vite": "^1.9.3",
     "@quasar/quasar-app-extension-qcalendar": "^4.0.0-beta.16",
     "autoprefixer": "^10.4.2",
-    "electron": "^31.1.0",
-    "workbox-build": "^6.6.0",
+    "electron": "^33.0.1",
     "workbox-core": "^6.6.0",
     "workbox-expiration": "^6.6.0",
     "workbox-precaching": "^6.6.0",

@@ -165,7 +165,7 @@
            </q-td>
          </q-tr> -->
          <div class="payment">
-          <Payment :tableProps="props" :mobile="mobile"   @openPaymentModal="openPaymentModal" class="payment"  :payment="props.row" :key="props.row.paymentId" :pageRef="page" /></div>
+          <Payment :tableProps="props" :mobile="mobile"    class="payment"  :payment="props.row" :key="props.row.paymentId" :pageRef="page" /></div>
        </template>
 
        <template v-slot:no-data="{ icon, message, filter }">
@@ -204,9 +204,9 @@
   import { IonSegment, IonSegmentButton, IonHeader, IonLabel , IonToolbar ,IonPage ,IonContent, modalController,IonCard} from '@ionic/vue';
   import MobilePaymentModal from 'src/components/MobilePaymentModal.vue'
   import { Platform } from 'quasar';
- import Expenses from './Expenses.vue';
- import Payment from 'src/components/Payment.vue'
- import { useStorePatients } from 'src/stores/storePatients';
+  import Expenses from './Expenses.vue';
+  import Payment from 'src/components/Payment.vue'
+  import { useStorePatients } from 'src/stores/storePatients';
 
  const storePatients=useStorePatients()
   const $q = useQuasar()

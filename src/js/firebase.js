@@ -1,8 +1,12 @@
 
 import { initializeApp } from 'firebase/app'
 import { getFirestore,enableIndexedDbPersistence } from 'firebase/firestore'
-import { getAuth } from 'firebase/auth'
+import { getAuth,initializeAuth,indexedDBLocalPersistence } from 'firebase/auth'
 import {getFunctions} from 'firebase/functions'
+import { Capacitor } from '@capacitor/core';
+
+let auth;
+
 
 const firebaseConfig = {
   apiKey: "AIzaSyD0kt96ogghILFaxVsub6rr2bCL7W8O7WU",
@@ -19,7 +23,17 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig)
 const functions = getFunctions(app)
 const db = getFirestore(app)
-const auth = getAuth(app)
+// const auth = getAuth(app)
+
+if (Capacitor.isNativePlatform()) {
+  // Initialize auth with local persistence for native apps
+  auth = initializeAuth(app, {
+    persistence: indexedDBLocalPersistence
+  });
+} else {
+  // Standard initialization for web
+  auth = getAuth(app);
+}
 // offline support
 enableIndexedDbPersistence(db)
 .catch((err) => {

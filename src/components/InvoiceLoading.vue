@@ -1,5 +1,5 @@
 <template>
-  <div class="invoice flex" >
+  <div class="invoiceLoading flex" >
     <div class="left flex">
       <span class="tracking-number">   <q-skeleton type="text" width="100%" class="text-subtitle1" /></span>
 
@@ -44,10 +44,11 @@ import { ref,computed } from 'vue'
 </script>
 
 <style lang="scss" scoped>
-.invoice {
+.invoiceLoading {
+  box-sizing: border-box !important;
   text-decoration: none;
   cursor: pointer;
-  gap: 16px;
+
   margin-bottom: 16px;
   color: #000000;
   border-radius: 20px;
@@ -97,6 +98,14 @@ import { ref,computed } from 'vue'
       min-width: 107px;
 
     }
+  }
+}
+/* Dark Mode Styles */
+.ion-dark .invoiceLoading {
+  background-color: #1e3639;
+  color: #ffffff;
+  ion-item {
+    --background: #1e3539;
   }
 }
 </style>

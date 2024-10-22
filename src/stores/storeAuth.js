@@ -34,7 +34,8 @@ export const useStoreAuth = defineStore('storeAuth', {
       errorMessageRegister: '',
       loadingDoctors: false,
       loading: true, // Add loading state
-      initialized: false // Add an initialized flag
+      initialized: false, // Add an initialized flag
+      loadingApp:null,
     }
   },
 

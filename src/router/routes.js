@@ -7,7 +7,7 @@ import Calendar from 'src/pages/Calendar.vue'
 import Invoices from'src/pages/Invoices.vue'
 import invoice from 'src/pages/InvoiceView.vue'
 import PatientDetails from 'src/pages/PatientDetails.vue'
-import Treasury from 'src/pages/Treasury.vue'
+import Transactions from 'src/pages/Transactions.vue'
 
 const routes = [
   {
@@ -46,11 +46,10 @@ const routes = [
       component: invoice,
       name: 'Invoice',
       },
-      { path: '/Treasury',
-      component: Treasury,
-      name:'treasury'
+      { path: '/Transactions',
+      component: Transactions,
+      name:'transactions'
       },
-
     ]
   },
 

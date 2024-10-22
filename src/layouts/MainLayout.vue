@@ -60,7 +60,7 @@
     full-height
     allow-focus-outside
     :persistent="checkContent"
-    :position="$route.path === '/Treasury' ? 'right' : 'left'"
+    :position="$route.path === '/Transactions' ? 'right' : 'left'"
     transition-duration="700"
     @shake="closeWithcontent"
     v-model="storePayments.paymentModal"
@@ -93,7 +93,7 @@
     full-height
     allow-focus-outside
     :persistent="checkContent"
-    :position="$route.path === '/Treasury' ? 'right' : 'left'"
+    :position="$route.path === '/Transactions' ? 'right' : 'left'"
     transition-duration="700"
     @shake="closeWithcontent"
     v-model="storeExpenses.expenseModal"
@@ -132,7 +132,7 @@
           </q-avatar>
         </q-btn>
         <ion-label>
-          <!-- <h6>Treasury</h6> -->
+          <!-- <h6>appLogo</h6> -->
         </ion-label>
       </q-toolbar>
 
@@ -142,7 +142,7 @@
 
       <q-page-container>
 
-    <q-drawer
+        <q-drawer
       v-if="!mobile"
       v-model="leftDrawerOpen"
       show-if-above
@@ -151,10 +151,16 @@
       @mouseout="storeSettings.miniState = true"
       :width="200"
       :breakpoint="500"
-      class="bg-grey-3 drawer "
+      class="drawer "
     >
-      <q-scroll-area class="fit q-pt-xl">
-        <q-list padding>
+      <q-scroll-area class="fit">
+        <q-list>
+          <q-item style="padding:8px 14px">
+            <q-item-section avatar>
+              <q-icon size="29px" style="height: 19px; filter: drop-shadow(2px 2px 3px rgba(0, 0, 0, 0.5));" name="appLogo" />
+            </q-item-section>
+
+          </q-item>
           <div v-if="storeAuth.user.uid">
             <EssentialLink v-for="link in essentialLinks" :key="link.title" v-bind="link" />
           </div>
@@ -205,12 +211,11 @@
           <ion-label>Patients</ion-label>
         </ion-tab-button>
 
-        <ion-tab-button tab="tab1" href="/Treasury">
-          <q-icon class="treasury-icon" size="24px" name="fa-solid fa-vault"></q-icon>
-          <ion-label>
-            <h6 class="ion-text">Treasury</h6>
-          </ion-label>
+        <ion-tab-button tab="tab1" href="/Transactions">
+          <ion-icon aria-hidden="true" :icon="swapHorizontalOutline" />
+          <ion-label>Transactions</ion-label>
         </ion-tab-button>
+
 
         <ion-tab-button tab="tab2" href="/Invoices">
           <ion-icon aria-hidden="true" :icon="newspaper" />
@@ -235,10 +240,11 @@ import PaymentModal from 'src/components/PaymentModal.vue'
 import { useStorePayments } from 'src/stores/storePayments'
 import { IonPage, IonContent, IonHeader, IonToolbar, IonTabBar, IonTabButton, IonTabs, IonLabel, IonIcon, IonRouterOutlet } from '@ionic/vue'
 import { useStoreSettings } from 'src/stores/storeSettings'
-import { newspaper, people, calendar } from 'ionicons/icons'
+import { newspaper, people, calendar,swapHorizontalOutline} from 'ionicons/icons'
 import { useStoreExpenses } from 'src/stores/storeExpenses'
 import ExpenseModal from 'src/components/ExpenseModal.vue'
 import { useTheme } from 'vuetify'
+
 
 const theme = useTheme()
 const $q = useQuasar()
@@ -270,11 +276,23 @@ const essentialLinks = [
     link: '/Invoices'
   },
   {
-    title: 'Treasury',
-    icon: 'fa-solid fa-vault',
-    link: '/Treasury'
+    title: 'Transactions',
+    icon: 'swap_horiz',
+    link: '/Transactions'
   }
 ]
+
+const myIcons = {
+  'appLogo': 'img:/src/assets/appLogo.svg',
+}
+
+
+$q.iconMapFn = (iconName) => {
+  const icon = myIcons[iconName]
+  if (icon !== undefined) {
+    return { icon }
+  }
+}
 const drawer= ref(true)
 const leftDrawerOpen = ref(false)
 const miniState = ref(true)
@@ -386,7 +404,7 @@ onBeforeUnmount(() => {
    box-sizing: border-box
 .ion-text
    font-size: 11px !important
-.treasury-icon
+.appLogo-icon
    padding-bottom:1px
    padding-top:5px
 .ion-page
@@ -395,7 +413,7 @@ onBeforeUnmount(() => {
     position: absolute
     top: 0
     bottom: 0
-    background: #fff
+    // background: #fff
     z-index: 0
 
 </style>

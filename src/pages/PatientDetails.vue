@@ -8,13 +8,13 @@
       <ion-title>Back Button</ion-title>
     </ion-toolbar>
   </ion-header>
-    <ion-content  :fullscreen="true">
+    <ion-content :fullscreen="true">
       <ion-header collapse="condense">
         <ion-toolbar>
 
         </ion-toolbar>
       </ion-header>
-
+      <div >
       <router-link v-if="!mobile" class="nav-link flex" :to="lastRoute">
       <img src="../assets/icon-arrow-left.svg" alt="" />
       Back
@@ -23,48 +23,46 @@
 
 <div :class="{'q-pl-md q-mb-lg q-mr-xs col-12 col-sm-4 q-gutter-md' :$q.screen.gt.sm , 'q-mb-lg col-12 col-md-auto q-pa-xs' :!$q.screen.gt.sm} " >
 <!-- Patient details -->
-<Patient  :patientId="patientId"/>
+<Patient  :patientId="patientId" :patient="patient"/>
         </div>
        <div :class="{'col-12 col-sm-8' :$q.screen.gt.sm , ' col-12 ' :!$q.screen.gt.sm} ">
         <div class="q-gutter-y-md">
-          <q-card>
-          <q-card-section>
-          </q-card-section>
-        </q-card>
 
         </div>
         </div>
        </div>
-       <div class="sticky-tabs">
+       <q-card :class="{'sticky-tabs-mobile' :mobile , ' sticky-tabs-desktop' :!mobile}">
           <q-tabs
               align="justify"
               v-model="tab"
               indicator-color="white"
               class="bg-secondary text-grey-5 shadow-2 "
               active-color="white"
+              font-size="40px"
             >
-              <q-tab name="appointments" icon="calendar_today" ><div v-if="!mobile">Appointments</div></q-tab>
-              <q-tab name="payments" icon="payments" ><div v-if="!mobile">Payments</div></q-tab>
+              <q-tab name="appointments" icon="calendar_today" font-size="40px" ><div v-if="!mobile">Appointments</div></q-tab>
+              <q-tab name="payments" icon="swap_horiz" ><div v-if="!mobile">Payments</div></q-tab>
               <q-tab name="invoices" icon="request_page" ><div v-if="!mobile">Invoices</div></q-tab>
 
             </q-tabs>
             <q-separator />
-          </div>
 
-        <q-tab-panels  v-model="tab" animated  >
+
+        <q-tab-panels class="text-center"  v-model="tab" animated  >
         <q-tab-panel style="padding: 0px;" name="appointments">
         <!-- Appointments -->
         <AppointmentsPatientView  :patientId="patientId "></AppointmentsPatientView>
         </q-tab-panel>
         <q-tab-panel style="padding: 0px;"  name="payments">
         <!-- Payments -->
-        <PaymentsPatientView  :patientId="patientId"></PaymentsPatientView>
+        <PaymentsPatientView :pageRef="page"  :patientId="patientId"></PaymentsPatientView>
         </q-tab-panel>
         <q-tab-panel style="padding: 0px;" name="invoices">
        <InvoicesPatientView :pageRef="page" @openPaymentModal="openPaymentModal"  :patientId="patientId"></InvoicesPatientView>
         </q-tab-panel>
       </q-tab-panels>
-
+    </q-card>
+    </div>
 
     </ion-content>
     </ion-page>
@@ -110,6 +108,10 @@ const $q =useQuasar()
 const patientId=computed(()=>{
   console.log(route.params.patientId,'route.params.patientId')
   return route.params.patientId
+})
+const patient = computed (()=>{
+  console.log(storePatients.patients.find(patient=>patient.patientId===patientId.value),'ssaa')
+  return storePatients.patients.find(patient=>patient.patientId===patientId.value)
 })
 /*
   Save clicked
@@ -198,9 +200,19 @@ const   mobile=computed(()=>{
         })
 </script>
 <style scoped>
-.sticky-tabs {
+.sticky-tabs-desktop {
   position: sticky;
   top: 0;
   z-index: 10; /* Adjust as needed to ensure it appears above other content */
+  margin:10px;
+}
+.sticky-tabs-mobile {
+  position: sticky;
+  top: 0;
+  z-index: 10; /* Adjust as needed to ensure it appears above other content */
+  border-radius: 0;
+}
+body.dark .q-tab-panels {
+  background-color: #142325; /* Background color for dark mode */
 }
 </style>

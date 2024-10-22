@@ -46,7 +46,7 @@
         <ion-item-option @click="isOpen=true" expandable color="danger"><q-icon size="25px" name="delete"/>Delete</ion-item-option>
       </ion-item-options>
     </ion-item-sliding>
-    <ion-action-sheet   @didDismiss="isOpen=false" :is-open="isOpen"  header="Actions" :buttons="actionSheetButtons"/>
+    <ion-action-sheet   @didDismiss="isOpen=false" :is-open="isOpen"  header="Delete The Following Transaction?" :buttons="actionSheetButtons"/>
 </template>
 
 <script setup>
@@ -153,12 +153,6 @@ watch(() => props.payment.deleted, (newValue) => {
           // const slidingItem = document.querySelector('.payment')
           // slidingItem.closeOpened()
         }
-        },
-        {
-          text: 'Archive',
-          data: {
-            action: 'archive',
-          },
         },
         {
           text: 'Cancel',
