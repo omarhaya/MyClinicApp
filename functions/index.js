@@ -63,7 +63,7 @@ exports.sendWhatsAppAppointment = functions.https.onCall((data, context) => {
       3: message.dayArabic,
       4: message.startDate,
     }),
-      from: 'whatsapp:+9647511431331', // Your Twilio WhatsApp-enabled number
+      from: '', // Your Twilio WhatsApp-enabled number
       to: to
   })
   .then((message) => {
@@ -89,7 +89,7 @@ exports.sendWhatsAppChange = functions.https.onCall((data, context) => {
       3: message.dayArabic,
       4: message.startDate,
     }),
-      from: 'whatsapp:+9647511431331', // Your Twilio WhatsApp-enabled number
+      from: '', // Your Twilio WhatsApp-enabled number
       to: to
   })
   .then((message) => {
@@ -114,7 +114,7 @@ exports.sendWhatsAppCancel = functions.https.onCall((data, context) => {
       3: message.dayArabic,
       4: message.startDate,
     }),
-      from: 'whatsapp:+9647511431331', // Your Twilio WhatsApp-enabled number
+      from: '', // Your Twilio WhatsApp-enabled number
       to: to
   })
   .then((message) => {
@@ -142,7 +142,7 @@ exports.sendWhatsAppReservatiion = functions.https.onCall((data, context) => {
       2: 'حجز',
       3:message.doctorInfo.doctorName
     }),
-      from: 'whatsapp:+9647511431331', // Your Twilio WhatsApp-enabled number
+      from: '', // Your Twilio WhatsApp-enabled number
       to: to
   })
   .then((message) => {
@@ -260,7 +260,7 @@ exports.scheduleWhatsAppMessages = onSchedule("every 1 minutes", async (event) =
                       4: messageContent.dayArabic,
                       5: messageContent.doctorName,
                     }),
-                    from: 'whatsapp:+9647511431331',
+                    from: '',
                     to: `whatsapp:${phone}`,
                   });
 
