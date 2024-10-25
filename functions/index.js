@@ -47,8 +47,8 @@ exports.processSignUp = functions.auth.user().onCreate(async (user) => {
 
 //Twilio messeaging
 //appointment_reservation
-const accountSid = 'AC6714de1ae7d6324a62f0acbc62195ed6';
-const authToken = 'a972d1974f906eb511c6215c96d341f9';
+const accountSid = '';
+const authToken = '';
 const client = new twilio(accountSid, authToken);
 
 exports.sendWhatsAppAppointment = functions.https.onCall((data, context) => {
@@ -56,7 +56,7 @@ exports.sendWhatsAppAppointment = functions.https.onCall((data, context) => {
   const message = data.message; // e.g., 'Hello from my app!'
 
   return client.messages.create({
-    contentSid: "HX6d818fafe4f682bb4e1da293a1733f8b",
+    contentSid: "",
     contentVariables: JSON.stringify({
       1: message.timeArabic,
       2: message.doctor,
@@ -82,7 +82,7 @@ exports.sendWhatsAppChange = functions.https.onCall((data, context) => {
   const message = data.message; // e.g., 'Hello from my app!'
 
   return client.messages.create({
-    contentSid: "HX25dae7a6048c8af115875449cc90519a",
+    contentSid: "",
     contentVariables: JSON.stringify({
       1: message.timeArabic,
       2: message.doctor,
@@ -107,7 +107,7 @@ exports.sendWhatsAppCancel = functions.https.onCall((data, context) => {
   const message = data.message; // e.g., 'Hello from my app!'
 
   return client.messages.create({
-    contentSid: "HX030b90e78b25fc74d6b10f08bd2b479a",
+    contentSid: "",
     contentVariables: JSON.stringify({
       1: message.timeArabic,
       2: message.doctor,
@@ -133,7 +133,7 @@ exports.sendWhatsAppReservatiion = functions.https.onCall((data, context) => {
   const message = data.message; // e.g., 'Hello from my app!'
 
   return client.messages.create({
-    contentSid: "HX0f3938db6243f631f95a7022d5f2c931",
+    contentSid: "",
     contentVariables: JSON.stringify({
       5: message.timeArabic,
       1: message.doctorInfo.clinicName,
@@ -252,7 +252,7 @@ exports.scheduleWhatsAppMessages = onSchedule("every 1 minutes", async (event) =
                 try {
                   console.log(messageContent);
                   const message = await client.messages.create({
-                    contentSid: "HXf77adb5996726eb9c862715219723c0f",
+                    contentSid: "",
                     contentVariables: JSON.stringify({
                       1: patientName,
                       2: messageContent.clinicName,
