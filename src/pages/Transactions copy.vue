@@ -48,20 +48,8 @@
     </ion-card-content>
   </div>
   </ion-card> -->
-  <CardWidget
-      class="col q-ma-xs"
-      label="Total"
-      :totals="groupedTotals"
-    />
-
-    <!-- Card for New Payments -->
-    <CardWidget
-      class="col q-ma-xs"
-      label="New"
-      :prefix="''"
-      :value="payments.length"
-      :suffix="''"
-    />
+  <CardWidget class="col q-ma-xs" :label="'Total'" :value="totals"/>
+  <CardWidget class="col q-ma-xs" :label="'Number'" :value="payments.length"/>
   <!-- <ion-card class="col q-ma-xs">
     <div>
     <ion-card-header>
@@ -556,23 +544,6 @@
        // message.value = `Hello, ${data}!`;
      }
    }
-// Computed property to group totals by currency
-const groupedTotals = computed(() => {
-  const totalsByCurrency = {};
-
-  // Group totals by currency
-  totals.value.forEach(total => {
-    if (!totalsByCurrency[total.currency]) {
-      totalsByCurrency[total.currency] = { currency: total.currency, totalPaid: 0 };
-    }
-    totalsByCurrency[total.currency].totalPaid += total.totalPaid;
-  });
-
-  // Return an array of totals grouped by currency
-  return Object.values(totalsByCurrency);
-});
-
-
    const page = ref();
 
  /*

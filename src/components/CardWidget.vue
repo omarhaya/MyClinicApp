@@ -1,22 +1,39 @@
 <template>
   <ion-card>
-    <ion-card-header>
-      <ion-card-title>
-        {{ prefix }}{{ newValueFormatted }}{{ suffix }}
-      </ion-card-title>
-    </ion-card-header>
-    <ion-card-content>
-      <p>This value will grow over time:</p>
-      <p>{{ prefix }}{{ newValueFormatted }}{{ suffix }}</p>
-    </ion-card-content>
+    <div>
+      <ion-card-header>
+        <ion-card-title v-if="totals.length>1" class="text-h6">Totals</ion-card-title>
+        <ion-card-title v-else class="text-h6">{{ label }}</ion-card-title>
+      </ion-card-header>
+    </div>
+    <div>
+      <ion-card-content class="text-green-7">
+        <!-- If totals are provided, loop through them and use newValueFormatted for each -->
+        <template v-if="totals.length">
+          <div v-for="(total, index) in totals" :key="index">
+            <h1 class=" inner-text">
+
+            {{ prefix }}<span class="currency">{{ total.currency }}</span><GrowingNumeral  :value="(total.totalPaid)"/>
+          </h1>
+          </div>
+        </template>
+
+        <!-- Otherwise, use newValueFormatted for the single value -->
+        <template v-else>
+          <h1 class=" inner-text">
+          <span v-if="newValue > 0">+</span>
+          <span class="currency">{{ prefix }}</span><GrowingNumeral  :prefix="prefix" :suffix="suffix" :value="value"/>{{ suffix }}
+          </h1>
+        </template>
+      </ion-card-content>
+    </div>
   </ion-card>
 </template>
 
 <script setup>
-import { IonCard, IonCardHeader, IonCardTitle, IonCardContent } from '@ionic/vue';
-import { computed, ref, watch, onMounted } from 'vue';
+import { ref, computed, watch, onMounted } from 'vue';
 import numeral from 'numeral';
-
+import GrowingNumeral from './GrowingNumeral.vue';
 // Props passed into the component
 const props = defineProps({
   prefix: {
@@ -31,57 +48,27 @@ const props = defineProps({
     type: Number,
     default: 100000000,
   },
+  totals: {
+    type: Array,
+    default: () => [],
+  },
   duration: {
     type: Number,
     default: 500, // duration in milliseconds
   },
+  label: {
+    type: String,
+    default: 'Total',
+  },
 });
 
-// Local state to hold the growing value
-const newValue = ref(0);
-
-// Computed property to format the newValue
-const newValueFormatted = computed(() =>
-  newValue.value < 1000 ? newValue.value : numeral(newValue.value).format('0,0')
-);
-
-// Access the prop value as a computed property
-const value = computed(() => props.value);
-
-// The grow method to incrementally increase newValue
-const grow = (m) => {
-  const v = Math.ceil(newValue.value + m); // Increment the value
-
-  if (v > value.value) {
-    newValue.value = value.value; // Stop growing when it reaches the final value
-    return false;
-  }
-
-  newValue.value = v; // Update the newValue with the incremented value
-
-  // Continue growing the value every 25 milliseconds
-  setTimeout(() => {
-    grow(m);
-  }, 25);
-};
-
-// Initializes the grow effect
-const growInit = () => {
-  newValue.value = 0; // Reset the value before starting the grow effect
-  grow(props.value / (props.duration / 25)); // Divide the target value across the specified duration
-};
-
-// Watch for changes in the value and restart the grow effect
-watch(value, () => {
-  growInit();
-});
-
-// Start the grow effect when the component is mounted
-onMounted(() => {
-  growInit();
-});
 </script>
 
 <style scoped>
-/* Add any styles if needed */
+.inner-text {
+  font-weight: 600 !important;
+}
+.currency {
+    font-size: 20px;
+}
 </style>
