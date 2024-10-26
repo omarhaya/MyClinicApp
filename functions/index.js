@@ -47,8 +47,8 @@ exports.processSignUp = functions.auth.user().onCreate(async (user) => {
 
 //Twilio messeaging
 //appointment_reservation
-const accountSid = '';
-const authToken = '';
+const accountSid = 'AC6714de1ae7d6324a62f0acbc62195ed6';
+const authToken = 'a972d1974f906eb511c6215c96d341f9';
 const client = new twilio(accountSid, authToken);
 
 exports.sendWhatsAppAppointment = functions.https.onCall((data, context) => {
@@ -56,14 +56,14 @@ exports.sendWhatsAppAppointment = functions.https.onCall((data, context) => {
   const message = data.message; // e.g., 'Hello from my app!'
 
   return client.messages.create({
-    contentSid: "",
+    contentSid: "HX6d818fafe4f682bb4e1da293a1733f8b",
     contentVariables: JSON.stringify({
       1: message.timeArabic,
       2: message.doctor,
       3: message.dayArabic,
       4: message.startDate,
     }),
-      from: '', // Your Twilio WhatsApp-enabled number
+      from: 'whatsapp:+9647511431331', // Your Twilio WhatsApp-enabled number
       to: to
   })
   .then((message) => {
@@ -82,14 +82,14 @@ exports.sendWhatsAppChange = functions.https.onCall((data, context) => {
   const message = data.message; // e.g., 'Hello from my app!'
 
   return client.messages.create({
-    contentSid: "",
+    contentSid: "HX25dae7a6048c8af115875449cc90519a",
     contentVariables: JSON.stringify({
       1: message.timeArabic,
       2: message.doctor,
       3: message.dayArabic,
       4: message.startDate,
     }),
-      from: '', // Your Twilio WhatsApp-enabled number
+      from: 'whatsapp:+9647511431331', // Your Twilio WhatsApp-enabled number
       to: to
   })
   .then((message) => {
@@ -107,14 +107,14 @@ exports.sendWhatsAppCancel = functions.https.onCall((data, context) => {
   const message = data.message; // e.g., 'Hello from my app!'
 
   return client.messages.create({
-    contentSid: "",
+    contentSid: "HX030b90e78b25fc74d6b10f08bd2b479a",
     contentVariables: JSON.stringify({
       1: message.timeArabic,
       2: message.doctor,
       3: message.dayArabic,
       4: message.startDate,
     }),
-      from: '', // Your Twilio WhatsApp-enabled number
+      from: 'whatsapp:+9647511431331', // Your Twilio WhatsApp-enabled number
       to: to
   })
   .then((message) => {
@@ -133,7 +133,7 @@ exports.sendWhatsAppReservatiion = functions.https.onCall((data, context) => {
   const message = data.message; // e.g., 'Hello from my app!'
 
   return client.messages.create({
-    contentSid: "",
+    contentSid: "HX0f3938db6243f631f95a7022d5f2c931",
     contentVariables: JSON.stringify({
       5: message.timeArabic,
       1: message.doctorInfo.clinicName,
@@ -142,7 +142,7 @@ exports.sendWhatsAppReservatiion = functions.https.onCall((data, context) => {
       2: 'حجز',
       3:message.doctorInfo.doctorName
     }),
-      from: '', // Your Twilio WhatsApp-enabled number
+      from: 'whatsapp:+9647511431331', // Your Twilio WhatsApp-enabled number
       to: to
   })
   .then((message) => {
@@ -252,7 +252,7 @@ exports.scheduleWhatsAppMessages = onSchedule("every 1 minutes", async (event) =
                 try {
                   console.log(messageContent);
                   const message = await client.messages.create({
-                    contentSid: "",
+                    contentSid: "HXf77adb5996726eb9c862715219723c0f",
                     contentVariables: JSON.stringify({
                       1: patientName,
                       2: messageContent.clinicName,
@@ -260,7 +260,7 @@ exports.scheduleWhatsAppMessages = onSchedule("every 1 minutes", async (event) =
                       4: messageContent.dayArabic,
                       5: messageContent.doctorName,
                     }),
-                    from: '',
+                    from: 'whatsapp:+9647511431331',
                     to: `whatsapp:${phone}`,
                   });
 
