@@ -1,12 +1,16 @@
 <template>
   <div >
-    <q-card min-width="300" class="my-card">
+    <q-card  min-width="300" class="my-card">
       <q-toolbar :class="`bg-${event.extendedProps.background} text-white`" style="min-width: 340px;padding-left: 0px;">
         <q-btn flat round color="white" icon="close"   @click="storeAppointments.menu[event.extendedProps.appointmentId] = false"/>
             <q-toolbar-title >
               <!-- Add New Appointment -->
             </q-toolbar-title>
-            <q-btn flat round color="white" icon="edit"   @click="storeAppointments.menu[event.extendedProps.appointmentId] = false"/>
+            <q-btn flat round color="white" icon="edit"     @click="
+    storeAppointments.editAppointment = true;
+    storeAppointments.currentAppointment= event
+    storeAppointments.TOGGLE_APPOINTMENT();
+  "/>
             <q-btn flat round color="white" icon="delete"   @click=" storeAppointments.deleteAppointment(event)"/>
           </q-toolbar>
                   <div class="row">

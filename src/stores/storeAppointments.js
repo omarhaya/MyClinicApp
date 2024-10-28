@@ -14,6 +14,7 @@ import { httpsCallable } from 'firebase/functions';
 import 'dayjs/locale/ar' // Import Arabic locale
 import customParseFormat from 'dayjs/plugin/customParseFormat';
 import { computed } from 'vue'
+import { Platform } from 'quasar';
 
 let appointmentsCollectionRef
 let appointmentsCollectionQuery
@@ -22,9 +23,23 @@ let getAppointmentsSnapshot=null
 export const useStoreAppointments= defineStore('storeAppointments', {
   state: () => {
     const storeAuth=useStoreAuth()
+    const mobile = computed(() => {
+      if (Platform.is.desktop) {
+        return false;
+      }
+      if (Platform.is.mobile) {
+        return true;
+      }
+      // Default to false if neither
+      return false;
+    })
     return {
        loading:null,
        appointments:[],
+       editAppointment: null,
+       appointment:[],
+       currentAppointment:{},
+       appointmentModal:null,
        transition:'',
        dayAppointments:[],
        selectedDate:today(),
@@ -32,17 +47,24 @@ export const useStoreAppointments= defineStore('storeAppointments', {
        menu:[],
        $q:useQuasar(),
        modal:false,
+       mobile,
     }
   },
 
   actions:{
-    init(){
+   init(){
       if(this.storeAuth.role.doctor&&this.storeAuth.role.clinicId!==''){
         appointmentsCollectionRef = collection(db, 'users',this.storeAuth.role.clinicId,'appointments')
         }
         else {appointmentsCollectionRef = collection(db, 'users',this.storeAuth.user.uid,'appointments')}
       // this.updateInvoices()
    },
+
+   TOGGLE_APPOINTMENT() {
+    if (!this.mobile){this.appointmentModal = !this.appointmentModal}
+    console.log(this.currentAppointment,'appoointmentmodalll')
+  },
+
    async updateInvoices() {
     try {
       // const doctorsIds = doctors.map(doctor => doctor.doctorId);
@@ -98,7 +120,6 @@ export const useStoreAppointments= defineStore('storeAppointments', {
         };
         fbAppointments.push(appointment);
       });
-
       // Add the default event to each day's appointments
       const defaultEvent = {
         groupId: 'availableForAppointment',
@@ -113,7 +134,7 @@ export const useStoreAppointments= defineStore('storeAppointments', {
         resourceIds: this.storeAuth.doctors.map(doctor => doctor.doctorId),
         color: '#257e4a',
       };
-console.log(defaultEvent,'default event')
+      console.log(defaultEvent,'default event')
       fbAppointments.push(defaultEvent);
 
       this.dayAppointments[appointmentDate] = fbAppointments;
@@ -121,8 +142,6 @@ console.log(defaultEvent,'default event')
     });
     this.loadingAppointments = false;
   },
-
-
     // Patient View
     async getAppointments(patientId) {
       appointmentsCollectionQuery = query(appointmentsCollectionRef, where("patientDetails.patientId", "==",patientId),orderBy("date","desc"))
@@ -259,10 +278,86 @@ console.log(defaultEvent,'default event')
       this.loading = false;
     }
   },
+
+
+  async updateAppointment(newAppointmentDetails) {
+    this.loading = true;
+    if(!newAppointmentDetails.title.phone){newAppointmentDetails.sendWhatsAppReminder=false,newAppointmentDetails.sendWhatsAppMessage=false}
+    try {
+          // Calculate the sendAt timestamp for 11:00 AM on the appointment date
+      const appointmentDate = dayjs(newAppointmentDetails.startDate);
+      const sendAt = appointmentDate.set('hour', 11).set('minute', 0).toDate(); // 11:00 AM on the appointment day
+      // Add appointment to Firestore
+      const appointmentDocRef = doc(appointmentsCollectionRef, newAppointmentDetails.appointmentId);
+      const updateData =  {
+        start: newAppointmentDetails.startDate + 'T' + newAppointmentDetails.startTime,
+        end: newAppointmentDetails.startDate + 'T' + newAppointmentDetails.endTime,
+        patientDetails: newAppointmentDetails.title,
+        doctorId: newAppointmentDetails.doctor.doctorId,
+        appointmentdate: dayjs(newAppointmentDetails.startDate).format('YYYY-MM-DD'),
+        date: new Date().getTime().toString(),
+        sendWhatsAppReminder:newAppointmentDetails.sendWhatsAppReminder || false,
+        sendWhatsAppMessage:newAppointmentDetails.sendWhatsAppMessage || false,
+      };
+      const updateDocPromise = await updateDoc(appointmentDocRef, updateData);
+      modalController.dismiss(null, 'confirm');
+
+      this.$q.notify({
+        icon: 'done',
+        color: 'positive',
+        message: 'Appointment Updated',
+        actions: [{ label: 'Dismiss', color: 'white', handler: () => {} }],
+      });
+
+      // Check if WhatsApp message is enabled and phone number is provided
+      if (newAppointmentDetails.sendWhatsAppMessage && newAppointmentDetails.title.phone) {
+        dayjs.extend(customParseFormat)
+        const time = dayjs(newAppointmentDetails.startTime, 'HH:mm').locale('ar')
+        const timeArabic = time.format('hh:mm A').replace('ص', 'صباحاً').replace('م', 'مساءً');
+        const dayArabic = dayjs(newAppointmentDetails.startDate).locale('ar').format('dddd');
+        const type = 'حجز';
+        const doctorInfo = computed(() => {
+          if (this.storeAuth.role.clinicId !== '') {
+            return {
+              clinicName:this.storeAuth.doctors.find(doctor => doctor.doctorId === this.storeAuth.role.clinicId).name,
+              doctorName:this.storeAuth.doctors.find(doctor => doctor.doctorId === newAppointmentDetails.doctor.doctorId).name
+            }
+          } else {
+            if (this.storeAuth.doctors.length > 1) {
+              return {
+                clinicName:this.storeAuth.doctors.find(doctor => doctor.doctorId === this.storeAuth.user.uid).name,
+                doctorName:this.storeAuth.doctors.find(doctor => doctor.doctorId === newAppointmentDetails.doctor.doctorId).name
+              }
+            } else {
+              return {
+                clinicName:this.storeAuth.doctors.find(doctor => doctor.doctorId === this.storeAuth.user.uid).name,
+                doctorName:this.storeAuth.doctors.find(doctor => doctor.doctorId === newAppointmentDetails.doctor.doctorId).name
+              }
+            }
+          }
+        });
+        console.log(doctorInfo);
+        const sendWhatsAppReservatiion = httpsCallable(functions, 'sendWhatsAppReservatiion');
+        const result = await sendWhatsAppReservatiion({
+          to: `whatsapp:${newAppointmentDetails.title.phone}`,  // Recipient's WhatsApp number
+          message: { startDate: newAppointmentDetails.startDate, doctorInfo: doctorInfo.value, timeArabic, dayArabic, type }
+        })
+        console.log('Message sent:', result.data);
+      }
+    } catch (error) {
+      console.error('Error:', error);
+    } finally {
+      this.loading = false;
+    }
+  },
     clearAppointments(){
       this.appointments=[]
       console.log(this.appointments,'cleared')
       if (getAppointmentsSnapshot) getAppointmentsSnapshot() //unsubscribe from any active listener
+    },
+    CLEAR_DATA(){
+      this.currentAppointment={}
+      this.editAppointment=false
     },
     async deleteAppointment(appointmentDetails) {
       this.loading = true;

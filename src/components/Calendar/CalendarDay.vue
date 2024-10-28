@@ -7,10 +7,10 @@
       :appointment="Appointment"
        />
      </q-dialog>
-     <q-dialog v-model="modals.addAppointment"  >
-      <ModalAddAppointment
-      v-if="modals.addAppointment"
-      v-model="modals.addAppointment"
+     <q-dialog v-model="storeAppointments.appointmentModal"  >
+      <appointmentModal
+      v-if="storeAppointments.appointmentModal"
+      v-model="storeAppointments.appointmentModal"
       :time="time"
       :duration="duration"
       :date="storeAppointments.selectedDate"
@@ -183,7 +183,7 @@ import '@quasar/quasar-ui-qcalendar/src/QCalendarTransitions.sass'
 import '@quasar/quasar-ui-qcalendar/src/QCalendarDay.sass'
 import { useStoreAppointments } from 'src/stores/storeAppointments'
 import { ref, reactive,onMounted,onBeforeUnmount,computed,watch } from 'vue'
-import ModalAddAppointment from 'src/components/PaymentsAndAppointments/ModalAddAppointment.vue'
+import appointmentModal from 'src/components/appointmentModal.vue'
 import NavigationBar from 'src/components/Calendar/NavigationBar.vue'
 import CalendarAppointmentCard from './CalendarAppointmentCard.vue'
 import ModalEditAppointment from '../PaymentsAndAppointments/ModalEditAppointment.vue'
@@ -305,7 +305,7 @@ import ModalEditAppointment from '../PaymentsAndAppointments/ModalEditAppointmen
                     }
 
         console.log(time.value,duration.value,'hiSS')
-        modals.addAppointment=true
+        storeAppointments.TOGGLE_APPOINTMENT()
         mouseDown.value = false
       }
     }
@@ -549,7 +549,7 @@ import ModalEditAppointment from '../PaymentsAndAppointments/ModalEditAppointmen
   showAppointment:false,
   editAppointment:false
  })
- watch(() => modals.addAppointment, (currentValue, oldValue) => {
+ watch(() => storeAppointments.appointmentModal, (currentValue, oldValue) => {
         if(currentValue===false){
           anchorDayTimeIdentifierVisible.value=false
         }

@@ -278,7 +278,7 @@ import ModalDeletePatient from 'src/components/Patients/ModalDeletePatient.vue'
 import Patient from 'src/components/Patients/Patient.vue'
 import ModalAddPayment from 'src/components/PaymentsAndAppointments/ModalAddPayment.vue'
 import AppointmentsPatientView from 'src/components/PaymentsAndAppointments/AppointmentsPatientView.vue'
-import ModalAddAppointment from 'src/components/PaymentsAndAppointments/ModalAddAppointment.vue'
+import ModalAddAppointment from 'src/components/PaymentsAndAppointments/appointmentModal.vue'
 import PaymentsPatientView from 'src/components/PaymentsAndAppointments/PaymentsPatientView.vue'
 import InvoicesPatientView from 'src/components/PaymentsAndAppointments/InvoicesPatientView.vue'
 import { IonSearchbar, IonHeader, IonIcon , IonToolbar ,IonPage ,IonContent,modalController} from '@ionic/vue';

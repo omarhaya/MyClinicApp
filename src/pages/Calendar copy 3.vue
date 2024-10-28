@@ -97,7 +97,7 @@ import NavigationBar from 'src/components/Calendar/NavigationBar.vue'
 import { useStoreAppointments } from 'src/stores/storeAppointments';
 import { storeToRefs } from 'pinia'
 import { useStoreAuth } from 'src/stores/storeAuth';
-import ModalAddAppointment from 'src/components/PaymentsAndAppointments/ModalAddAppointment.vue'
+import ModalAddAppointment from 'src/components/PaymentsAndAppointments/appointmentModal.vue'
 import Popover from 'src/components/Calendar/Popover.vue'
 import MobileInvoiceModal from 'src/components/MobileInvoiceModal.vue';
 import MobileAppointmentPopup from 'src/components/MobileAppointmentPopup.vue'

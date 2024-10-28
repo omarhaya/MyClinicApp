@@ -1,6 +1,6 @@
 <template>
       <q-dialog v-model="modals.addAppointment" persistent >
-      <ModalAddAppointment
+      <appointmentModal
       v-if="modals.addAppointment"
       v-model="modals.addAppointment"
       :patientId="patient.patientId"
@@ -102,7 +102,7 @@
  import ModalDeletePatient from './ModalDeletePatient.vue'
  import { date } from 'quasar'
  import { useRouter } from 'vue-router'
- import ModalAddAppointment from '../PaymentsAndAppointments/ModalAddAppointment.vue'
+ import appointmentModal from '../appointmentModal.vue'
  import ModalEditPatient from './ModalEditPatient.vue'
 /*
  props

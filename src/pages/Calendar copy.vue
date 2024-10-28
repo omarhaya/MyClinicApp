@@ -155,7 +155,7 @@
 import VueCal from 'vue-cal'
 import 'vue-cal/dist/vuecal.css'
 import {ref,reactive,computed,onMounted,watch} from 'vue'
-import ModalAddAppointment from 'src/components/PaymentsAndAppointments/ModalAddAppointment.vue'
+import ModalAddAppointment from 'src/components/PaymentsAndAppointments/appointmentModal.vue'
 import NavigationBar from 'src/components/Calendar/NavigationBar.vue'
 import moment from 'moment'
 import {

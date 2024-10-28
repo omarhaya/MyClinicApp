@@ -22,6 +22,9 @@
       <span> <div v-if="storeWorks.invoiceWorks[payment.invoiceId]" v-for="subtotal in storeWorks.invoiceWorks[payment.invoiceId].subTotals" class="price center column">
       <div  class="col flex text-green-7">+<span class="currency">{{(subtotal.currency)}} </span>{{formatMoney(payment.paid) }}</div>
      </div>
+     <div v-else  class="price center column">
+      <div  class="col flex text-green-7">  <q-skeleton animation="blink" type="text" width="100px" /></div>
+     </div>
         <!-- <div class="center column price">
           <q-circular-progress
 
@@ -90,7 +93,7 @@ const isOpen=ref(false)
   const storePayments=useStorePayments()
   const storePatients=useStorePatients()
   const storeInvoices=useStoreInvoices()
-const skill=ref(60)
+  const skill=ref(60)
    /*
     Styling
    */

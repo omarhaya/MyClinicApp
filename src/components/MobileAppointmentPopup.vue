@@ -5,8 +5,14 @@
             <q-toolbar-title >
               <!-- Add New Appointment -->
             </q-toolbar-title>
+            <q-btn flat round color="white" icon="edit"
+            @click="
+            storeAppointments.menu[props.event.extendedProps.appointmentId] = false;
+            storeAppointments.editAppointment = true;
+            storeAppointments.currentAppointment= props.event
+            openAppointmentModal()"/>
             <q-btn flat round color="white" icon="delete"   @click="() => {  storeAppointments.deleteAppointment(event);cancel()}"/>
-            <q-btn flat round color="white" icon="edit"   @click="storeAppointments.menu[event.extendedProps.appointmentId] = false"/>
+
           </q-toolbar>
                   <div class="row">
                   <div class="col">
@@ -97,9 +103,10 @@
 </template>
 <script setup>
 import { useStoreAppointments } from 'src/stores/storeAppointments';
-import { ref,computed } from 'vue';
- import { date } from 'quasar'
- import { IonButtons, IonButton, IonSpinner, IonHeader, IonContent, IonToolbar, IonTitle, IonItem, IonCheckbox, IonPage, modalController, } from '@ionic/vue';
+import { ref,computed,toRefs,toRef,watchEffect } from 'vue';
+import { date } from 'quasar'
+import { IonButtons, IonButton, IonSpinner, IonHeader, IonContent, IonToolbar, IonTitle, IonItem, IonCheckbox, IonPage, modalController, } from '@ionic/vue';
+import MobileAppointmentModal from './MobileAppointmentModal.vue';
  const cancel = () => modalController.dismiss(null, 'cancel');
 /*
    props
@@ -113,8 +120,13 @@ modelValue:{
 event:{
   type: Object,
 },
+pageRef:{
+type: Object,
+required: true
+},
 })
-
+const event = toRef(props, 'event'); // Make `event` reactive
+const { pageRef } = toRefs(props);
 const storeAppointments=useStoreAppointments()
 const patient=ref(props.event.extendedProps.patientDetails)
 
@@ -131,4 +143,33 @@ function getInitials(name) {
           const lastName = nameParts[nameParts.length - 1].charAt(0).toUpperCase();
           return `${firstName}${lastName}`;
        }
+       const openAppointmentModal = async () => {
+        console.log(props.event.start,'startTime')
+  const modal = await modalController.create({
+    component: MobileAppointmentModal,
+    isOpen:storeAppointments.modal,
+    componentProps: {
+      appointment:event.value// Replace 'yourValue' with the value you want to pass
+    },
+    presentingElement: pageRef.value.$el,
+  });
+  storeAppointments.modal=true
+  modal.present();
+  const { data, role } = await modal.onWillDismiss();
+  modal.onDidDismiss().then((data) => {
+    // You can handle the data returned from the modal here
+
+    storeAppointments.CLEAR_DATA() // Call cancel here
+    if (role === 'confirm') {
+      cancel();
+      storeAppointments.modal = false;
+      console.log('data', data);
+    }
+  });
+
+};
+watchEffect(() => {
+  console.log(props.event, 'Reactive Event');
+  // Perform any updates based on changes to props.event.value
+});
 </script>

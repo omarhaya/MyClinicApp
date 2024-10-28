@@ -29,7 +29,7 @@
 
 
          <q-dialog v-model="modals.addAppointment" persistent >
-      <ModalAddAppointment
+      <appointmentModal
       v-if="modals.addAppointment"
       v-model="modals.addAppointment"
        />
@@ -159,7 +159,7 @@ import {
 } from "ionicons/icons";
 import { useIonRouter } from "@ionic/vue";
 import { useStorePatients } from "src/stores/storePatients";
-import ModalAddAppointment from "src/components/PaymentsAndAppointments/ModalAddAppointment.vue";
+import appointmentModal from "src/components/appointmentModal.vue";
 import ModalAddPatient from "src/components/Patients/ModalAddPatient.vue";
 import ModalDeletePatient from "src/components/Patients/ModalDeletePatient.vue";
 import { Platform } from "quasar";

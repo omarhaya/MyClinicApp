@@ -174,7 +174,7 @@ import { useStoreInvoices } from '../stores/storeInvoices'
 // import Modal from 'src/components/Modal.vue'
 import InvoiceModal from 'src/components/InvoiceModal.vue';
 import { useQuasar } from 'quasar'
-import ModalAddAppointment from 'src/components/PaymentsAndAppointments/ModalAddAppointment.vue'
+import ModalAddAppointment from 'src/components/PaymentsAndAppointments/appointmentModal.vue'
 import PaymentModal from 'src/components/PaymentModal.vue'
 import { useStorePayments } from 'src/stores/storePayments'
 

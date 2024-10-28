@@ -1,11 +1,11 @@
 <template>
   <div class="calendar-container row">
     <!-- FullCalendar Component -->
-    <q-dialog v-model="modals.addAppointment">
+    <q-dialog v-model="storeAppointments.appointmentModal">
       <q-card>
-        <ModalAddAppointment
-          v-if="modals.addAppointment"
-          v-model="modals.addAppointment"
+        <appointmentModal
+          v-if="storeAppointments.appointmentModal"
+          v-model="storeAppointments.appointmentModal"
           :appointment="appointment"
           :startTime="appointment.eventTimeStart"
           :endTime="appointment.eventTimeEnd"
@@ -31,6 +31,8 @@
               v-model="storeAppointments.menu[arg.event.extendedProps.appointmentId]"
               :close-on-content-click="false"
               location="end"
+              :persistent="handleMenuClose"
+
             >
               <template v-slot:activator="{ props }">
                 <div @click="openAppointmentPopup(arg.event)" v-bind="props" class="event-content">
@@ -89,11 +91,11 @@ import NavigationBar from 'src/components/Calendar/NavigationBar.vue'
 import { useStoreAppointments } from 'src/stores/storeAppointments';
 import { storeToRefs } from 'pinia'
 import { useStoreAuth } from 'src/stores/storeAuth';
-import ModalAddAppointment from 'src/components/PaymentsAndAppointments/ModalAddAppointment.vue'
-import Popover from 'src/components/Calendar/Popover.vue'
+import appointmentModal from 'src/components/appointmentModal.vue'
+import Popover from "src/components/Scehduler/Popover.vue"
 import MobileInvoiceModal from 'src/components/MobileInvoiceModal.vue';
 import MobileAppointmentPopup from 'src/components/MobileAppointmentPopup.vue'
-import MobileApppointmentModal from 'src/components/MobileAppointmentModal.vue'
+import MobileAppointmentModal from 'src/components/MobileAppointmentModal.vue'
 import scrollGridPlugin from '@fullcalendar/scrollgrid';
 import ModalAddPatient from '../Patients/ModalAddPatient.vue';
 import { useStorePatients } from 'src/stores/storePatients';
@@ -304,12 +306,12 @@ if(mobile.value){
  openAppointmentModal(newAppointment)
 }
 else {
-modals.addAppointment=true
+storeAppointments.TOGGLE_APPOINTMENT()
 }
 
 
 }
-watch(() => modals.addAppointment, (currentValue, oldValue) => {
+watch(() => storeAppointments.appointmentModal, (currentValue, oldValue) => {
        if(currentValue!==true){
         handleEventUnselect ()
        }
@@ -318,6 +320,7 @@ watch(() => modals.addAppointment, (currentValue, oldValue) => {
 
 function handleEventUnselect () {
   console.log('finish')
+  storeAppointments.editAppointment=false
   let calendarApi = calendar.value.getApi()
   calendarApi.unselect()
 }
@@ -329,6 +332,13 @@ if (confirm(`Are you sure you want to delete the event '${clickInfo.event.title}
 }
 }
 
+// Only close the menu if the dialog is not open
+const handleMenuClose =computed (() => {
+  if (!storeAppointments.appointmentModal) {
+    return false
+  }
+  else return true
+})
 function handleEvents(events) {
 currentEvents.value = events;
 }
@@ -407,7 +417,7 @@ onMounted(() => {
          }
        { await storeAppointments.getDayAppointments(newValue)}
        })
-       watch(modals.addAppointment, async (newValue, oldValue) => {
+       watch(storeAppointments.appointmentModal, async (newValue, oldValue) => {
        if (newValue=false) {
         let calendarApi = selectInfo.view.calendar
         calendarApi.unselect()
@@ -463,6 +473,7 @@ modalController.dismiss(null, 'cancel')
   const modal = await modalController.create({
     component: MobileAppointmentPopup,
     componentProps: {
+      pageRef:props.pageRef,
       event:event // Replace 'yourValue' with the value you want to pass
     },
     // presentingElement: page.value.$el,
@@ -476,7 +487,7 @@ modalController.dismiss(null, 'cancel')
   console.log(storeAppointments.menu,'hiii')
   modal.present();
   const { data, role } = await modal.onWillDismiss();
-  // modal.onDidDismiss(() => storeAppointments.CLEAR_DATA());
+  modal.onDidDismiss(() => storeAppointments.CLEAR_DATA());
 
   if (role === 'confirm') {
     console.log('data', data);
@@ -494,7 +505,7 @@ modalController.dismiss(null, 'cancel')
 const { pageRef } = toRefs(props);
 const openAppointmentModal = async (newAppointment) => {
   const modal = await modalController.create({
-    component: MobileApppointmentModal,
+    component: MobileAppointmentModal,
     isOpen:storeAppointments.modal,
     componentProps: {
       appointment:newAppointment// Replace 'yourValue' with the value you want to pass

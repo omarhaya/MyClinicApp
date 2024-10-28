@@ -1,8 +1,11 @@
 <template>
 
       <q-toolbar v-if="!mobile" class="bg-primary text-white" style="min-width: 340px;background-color:red;">
-            <q-toolbar-title >
+          <q-toolbar-title v-if="!storeAppointments.editAppointment" >
               Add New Appointment
+            </q-toolbar-title>
+            <q-toolbar-title v-else >
+              Edit Appointment
             </q-toolbar-title>
             <q-btn flat round color="white" icon="close" v-close-popup></q-btn>
           </q-toolbar>
@@ -12,7 +15,7 @@
         <q-card-section class="q-pt-none">
       <q-select
         filled
-        v-model="appointment.title"
+        v-model="storeAppointments.appointment.title"
         behavior="menu"
         use-chips
         stack-label
@@ -70,15 +73,15 @@
         </template>
       </q-select>
 
-     <q-input v-model="appointment.startTime" type="time" filled  label="Enter date & time" ></q-input>
-     <q-input v-model="appointment.endTime" type="time" filled  label="Enter date & time" ></q-input>
-       <q-input v-model="appointment.startDate" type="date" filled  label="Date" ></q-input>
-         <q-input v-model="appointment.duration" filled  label="Duration" ></q-input>
-         <q-input v-model="appointment.bgcolor" filled  label="color" ></q-input>
-           <q-input v-model="appointment.details" filled  label="Details" ></q-input>
+     <q-input v-model="storeAppointments.appointment.startTime" type="time" filled  label="Enter date & time" ></q-input>
+     <q-input v-model="storeAppointments.appointment.endTime" type="time" filled  label="Enter date & time" ></q-input>
+       <q-input v-model="storeAppointments.appointment.startDate" type="date" filled  label="Date" ></q-input>
+         <q-input v-model="storeAppointments.appointment.duration" filled  label="Duration" ></q-input>
+         <q-input v-model="storeAppointments.appointment.bgcolor" filled  label="color" ></q-input>
+           <q-input v-model="storeAppointments.appointment.details" filled  label="Details" ></q-input>
 
    <q-tabs
-          v-model="appointment.doctor"
+          v-model="storeAppointments.appointment.doctor"
           dense
           class="text-grey"
           active-color="primary"
@@ -90,13 +93,14 @@
         </q-tabs>
         </q-card-section>
         <div class="column">
-          <q-toggle class="col" v-model="appointment.sendWhatsAppMessage"   label="Send WhatsApp Message"></q-toggle>
-          <q-toggle class="col" v-model="appointment.sendWhatsAppReminder"   label="Send Sameday Reminder(At 12:00 PM)"></q-toggle>
+          <q-toggle class="col" v-model="storeAppointments.appointment.sendWhatsAppMessage"   label="Send WhatsApp Message"></q-toggle>
+          <q-toggle class="col" v-model="storeAppointments.appointment.sendWhatsAppReminder"   label="Send Sameday Reminder(At 12:00 PM)"></q-toggle>
         </div>
 
 
         <q-card-actions v-if="!mobile" align="left" class="text-primary">
-          <q-btn  label="Add Appointment" color="primary" type="submit" />
+          <q-btn v-if="!storeAppointments.editAppointment"  label="Add Appointment" color="primary" type="submit" :loading="storeAppointments.loading"  icon="add" />
+          <q-btn v-else label="Update Appointment" color="primary" type="submit" :loading="storeAppointments.loading"  icon="cloud_upload" />
           <q-btn label="Reset"  type="reset" color="primary" flat class="q-ml-sm" />
           <q-btn flat label="Cancel" v-close-popup />
         </q-card-actions>
@@ -108,12 +112,13 @@
 
 </template>
 <script setup>
-import { computed, ref } from 'vue'
+import { computed, ref,watchEffect } from 'vue'
 import {useStoreAppointments} from 'stores/storeAppointments'
 import { useStorePatients } from 'src/stores/storePatients'
 import { useStoreAuth } from 'src/stores/storeAuth'
 import { uid, useQuasar } from 'quasar'
 import { Platform } from 'quasar'
+import dayjs from 'dayjs';
 
 /*
  Quasar Lib
@@ -228,7 +233,7 @@ doctorId:{
 /*
  addAppointment
 */
-  const appointment = ref({
+  storeAppointments.appointment = ref({
     startTime:props.startTime,
     endTime:props.endTime,
     startDate:props.startDate,
@@ -252,7 +257,7 @@ doctorId:{
     function submitAppointmentFormMobile (){
       const form = formRef.value;
   if (form.checkValidity()) {
-    if (appointment.title === null) {
+    if (storeAppointments.appointment.title === null) {
   $q.notify({
     message: 'Choose a Patient please.',
     color: 'negative',
@@ -288,8 +293,8 @@ doctorId:{
       //  }
       onSubmit()
      }
-  const onSubmit= ()=> {
-    if (!appointment.value.title) {
+  async function onSubmit () {
+    if (!storeAppointments.appointment.title) {
     $q.notify({
       color: 'negative',
       message: 'Please select a patient.',
@@ -298,38 +303,96 @@ doctorId:{
   }
 
 
-  console.log(appointment.value)
-  if (appointment.value.sendWhatsAppReminder==true&&!appointment.value.title.phone||appointment.value.sendWhatsAppMessage==true&&!appointment.value.title.phone
+  console.log(storeAppointments.appointment)
+  if (storeAppointments.appointment.sendWhatsAppReminder==true&&!storeAppointments.appointment.title.phone||storeAppointments.appointment.sendWhatsAppMessage==true&&!storeAppointments.appointment.title.phone
   ) {
     $q.notify({
       color: 'negative',
       message: 'Patient Has No Phone Number assigned.',
     })
-    appointment.value.sendWhatsAppReminder==false
+    storeAppointments.appointment.sendWhatsAppReminder==false
 
   }
-  storeAppointments.addAppointment(appointment.value)
+  if (storeAppointments.editAppointment) {
+    console.log('u[pdating ]',storeAppointments.appointment)
+   await storeAppointments.updateAppointment(storeAppointments.appointment)
+  }
+  else {
+    console.log('adding')
+    await storeAppointments.addAppointment(storeAppointments.appointment)
+  }
+
   closeModal()
 
           }
 
        const onReset= ()=> {
-        appointment.value.duration = ''
-        appointment.value.title = null
-        appointment.value.startTime = props.startTime
-        appointment.value.endTime = props.endTime
-        appointment.value.startDate = props.startDate
-        appointment.value.details = 'Check up'
-        appointment.value.doctor = ''
-        appointment.value.bgcolor = 'orange'
-        appointment.value.sendWhatsAppMessage=false
-        appointment.value.sendWhatsAppReminder=false
+        storeAppointments.appointment.duration = ''
+        storeAppointments.appointment.title = null
+        storeAppointments.appointment.startTime = props.startTime
+        storeAppointments.appointment.endTime = props.endTime
+        storeAppointments.appointment.startDate = props.startDate
+        storeAppointments.appointment.details = 'Check up'
+        storeAppointments.appointment.doctor = ''
+        storeAppointments.appointment.bgcolor = 'orange'
+        storeAppointments.appointment.sendWhatsAppMessage=false
+        storeAppointments.appointment.sendWhatsAppReminder=false
         // moneyhavetopayRef.value.resetValidation()
         // moneypaidRef.value.resetValidation()
         // detailsRef.value.resetValidation()
       }
 
+ /*
+ Edit Modal Data
+ */
+ if (storeAppointments.editAppointment) {
+  const patient=storePatients.patients.find(doc => doc.patientId === storeAppointments.currentAppointment.extendedProps.patientDetails.patientId)
+  const title= storeAppointments.currentAppointment.title
+  const  startDate= dayjs(storeAppointments.currentAppointment.startStr).format('YYYY-MM-DD')
+   const endDate= dayjs(storeAppointments.currentAppointment.endStr).format('YYYY-MM-DD')
+   const  startTime= dayjs(storeAppointments.currentAppointment.startStr).format('HH:mm:ss')
+   const endTime= dayjs(storeAppointments.currentAppointment.endStr).format('HH:mm:ss')
+   const doctor = storeAuth.doctors.find(doc => doc.doctorId === storeAppointments.currentAppointment._def.resourceIds[0])
+   console.log(doctor,'time')
+        storeAppointments.appointment.title = patient
+        storeAppointments.appointment.startTime = startTime
+        storeAppointments.appointment.endTime = endTime
+        storeAppointments.appointment.startDate = startDate
+        storeAppointments.appointment.sendWhatsAppMessage=storeAppointments.currentAppointment.extendedProps.sendWhatsAppMessage
+        storeAppointments.appointment.sendWhatsAppReminder=storeAppointments.currentAppointment.extendedProps.sendWhatsAppReminder
+        storeAppointments.appointment.doctor = doctor
+        storeAppointments.appointment.appointmentId =  storeAppointments.currentAppointment.extendedProps.appointmentId
+    //  console.log(storeInvoices.currentInvoiceArray[0],'currentinvoicearray00')
+      //  const currentInvoice = storeInvoices.currentInvoiceArray
+      //  docId.value = currentInvoice.docId
+      //  patient.value=storePatients.patients.find(doc => doc.patientId === currentInvoice.patientId)
+      //  invoiceDate.value=currentInvoice.invoiceDate
+      //  invoiceDateUnix.value =currentInvoice.invoiceDateUnix
+      //  let workItemList = []
+      //  currentInvoice.workItemList.forEach(work =>{
+      // let  workItem={}
+      //   workItem.label=work.label
+      //   workItem.color=work.color
+      //   workItem.price=work.price.replace(/\B(?=(\d{3})+(?!\d))/g, ',')
+      //   workItem.discount=work.discount.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',')
+      //   workItem.currency=work.currency
+      //   workItem.percent=(work.discount/work.price*100).toFixed(2)
+      //   workItem.description=work.description
+      //   workItem.doctor=work.doctor
+      //   workItem.teeth=work.teeth
+      //   workItem.paymentTerms=work.paymentTerms
+      //   workItem.workId=work.workId
+      //   workItem.invoiceId=work.invoiceId
+      //   workItem.paymentDueDate=new Date(work.paymentDueDateUnix).toLocaleDateString("en-us", dateOptions)
+      //   workItem.paymentDueDateUnix=work.paymentDueDateUnix
+      //   workItem.docId=work.docId
+      //   // workItem.patientDetails=patient.value
 
+      //   workItemList.push(workItem)
+      // })
+      // console.log(workItemList,'workke')
+      // storeInvoices.workItemList=workItemList
+     }
 
 /*
    emits
@@ -370,7 +433,10 @@ doctorId:{
 const mobile = computed(() => {
   return Platform.is.mobile && !Platform.is.desktop;
 })
-
+watchEffect(() => {
+  console.log(props.startTime, 'Reactive Event');
+  // Perform any updates based on changes to props.event.value
+});
 </script>
 
 <style lang="scss">
