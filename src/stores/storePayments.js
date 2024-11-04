@@ -36,6 +36,7 @@ export const useStorePayments= defineStore('storePayments', {
        appointmentDate:null,
        paymentInvoices:null,
        payments:[],
+       paymentPeriod:[],
        dayPayments:[],
        editPayment: null,
        paymentModal: null,
@@ -174,6 +175,35 @@ export const useStorePayments= defineStore('storePayments', {
       console.error('Error deleting payment:', error);
       // Handle error here
     }
+  },
+  async fetchPaymentsByDate(startDate, endDate) {
+    const paymentsRef = collection(db, 'payments');
+    const q = query(paymentsRef, where('date', '>=', startDate), where('date', '<=', endDate));
+    const querySnapshot = await getDocs(q);
+
+    this.payments = querySnapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data()
+    }));
+  },
+
+  getPaymentsByPeriod(period = 'day') {
+    const groupedPayments = {};
+
+    this.payments.forEach(payment => {
+      const formattedDate = dayjs(payment.date).format(period === 'day' ? 'YYYY-MM-DD' : 'YYYY-MM');
+      
+      if (!groupedPayments[formattedDate]) {
+        groupedPayments[formattedDate] = 0;
+      }
+      
+      groupedPayments[formattedDate] += payment.paymentamount;
+    });
+
+    return Object.keys(groupedPayments).map(date => ({
+      date,
+      total: groupedPayments[date]
+    }));
   },
   async getdayPayments(date) {
     this.loading=true

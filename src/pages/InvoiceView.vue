@@ -133,22 +133,7 @@
         </div>
       </div>
         <div class="right col"  v-if="storeWorks.invoiceWorks[currentInvoice.invoiceId]">
-          <q-circular-progress
-        class="q-ma-md"
-      show-value
-      font-size="15px"
-      :value="storeWorks.invoiceWorks[currentInvoice.invoiceId].overallPercentage==100?storeWorks.invoiceWorks[currentInvoice.invoiceId].overallPercentage:storeWorks.invoiceWorks[currentInvoice.invoiceId].overallPercentage-1"
-      :color="storeWorks.invoiceWorks[currentInvoice.invoiceId].overallPercentage==100?'teal-4':'orange'"
-      track-color="grey-3"
-      size="90px"
-      :thickness="0.15"
-      rounded
-    >
-    <span v-if="storeWorks.invoiceWorks[currentInvoice.invoiceId].overallPercentage<100">
-     {{storeWorks.invoiceWorks[currentInvoice.invoiceId].overallPercentage+'%'}}</span>
-     <q-icon v-else name="done" size="35px" color="teal-4"> </q-icon>
-    </q-circular-progress>
-
+    <GrowingCircularProgress class="q-ma-md" :color="storeWorks.invoiceWorks[currentInvoice.invoiceId].overallPercentage==100?'teal-4':'orange'" :value="storeWorks.invoiceWorks[currentInvoice.invoiceId].overallPercentage==100?storeWorks.invoiceWorks[currentInvoice.invoiceId].overallPercentage:storeWorks.invoiceWorks[currentInvoice.invoiceId].overallPercentage-1"/>
         </div>
       </div>
 
@@ -327,6 +312,7 @@ import { IonAccordion, IonAccordionGroup, IonItem, IonLabel, IonPage, IonHeader,
 import { Platform } from 'quasar'
 import MobileInvoiceModal from 'src/components/MobileInvoiceModal.vue'
 import MobilePaymentModal from 'src/components/MobilePaymentModal.vue'
+import GrowingCircularProgress from '../components/GrowingCircularProgress.vue';
 
 const $=useQuasar()
 const page=ref()

@@ -48,7 +48,7 @@ exports.processSignUp = functions.auth.user().onCreate(async (user) => {
 //Twilio messeaging
 //appointment_reservation
 const accountSid = 'AC6714de1ae7d6324a62f0acbc62195ed6';
-const authToken = '8ad33f87bf0f306441d06d5747f2f429';
+const authToken = '54f4eae53868b3cb7f319086cb4678bf';
 const client = new twilio(accountSid, authToken);
 
 exports.sendWhatsAppAppointment = functions.https.onCall((data, context) => {
