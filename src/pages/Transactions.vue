@@ -233,7 +233,14 @@
         console.log('hi')
       }
   onMounted(() => {
-        storePayments.getdayPayments(storePayments.selectedDate)
+    if (storePayments.selectedDate && storePayments.selectedDate.from) {
+         storePayments.getIntervalPayments(storePayments.selectedDate.from, storePayments.selectedDate.to);
+        // Perform other actions if needed
+      }
+      else{
+         storePayments.getdayPayments(storePayments.selectedDate);
+      }
+
         console.log(storePayments.selectedDate,'storePayments.selectedDate')
            watch(selectedDate, async (newValue, oldValue) => {
             console.log(selectedDate, 'gi');

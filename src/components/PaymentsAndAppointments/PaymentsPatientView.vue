@@ -115,10 +115,10 @@ const tableRef= ref()
 /*
   Payments
 */
-  storePayments.getPayments(props.patientId)
+  storePayments.getPatientPayments(props.patientId)
   const payments=computed(()=>{
 
-    const selectedPayments = storePayments.payments[props.patientId]
+    const selectedPayments = storePayments.patientPayments[props.patientId]
 
 if (selectedPayments) {
   selectedPayments.forEach(payment => {

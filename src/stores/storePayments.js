@@ -12,6 +12,7 @@ import {modalController, } from '@ionic/vue';
 import { currency } from 'maz-ui'
 import { computed } from 'vue'
 import { Platform } from 'quasar';
+import dayjs from 'dayjs'
 
 let paymentsCollectionRef
 let paymentsCollectionQuery
@@ -35,7 +36,7 @@ export const useStorePayments= defineStore('storePayments', {
        patient:null,
        appointmentDate:null,
        paymentInvoices:null,
-       payments:[],
+       patientPayments:[],
        paymentPeriod:[],
        dayPayments:[],
        editPayment: null,
@@ -73,8 +74,8 @@ export const useStorePayments= defineStore('storePayments', {
 
     // If payment is not found in invoicePayments, search in payments
     if (!this.currentPaymentArray) {
-      this.currentPaymentArray = Object.keys(this.payments).reduce((acc, patientId) => {
-        const foundPayment = this.payments[patientId].find(payment => payment.paymentId === paymentId);
+      this.currentPaymentArray = Object.keys(this.patientPayments).reduce((acc, patientId) => {
+        const foundPayment = this.patientPayments[patientId].find(payment => payment.paymentId === paymentId);
         return foundPayment ? foundPayment : acc;  // If found, return it, otherwise keep searching
       }, null);
     }
@@ -177,27 +178,58 @@ export const useStorePayments= defineStore('storePayments', {
     }
   },
   async fetchPaymentsByDate(startDate, endDate) {
-    const paymentsRef = collection(db, 'payments');
-    const q = query(paymentsRef, where('date', '>=', startDate), where('date', '<=', endDate));
-    const querySnapshot = await getDocs(q);
+    // Define query with start and end date for range-based fetching
+    const q = query(
+      paymentsCollectionRef,
+      where('date', '>=', startDate),
+      where('date', '<=', endDate)
+    );
 
-    this.payments = querySnapshot.docs.map(doc => ({
-      id: doc.id,
-      ...doc.data()
-    }));
+    // Real-time listener for live updates
+    onSnapshot(q, (querySnapshot) => {
+      const payments = [];
+
+      querySnapshot.forEach((doc) => {
+        const payment = {
+          paymentId: doc.id,
+          // invoiceId: doc.data().invoiceId,
+          paid: doc.data().paid,
+          date: doc.data().date,
+          // dateUnix: doc.data().dateUnix,
+          // workId: doc.data().workId,
+          // patientId: doc.data().patientId,
+          // currency: doc.data().currency,
+        };
+
+        // Load related invoice and work data
+        // this.getPaymentsForInvoice(payment.invoiceId);
+        // this.storeWorks.getWork(payment.workId);
+
+        payments.push(payment);
+      });
+
+      // Store the detailed payment data for the date range in dayPayments
+      this.paymentPeriod = payments;
+      this.groupedPayments = this.getPaymentsByPeriod('day');
+      // this.dayPayments[this.selectedDate]=payments
+      console.log(this.paymentPeriod, 'this.paymentPeriod');
+      console.log(this.groupedPayments, 'this.groupedPayments');
+    });
   },
 
   getPaymentsByPeriod(period = 'day') {
     const groupedPayments = {};
 
-    this.payments.forEach(payment => {
+    // Loop through paymentPeriod to accumulate payments by formatted date
+    this.paymentPeriod.forEach(payment => {
       const formattedDate = dayjs(payment.date).format(period === 'day' ? 'YYYY-MM-DD' : 'YYYY-MM');
-      
+
       if (!groupedPayments[formattedDate]) {
         groupedPayments[formattedDate] = 0;
       }
-      
-      groupedPayments[formattedDate] += payment.paymentamount;
+
+      // Sum up the payment amount for each period
+      groupedPayments[formattedDate] += Number(payment.paid) || 0;
     });
 
     return Object.keys(groupedPayments).map(date => ({
@@ -228,46 +260,46 @@ export const useStorePayments= defineStore('storePayments', {
      this.dayPayments[date]=payments
  })
  this.loading=false
-
+console.log(this.dayPayments,'dayPayments')
 },
 async getIntervalPayments(startDate, endDate) {
-  const startDateUnix = Math.floor(new Date(startDate).getTime() / 1000).toString();
-  // Adjust endDate to be one day after the provided endDate
-  let endDateObject = new Date(endDate);
-  endDateObject.setDate(endDateObject.getDate() + 1); // Adding one day
-  const endDateUnix = Math.floor(endDateObject.getTime() / 1000).toString();
+ // Define query with start and end date for range-based fetching
+ const q = query(
+  paymentsCollectionRef,
+  where('date', '>=', startDate),
+  where('date', '<=', endDate)
+);
 
-  this.loading = true;
+// Real-time listener for live updates
+onSnapshot(q, (querySnapshot) => {
+  const payments = [];
 
-  const paymentsCollectionQuery = query(
-    paymentsCollectionRef,
-    where('dateUnix', '>=', startDateUnix),
-    where('dateUnix', '<', endDateUnix) // Use '<' to include until the day before the next day
-  );
+  querySnapshot.forEach((doc) => {
+    const payment = {
+      paymentId: doc.id,
+      invoiceId: doc.data().invoiceId,
+      paid: doc.data().paid,
+      date: doc.data().date,
+      dateUnix: doc.data().dateUnix,
+      workId: doc.data().workId,
+      patientId: doc.data().patientId,
+      currency: doc.data().currency,
+    };
 
-  getPaymentsSnapshot = onSnapshot(paymentsCollectionQuery, (querySnapshot) => {
-    const payments = [];
-    querySnapshot.forEach((doc) => {
-      let payment = {
-        paymentId: doc.id,
-        invoiceId: doc.data().invoiceId,
-        paid: doc.data().paid,
-        dateUnix: doc.data().dateUnix,
-        workId: doc.data().workId,
-        currency: doc.data().currency,
-        pateintId:doc.data().patientId,
-      };
+    // Load related invoice and work data
+    this.getPaymentsForInvoice(payment.invoiceId);
+    this.storeWorks.getWork(payment.workId);
 
-      //  this.getPaymentsForInvoice(payment.invoiceId)
-      //  this.storeWorks.getWork(payment.workId)
-      payments.push(payment);
-    });
-    console.log(payments, 'intervalpayments!!');
-    this.dayPayments[this.selectedDate] = payments;
+    payments.push(payment);
   });
-  this.loading = false;
+
+  // Store the detailed payment data for the date range in dayPayments
+  this.dayPayments[this.selectedDate]=payments
+
+});
 },
-async getPayments(patientId) {
+
+async getPatientPayments(patientId) {
   this.loadingPayments=true
  const paymentsCollectionQuery = query(paymentsCollectionRef,where("patientId", "==", patientId),orderBy('dateUnix','desc'));
  getPaymentsSnapshot=onSnapshot(paymentsCollectionQuery, (querySnapshot) => {
@@ -285,8 +317,8 @@ async getPayments(patientId) {
    this.storeWorks.getWork(payment.workId)
    payments.push(payment)
    })
-   this.payments[patientId]=payments
-   console.log(this.payments[patientId],'paymentssss')
+   this.patientPayments[patientId]=payments
+   console.log(this.patientPayments[patientId],'paymentssss')
 })
 this.loadingPayments=false
 },
@@ -392,9 +424,9 @@ this.loadingPayments=false
       }
     },
     clearPayments(){
-      this.payments=[]
+      this.patientPayments=[]
       this.invoicePayments=[]
-      console.log( this.payments,this.invoicePayments,'cleared')
+      console.log( this.patientPayments,this.invoicePayments,'cleared')
       if (getPaymentsSnapshot) getPaymentsSnapshot() //unsubscribe from any active listener
     },
 

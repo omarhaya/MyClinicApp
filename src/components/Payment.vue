@@ -1,6 +1,6 @@
 <template>
 
-  <ion-item-sliding class="payment" :class="{ 'fade-out': isDeleted }" :style="{ borderLeft: `4px solid ${payment.color}` }" >
+  <ion-item-sliding class="payment" :class="{ 'fade-out': isDeleted }" :style="{ borderLeft: `4px solid ${payment.color || 'grey'}` }">
 
     <!-- <ion-item-options side="start">
       <ion-item-option expandable @click="newPayment" color="success"><q-icon size="25px" name="payment"/>Pay</ion-item-option>
@@ -14,6 +14,10 @@
       <span class="row" v-if="storeWorks.invoiceWorks[payment.invoiceId]" v-for="work in storeWorks.invoiceWorks[payment.invoiceId]">
         <GrowingLinearProgress class="col" :color="work.color" :value="percentageValue(work).value"/>
       </span>
+      <span class="row" v-else >
+        <GrowingLinearProgress class="col" :color="'grey'" :value="0"/>
+      </span>
+
 <!-- <GrowingLinearProgress class="col" :color="'green'" :value="percentageValue"/>
 <GrowingLinearProgress class="col" :value="percentageValue"/> -->
     </span>
