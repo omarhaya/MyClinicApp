@@ -96,5 +96,8 @@ const chartOption = computed(() => {
 </script>
 
 <style scoped>
-
+.chart {
+  width: 100%;
+  touch-action: none;
+}
 </style>
