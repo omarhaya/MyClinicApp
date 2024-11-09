@@ -11,7 +11,7 @@
         <template v-if="totals.length">
           <div v-for="(total, index) in totals" :key="index">
             <h1 class="inner-text">
-              {{ prefix }}<span class="currency">{{ total.currency }}</span>
+              {{ prefix }}<span>{{ total.currency+' ' }}</span>
               <GrowingNumeral :value="(total.totalPaid)"/>
             </h1>
           </div>

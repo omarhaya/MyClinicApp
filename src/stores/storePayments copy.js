@@ -179,7 +179,6 @@ export const useStorePayments= defineStore('storePayments', {
     }
   },
   async fetchPaymentsByDate(startDate, endDate) {
-
     // Define query with start and end date for range-based fetching
     const q = query(
       paymentsCollectionRef,
@@ -189,61 +188,55 @@ export const useStorePayments= defineStore('storePayments', {
 
     // Real-time listener for live updates
     onSnapshot(q, (querySnapshot) => {
-      // Initialize paymentPeriod as an object to hold arrays grouped by currency
-      const paymentGroups = {};
+      const payments = [];
 
       querySnapshot.forEach((doc) => {
         const payment = {
           paymentId: doc.id,
+          // invoiceId: doc.data().invoiceId,
           paid: doc.data().paid,
           date: doc.data().date,
+          // dateUnix: doc.data().dateUnix,
+          // workId: doc.data().workId,
+          // patientId: doc.data().patientId,
           currency: doc.data().currency,
         };
 
-        // Group payments by currency
-        if (!paymentGroups[payment.currency]) {
-          paymentGroups[payment.currency] = [];  // Initialize array if currency group doesn't exist
-        }
+        // Load related invoice and work data
+        // this.getPaymentsForInvoice(payment.invoiceId);
+        // this.storeWorks.getWork(payment.workId);
 
-        paymentGroups[payment.currency].push(payment);  // Add payment to the appropriate currency group
+        payments.push(payment);
       });
 
-      // Store the grouped payments
-      this.paymentPeriod = paymentGroups;
-      this.groupedPayments = this.getPaymentsByPeriod('day');  // or 'month'
+      // Store the detailed payment data for the date range in dayPayments
+      this.paymentPeriod = payments;
+      this.groupedPayments = this.getPaymentsByPeriod('day');
+      // this.dayPayments[this.selectedDate]=payments
       console.log(this.paymentPeriod, 'this.paymentPeriod');
       console.log(this.groupedPayments, 'this.groupedPayments');
     });
   },
 
   getPaymentsByPeriod(period = 'day') {
-    const currencyGroupedPayments = {};
+    const groupedPayments = {};
 
-    // Loop through each currency group in paymentPeriod
-    Object.keys(this.paymentPeriod).forEach(currency => {
-      const payments = this.paymentPeriod[currency];
-      const groupedPayments = {};
-      // Accumulate payments by formatted date for each currency
-      payments.forEach(payment => {
-        const formattedDate = dayjs(payment.date).format(period === 'day' ? 'YYYY-MM-DD' : 'YYYY-MM');
+    // Loop through paymentPeriod to accumulate payments by formatted date
+    this.paymentPeriod.forEach(payment => {
+      const formattedDate = dayjs(payment.date).format(period === 'day' ? 'YYYY-MM-DD' : 'YYYY-MM');
 
-        if (!groupedPayments[formattedDate]) {
-          groupedPayments[formattedDate] = 0;
-        }
+      if (!groupedPayments[formattedDate]) {
+        groupedPayments[formattedDate] = 0;
+      }
 
-        // Sum up the payment amount for each date within the currency
-        groupedPayments[formattedDate] += Number(payment.paid) || 0;
-      });
-
-      // Store the grouped data for the current currency
-      currencyGroupedPayments[currency] = Object.keys(groupedPayments).map(date => ({
-        date,
-        total: groupedPayments[date],
-        currency: currency  // Include the currency in each entry for clarity
-      }));
+      // Sum up the payment amount for each period
+      groupedPayments[formattedDate] += Number(payment.paid) || 0;
     });
-    console.log('curr',currencyGroupedPayments)
-    return currencyGroupedPayments;
+
+    return Object.keys(groupedPayments).map(date => ({
+      date,
+      total: groupedPayments[date]
+    }));
   },
   async getdayPayments(date) {
     this.loading=true

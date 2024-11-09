@@ -57,7 +57,7 @@
     <!-- Card for New Payments -->
     <CardWidget
       class="col q-ma-xs"
-      label="New"
+      label="Number"
       :prefix="''"
       :value="payments.length"
       :suffix="''"

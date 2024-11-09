@@ -30,8 +30,8 @@
 
    </div>
    <div class="right justify-end flex row">
-     <div v-if="storeWorks.invoiceWorks[payment.invoiceId]" v-for="subtotal in storeWorks.invoiceWorks[payment.invoiceId].subTotals" class="price center row">
-    <div  class=" flex text-bold text-green-7">+<span class="currency">{{(subtotal.currency)}} </span>{{formatMoney(payment.paid) }}</div>
+     <div v-if="storeWorks.invoiceWorks[payment.invoiceId]" class="price center row">
+    <div  class=" flex text-bold text-green-7">+<span class="currency">{{(payment.currency)}} </span>{{formatMoney(payment.paid) }}</div>
      <!-- <span class="col"></span> -->
 
 

@@ -1,8 +1,8 @@
 <template>
   <ion-page>
     <IonContent>
-      <!-- <v-chart class="chart" :option="chartOption" autoresize style="height: 400px; width: 100%;" /> -->
-       <chart class="chart" :paymentsData="paymentsData" :data="paymentsData.map(item => item.date)" :payments="paymentsData.map(item => item.total)" :todayIndex=" paymentsData.findIndex(item => item.date === dayjs().format('YYYY-MM-DD'))"></chart>
+      <v-chart class="chart" :option="chartOption" autoresize style="height: 400px; width: 100%;" />
+       <!-- <chart class="chart" :paymentsData="paymentsData" :data="paymentsData.map(item => item.date)" :payments="paymentsData.map(item => item.total)" :todayIndex=" paymentsData.findIndex(item => item.date === dayjs().format('YYYY-MM-DD'))"></chart> -->
       <q-date
         v-model="selectedDateRange"
         range
@@ -13,26 +13,11 @@
     </IonContent>
   </ion-page>
 </template>
-
 <script setup>
-import { use } from 'echarts/core';
-import { CanvasRenderer } from 'echarts/renderers';
-import { LineChart } from 'echarts/charts';
-import { TitleComponent, TooltipComponent, LegendComponent } from 'echarts/components';
-import VChart from 'vue-echarts';
 import { ref, computed, onMounted } from 'vue';
 import { IonContent, IonPage } from '@ionic/vue';
 import dayjs from 'dayjs';
 import { useStorePayments } from 'src/stores/storePayments';
-import chart from 'src/components/Charts/chart.vue'
-
-use([
-  CanvasRenderer,
-  LineChart,
-  TitleComponent,
-  TooltipComponent,
-  LegendComponent,
-]);
 
 const storePayments = useStorePayments();
 const selectedDateRange = ref([]);
@@ -42,51 +27,38 @@ const fetchPayments = async () => {
     const startDate = selectedDateRange.value.from;
     const endDate = selectedDateRange.value.to;
     await storePayments.fetchPaymentsByDate(startDate, endDate);
-    console.log(paymentsData.value, 'paymentsData');
-  } else {
-    console.error('Invalid date range selected:', selectedDateRange.value);
   }
 };
 
 const paymentsData = computed(() => storePayments.getPaymentsByPeriod('day'));
 
-const chartOption = computed(() => ({
-  tooltip: {
-    trigger: 'axis',
-    axisPointer: {
-      type: 'cross',
-      label: {
-        backgroundColor: '#6a7985'
-      }
-    }
-  },
-  grid: {
-    left: '3%',
-    right: '4%',
-    bottom: '3%',
-    containLabel: true
-  },
-  tooltip: {
-    trigger: 'axis',
-    axisPointer: {
-      type: 'cross',
-      label: {
-        backgroundColor: '#6a7985'
-      }
-    }
-  },
-  xAxis: {
-    type: 'category',
-    data: paymentsData.value.map(item => item.date),
-  },
-  yAxis: {
-    type: 'value',
-  },
-  series: [
-    {
-      name: 'Payments',
+onMounted(() => {
+  const endDate = dayjs().format('YYYY-MM-DD');
+  const startDate = dayjs().subtract(1, 'month').format('YYYY-MM-DD');
+  selectedDateRange.value = { from: startDate, to: endDate };
+  fetchPayments();
+});
+
+const chartOption = computed(() => {
+  const payments = paymentsData.value || {};
+  const currencies = Object.keys(payments);
+
+  // Gather all unique dates across currencies
+  const allDates = [...new Set(currencies.flatMap(currency => payments[currency].map(item => item.date)))].sort();
+
+  // Map each currency's data to align with allDates
+  const series = currencies.map((currency, index) => {
+    const data = allDates.map(date => {
+      const item = payments[currency].find(i => i.date === date);
+      return item ? item.total : null;
+    });
+
+    return {
+      name: `${currency} Payments`,
       type: 'line',
       smooth: true,
+      lineStyle: { width: 4 },
+      showSymbol: false,
       areaStyle: {
         opacity: 0.8,
         color: {
@@ -96,33 +68,33 @@ const chartOption = computed(() => ({
           x2: 0,
           y2: 1,
           colorStops: [
-            { offset: 0, color: 'rgb(128, 255, 165)' },
-            { offset: 1, color: 'rgb(1, 191, 236)' }
+            { offset: 0, color: index % 2 === 0 ? '#3ecb7778' : '#00DDFF' },
+            { offset: 1, color: '#ffffff00' },
           ],
         },
       },
-      emphasis: {
-        focus: 'series',
-      },
-      data: paymentsData.value.map(item => item.total),
-    }
-  ]
-}));
+      emphasis: { focus: 'series' },
+      data,
+    };
+  });
 
-onMounted(() => {
-  // Calculate the date range for the last month
-  const endDate = dayjs().format('YYYY-MM-DD');
-  const startDate = dayjs().subtract(1, 'month').format('YYYY-MM-DD');
-
-  // Set selectedDateRange and fetch payments for this range
-  selectedDateRange.value = { from: startDate, to: endDate };
-  fetchPayments();
+  return {
+    animation: true,
+    animationDuration: 1500,
+    animationEasing: 'cubicOut',
+    color: ['#37c651', '#00DDFF', '#FF8C00', '#FF0087'], // Define a color palette
+    title: { text: 'Payments' },
+    tooltip: { trigger: 'axis', axisPointer: { type: 'cross', label: { backgroundColor: '#6a7985' } } },
+    legend: { data: currencies.map(currency => `${currency} Payments`) },
+    toolbox: { feature: { saveAsImage: {} } },
+    grid: { left: '3%', right: '4%', bottom: '3%', containLabel: true },
+    xAxis: [{ type: 'category', boundaryGap: false, data: allDates }],
+    yAxis: [{ type: 'value' }],
+    series,
+  };
 });
 </script>
 
 <style scoped>
-.chart {
-  height: 100vh;
-  width: 100%;
-}
+
 </style>

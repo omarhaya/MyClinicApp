@@ -275,6 +275,7 @@ const modifiedArray = manipulateRepeatedDoctorLabels(works)
    })
   //  console.log(this.invoiceWorks,'works2')
   console.log('done loading works for invoices')
+  console.log(this.invoiceWorks,'subTotals')
    this.loading=false
  },
  async getWork(workId) {
