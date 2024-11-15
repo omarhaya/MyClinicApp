@@ -27,7 +27,7 @@
       <q-avatar v-if="!isArabic(payment.patientName)" class="q-mr-xs avatar-name" size="35px" font-size="16px" color="green-3" text-color="white"> {{getInitials( payment.patientName) }} </q-avatar>
             <q-avatar v-if="isArabic(payment.patientName)" class="q-mr-xs avatar-person" font-size="42px" size="35px" color="green-3" text-color="white" icon="person"/>
       <span class="text-bold" > {{ payment.patientName }}</span></span>
-
+      <!-- <q-badge v-if="payment.doctor.name!==''" class="col q-mt-xs" color="grey-5" >{{' by Dr. '+payment.doctor.name }}</q-badge> -->
    </div>
    <div class="right justify-end flex row">
      <div v-if="storeWorks.invoiceWorks[payment.invoiceId]" class="price center row">

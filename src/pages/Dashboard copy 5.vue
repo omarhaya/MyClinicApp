@@ -20,7 +20,7 @@ import { ref, computed, onMounted } from 'vue';
 import { IonContent, IonPage } from '@ionic/vue';
 import dayjs from 'dayjs';
 import { useStorePayments } from 'src/stores/storePayments';
-import chart from 'src/components/Charts/chart.vue'
+import chart from 'src/components/Charts/DaiyPaymentLineChart.vue'
 
 
 const storePayments = useStorePayments();

@@ -37,7 +37,9 @@ export const useStorePayments= defineStore('storePayments', {
        appointmentDate:null,
        paymentInvoices:null,
        patientPayments:[],
-       paymentPeriod:[],
+       paymentPeriod: {},
+       groupedPayments: {},
+       period: 'day',  // Default period ('day' or 'month')
        dayPayments:[],
        editPayment: null,
        paymentModal: null,
@@ -178,43 +180,69 @@ export const useStorePayments= defineStore('storePayments', {
       // Handle error here
     }
   },
-  async fetchPaymentsByDate(startDate, endDate) {
+     // Fetch payments by date range and listen for live updates
+     async fetchPaymentsByDate(startDate, endDate) {
+      const q = query(
+        paymentsCollectionRef,
+        where('date', '>=', startDate),
+        where('date', '<=', endDate)
+      );
 
-    // Define query with start and end date for range-based fetching
-    const q = query(
-      paymentsCollectionRef,
-      where('date', '>=', startDate),
-      where('date', '<=', endDate)
-    );
+      onSnapshot(q, (querySnapshot) => {
+        const paymentGroups = {};
 
-    // Real-time listener for live updates
-    onSnapshot(q, (querySnapshot) => {
-      // Initialize paymentPeriod as an object to hold arrays grouped by currency
-      const paymentGroups = {};
+        querySnapshot.forEach((doc) => {
+          const payment = {
+            paymentId: doc.id,
+            paid: doc.data().paid,
+            date: doc.data().date,
+            currency: doc.data().currency,
+          };
 
-      querySnapshot.forEach((doc) => {
-        const payment = {
-          paymentId: doc.id,
-          paid: doc.data().paid,
-          date: doc.data().date,
-          currency: doc.data().currency,
-        };
+          if (!paymentGroups[payment.currency]) {
+            paymentGroups[payment.currency] = [];  // Initialize array if currency group doesn't exist
+          }
+          paymentGroups[payment.currency].push(payment);
+        });
 
-        // Group payments by currency
-        if (!paymentGroups[payment.currency]) {
-          paymentGroups[payment.currency] = [];  // Initialize array if currency group doesn't exist
-        }
+        this.paymentPeriod = paymentGroups;
+        this.groupPaymentsByPeriod();
+      });
+    },
 
-        paymentGroups[payment.currency].push(payment);  // Add payment to the appropriate currency group
+    // Set the period and trigger re-grouping of payments
+    setPeriod(newPeriod) {
+      this.period = newPeriod;
+      this.groupPaymentsByPeriod();
+    },
+
+    // Group payments by selected period ('day' or 'month')
+    groupPaymentsByPeriod() {
+      const currencyGroupedPayments = {};
+
+      Object.keys(this.paymentPeriod).forEach(currency => {
+        const payments = this.paymentPeriod[currency];
+        const groupedPayments = {};
+
+        payments.forEach(payment => {
+          const formattedDate = dayjs(payment.date).format(this.period === 'day' ? 'YYYY-MM-DD' : 'YYYY-MM');
+
+          if (!groupedPayments[formattedDate]) {
+            groupedPayments[formattedDate] = 0;
+          }
+
+          groupedPayments[formattedDate] += Number(payment.paid) || 0;
+        });
+
+        currencyGroupedPayments[currency] = Object.keys(groupedPayments).map(date => ({
+          date,
+          total: groupedPayments[date],
+          currency,
+        }));
       });
 
-      // Store the grouped payments
-      this.paymentPeriod = paymentGroups;
-      this.groupedPayments = this.getPaymentsByPeriod('day');  // or 'month'
-      console.log(this.paymentPeriod, 'this.paymentPeriod');
-      console.log(this.groupedPayments, 'this.groupedPayments');
-    });
-  },
+      this.groupedPayments = currencyGroupedPayments;
+    },
 
   getPaymentsByPeriod(period = 'day') {
     const currencyGroupedPayments = {};
