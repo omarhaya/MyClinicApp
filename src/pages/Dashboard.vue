@@ -1,180 +1,143 @@
 <template>
-  <ion-page>
-    <IonContent>
-      <v-chart class="chart" :option="chartOption" autoresize style="height: 400px; width: 100%;" />
-      <q-date
-        v-model="selectedDateRange"
-        range
-        mask="YYYY-MM-DD"
-        :options="dateOptions"
-      />
-      <q-btn label="Fetch Payments" @click="fetchPayments" />
-    </IonContent>
+  <ion-page ref="page">
+    <ion-header v-if="mobile" :translucent="true">
+      <ion-toolbar>
+        <ion-title>Dashboard</ion-title>
+      </ion-toolbar>
+    </ion-header>
+    <ion-content>
+      <ion-header collapse="condense">
+        <ion-toolbar class="home container">
+          <ion-title size="large">Dashboard</ion-title>
+        </ion-toolbar>
+      </ion-header>
+      <div class="row">
+        <CardWidgetIcons class="col-12 col-md card-widget" :value="10000" icon="card" label="Payments" />
+        <CardWidgetIcons class="col-12 col-md card-widget" :value="9" icon="calendar" label="Appointments" />
+        <CardWidgetIcons class="col-12 col-md card-widget" :value="currentMonthPatientsCount" icon="person"  label="New Clients" />
+        <CardWidgetIcons class="col-12 col-md card-widget" icon="newspaper" label="Invoices" />
+      </div>
+      <ion-card>
+             <!-- Wrapping div to apply touch handlers -->
+        <ion-card-content
+            style="height: 300px;"
+            ref="monthlyLineChart"
+            @touchstart="handleTouchStart"
+            @touchmove="handleTouchMove"
+            class="monthly-line-chart-wrapper">
+         <MonthlyPaymentLineChart :paymentsData="paymentsData"/>
+        </ion-card-content>
+      </ion-card>
+    </ion-content>
   </ion-page>
 </template>
 
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue';
-import { IonContent, IonPage } from '@ionic/vue';
+import {
+  IonCard,
+  IonCardContent,
+  IonTitle,
+  IonContent,
+  IonPage,
+  IonHeader,
+  IonToolbar,
+} from '@ionic/vue';
 import dayjs from 'dayjs';
 import { useStorePayments } from 'src/stores/storePayments';
-import numeral from 'numeral'
-
+import MonthlyPaymentLineChart from 'src/components/Charts/MonthlyPaymentLineChart.vue';
+import CardWidgetIcons from 'src/components/CardWidgetIcons.vue';
+import { Platform } from 'quasar';
+import { useStorePatients } from 'src/stores/storePatients';
 const storePayments = useStorePayments();
-const selectedDateRange = ref({});
-
-// Set the initial date range to the current month
+const storePatients = useStorePatients()
+// Set the initial date range to the current year
 onMounted(() => {
-  const startDate = dayjs().startOf('month').format('YYYY-MM-DD');
-  const endDate = dayjs().endOf('month').format('YYYY-MM-DD');
-  selectedDateRange.value = { from: startDate, to: endDate };
+  const startDate = dayjs().startOf('year').format('YYYY-MM-DD');
+  const endDate = dayjs().endOf('year').format('YYYY-MM-DD');
+  storePayments.selectedDateRange = { from: startDate, to: endDate };
   fetchPayments();
 });
 
 // Fetch payments based on the selected date range
 const fetchPayments = async () => {
-  if (selectedDateRange.value && selectedDateRange.value.from && selectedDateRange.value.to) {
-    const startDate = selectedDateRange.value.from;
-    const endDate = selectedDateRange.value.to;
+  if (storePayments.selectedDateRange?.from && storePayments.selectedDateRange?.to) {
+    const startDate = storePayments.selectedDateRange.from;
+    const endDate = storePayments.selectedDateRange.to;
     await storePayments.fetchPaymentsByDate(startDate, endDate);
   }
 };
 
 const paymentsData = computed(() => storePayments.getPaymentsByPeriod('day'));
+// Calculate the number of patients added in the current month
+const currentMonthPatientsCount = computed(() => {
+  const startOfMonth = dayjs().startOf('month').valueOf(); // Start of the current month in milliseconds
+  const endOfMonth = dayjs().endOf('month').valueOf(); // End of the current month in milliseconds
 
-// Watch for changes in selectedDateRange to refetch and update the chart data
-watch(selectedDateRange, fetchPayments);
-
-const chartOption = computed(() => {
-  const payments = paymentsData.value || {};
-  const currencies = Object.keys(payments);
-
-  // Collect all unique dates within the range from start to end
-  const allDates = [];
-  let currentDate = dayjs(selectedDateRange.value.from);
-  const endDate = dayjs(selectedDateRange.value.to);
-
-  while (currentDate.isBefore(endDate) || currentDate.isSame(endDate)) {
-    allDates.push(currentDate.format('YYYY-MM-DD'));
-    currentDate = currentDate.add(1, 'day');
-  }
-
-  // Map each currency's data to align with allDates and handle missing data
-  const series = currencies.map((currency, index) => {
-    const currencyData = payments[currency];
-
-    const data = allDates.map(date => {
-      const item = currencyData.find(i => i.date === date);
-      return item ? parseFloat(item.total) : null; // Convert to number (parseFloat) for missing data
-    });
-
-    return {
-      name: `${currency} Payments`,
-      type: 'line',
-      smooth: true,
-      connectNulls: true, // Connect lines across null values to maintain continuity
-      lineStyle: { width: 4 },
-      showSymbol: false,
-      areaStyle: {
-        opacity: 0.8,
-        color: {
-          type: 'linear',
-          x: 0,
-          y: 0,
-          x2: 0,
-          y2: 1,
-          colorStops: [
-            { offset: 0, color: index % 2 === 0 ? '#3ecb7778' : '#00DDFF' },
-            { offset: 1, color: '#ffffff00' },
-          ],
-        },
-      },
-      emphasis: { focus: 'series' },
-      data,
-    };
-  });
-
-  // If there is more than one currency, use logarithmic scale for better visibility of different ranges
-  const isLogScale = currencies.length > 1;
-
-  const today = dayjs().format('YYYY-MM-DD'); // Get today's date
-  const todayIndex = allDates.indexOf(today); // Find the index of today's date
-
-  // Calculate today's payment by parsing the strings to numbers
-  const todayPayments = currencies.map(currency => {
-    const todayData = payments[currency].find(i => i.date === today);
-    return todayData ? parseFloat(todayData.total) : 0; // Ensure the payment is parsed as a number
-  });
-
-  // Default y position if no payments today
-  const todayPaymentValue = todayPayments.reduce((max, curr) => Math.max(max, curr), 0); // Max value for today’s payment
-
-  // Log today's payment value for debugging
-  console.log('Today Index:', todayIndex);
-  console.log('Today Payment:', todayPaymentValue);
-
-  // Ensure that the yAxis range is set to accommodate your data
-  const maxPayment = Math.max(
-    ...Object.values(payments).flatMap(currencyData => currencyData.map(i => parseFloat(i.total))) // Parse all total values as numbers
-  );
-
-  // Ensure that the yAxis range accommodates the payment data
-  const yAxisRange = [0, Math.max(maxPayment, todayPaymentValue) * 1.1]; // 10% buffer above the highest payment value
-
-  return {
-    animation: true,
-    animationDuration: 1500,
-    animationEasing: 'cubicOut',
-    color: ['#37c651', '#00DDFF', '#FF8C00', '#FF0087'],
-    title: { text: 'Payments' },
-    tooltip: {
-      trigger: 'axis',
-      axisPointer: { type: 'cross', label: { backgroundColor: '#6a7985' } },
-    },
-    legend: { data: currencies.map(currency => `${currency} Payments`) },
-    toolbox: { feature: { saveAsImage: {}, dataZoom: { yAxisIndex: 'none'}, dataView: { readOnly: false } } },
-    grid: { left: '3%', right: '4%', bottom: '3%', containLabel: true },
-    xAxis: [{ type: 'category', boundaryGap: false, data: allDates }],
-    yAxis: [
-    {
-      type: isLogScale ? 'log' : 'value', // Dynamically set the scale type
-      logBase: 10, // Base 10 logarithmic scale
-      min: 1, // Ensure the minimum value is greater than 0 (logarithmic scale cannot handle 0)
-      max: yAxisRange[1], // Set y-axis max value
-      axisLabel: {
-        formatter: function (value) {
-          return numeral(Math.floor(value)).format('0,0')  // Remove decimal places
-        }
-      }
-    }
-  ],
-    series,
-    markPoint: {
-      symbol: 'circle',
-      symbolSize: 20,
-      itemStyle: { color: '#FF0000' },
-      data: [
-        {
-          xAxis: todayIndex !== -1 ? todayIndex : 0, // Position on the x-axis (today's date)
-          yAxis: todayPaymentValue, // Place at the y position for today’s payment or fallback value
-          name: 'Today',
-          label: { show: true, formatter: 'Today' },
-        },
-      ],
-      animation: {
-        duration: 1000,
-        easing: 'easeInOutElastic',
-        delay: 500,
-        loop: true,
-      },
-    },
-  };
+  return storePatients.patients.filter(patient =>
+    patient.dateUnix >= startOfMonth && patient.dateUnix <= endOfMonth
+  ).length;
 });
+watch(storePayments.selectedDateRange, fetchPayments);
+
+const mobile = computed(() => {
+  if (Platform.is.desktop) {
+    return false;
+  }
+  if (Platform.is.mobile) {
+    return true;
+  }
+  return false;
+});
+
+// Touch handling logic
+const touchStartX = ref(0);
+const touchStartY = ref(0);
+const isScrollingVertically = ref(true);
+
+// Handle touch start to detect initial coordinates
+const handleTouchStart = (event) => {
+  const touch = event.touches[0];
+  touchStartX.value = touch.clientX;
+  touchStartY.value = touch.clientY;
+  isScrollingVertically.value = true; // Reset scrolling direction
+};
+
+// Handle touch move to prevent vertical scrolling during horizontal swipe
+const handleTouchMove = (event) => {
+  const touch = event.touches[0];
+  const deltaX = Math.abs(touch.clientX - touchStartX.value);
+  const deltaY = Math.abs(touch.clientY - touchStartY.value);
+
+  if (deltaX > deltaY) {
+    // Horizontal scrolling detected
+    isScrollingVertically.value = false;
+    event.preventDefault(); // Prevent vertical scrolling
+  }
+};
+
 </script>
 
 <style scoped>
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between; /* Add spacing between cards */
+  gap: 10px; /* Ensure spacing between items */
+  padding: 10px; /* Replace margin with padding to prevent overflow */
+  box-sizing: border-box; /* Include padding in width calculations */
+}
+
+
+@media (max-width: 768px) {
+  .card-widget {
+    flex: 1 1 100%; /* Stack cards on smaller screens */
+    max-width: none;
+  }
+}
 .chart {
   width: 100%;
-  touch-action: none;
+
+  /* touch-action: none;  Disable touch gestures on the chart to avoid interference */
 }
 </style>

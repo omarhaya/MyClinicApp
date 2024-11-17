@@ -39,7 +39,8 @@ export const useStorePayments= defineStore('storePayments', {
        patientPayments:[],
        paymentPeriod: {},
        groupedPayments: {},
-       period: 'day',  // Default period ('day' or 'month')
+       period: 'month',  // Default period ('day' or 'month')
+       selectedDateRange:{},
        dayPayments:[],
        editPayment: null,
        paymentModal: null,
@@ -182,6 +183,7 @@ export const useStorePayments= defineStore('storePayments', {
   },
      // Fetch payments by date range and listen for live updates
      async fetchPaymentsByDate(startDate, endDate) {
+      this.loading=true
       const q = query(
         paymentsCollectionRef,
         where('date', '>=', startDate),
@@ -208,6 +210,7 @@ export const useStorePayments= defineStore('storePayments', {
         this.paymentPeriod = paymentGroups;
         this.groupPaymentsByPeriod();
       });
+      this.loading=false
     },
 
     // Set the period and trigger re-grouping of payments
@@ -218,6 +221,7 @@ export const useStorePayments= defineStore('storePayments', {
 
     // Group payments by selected period ('day' or 'month')
     groupPaymentsByPeriod() {
+      this.loading=true
       const currencyGroupedPayments = {};
 
       Object.keys(this.paymentPeriod).forEach(currency => {
@@ -225,7 +229,7 @@ export const useStorePayments= defineStore('storePayments', {
         const groupedPayments = {};
 
         payments.forEach(payment => {
-          const formattedDate = dayjs(payment.date).format(this.period === 'day' ? 'YYYY-MM-DD' : 'YYYY-MM');
+          const formattedDate = dayjs(payment.date).format(this.period === this.period ? 'YYYY-MM-DD' : 'YYYY-MM');
 
           if (!groupedPayments[formattedDate]) {
             groupedPayments[formattedDate] = 0;
@@ -242,9 +246,11 @@ export const useStorePayments= defineStore('storePayments', {
       });
 
       this.groupedPayments = currencyGroupedPayments;
+      this.loading=false
     },
 
-  getPaymentsByPeriod(period = 'day') {
+  getPaymentsByPeriod(period = this.period) {
+    this.loading=true
     const currencyGroupedPayments = {};
 
     // Loop through each currency group in paymentPeriod
@@ -253,7 +259,7 @@ export const useStorePayments= defineStore('storePayments', {
       const groupedPayments = {};
       // Accumulate payments by formatted date for each currency
       payments.forEach(payment => {
-        const formattedDate = dayjs(payment.date).format(period === 'day' ? 'YYYY-MM-DD' : 'YYYY-MM');
+        const formattedDate = dayjs(payment.date).format(period === this.period ? 'YYYY-MM-DD' : 'YYYY-MM');
 
         if (!groupedPayments[formattedDate]) {
           groupedPayments[formattedDate] = 0;
@@ -270,8 +276,10 @@ export const useStorePayments= defineStore('storePayments', {
         currency: currency  // Include the currency in each entry for clarity
       }));
     });
+    this.loading=false
     console.log('curr',currencyGroupedPayments)
     return currencyGroupedPayments;
+
   },
   async getdayPayments(date) {
     this.loading=true

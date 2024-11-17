@@ -12,33 +12,23 @@
     </IonContent>
   </ion-page>
 </template>
+
 <script setup>
-import { ref, computed, onMounted, watch, nextTick } from 'vue';
+import { ref, computed, onMounted, watch } from 'vue';
 import { IonContent, IonPage } from '@ionic/vue';
 import dayjs from 'dayjs';
 import { useStorePayments } from 'src/stores/storePayments';
-import numeral from 'numeral';
+import numeral from 'numeral'
 
 const storePayments = useStorePayments();
 const selectedDateRange = ref({});
-const paymentsData = ref([]); // Initialize as empty array
 
 // Set the initial date range to the current month
 onMounted(() => {
   const startDate = dayjs().startOf('month').format('YYYY-MM-DD');
   const endDate = dayjs().endOf('month').format('YYYY-MM-DD');
   selectedDateRange.value = { from: startDate, to: endDate };
-
-  // Immediately set paymentsData to an empty array
-  paymentsData.value = [];
-
-  // Wait for the DOM update and then call fetchPayments
-  nextTick(() => {
-    // Fetch payments right after the array is initialized, with a delay of 0.25 second
-    setTimeout(() => {
-      fetchPayments();
-    }, 250); // 0.25 second delay to simulate the load behavior
-  });
+  fetchPayments();
 });
 
 // Fetch payments based on the selected date range
@@ -47,11 +37,10 @@ const fetchPayments = async () => {
     const startDate = selectedDateRange.value.from;
     const endDate = selectedDateRange.value.to;
     await storePayments.fetchPaymentsByDate(startDate, endDate);
-
-    // After fetching, update the paymentsData
-    paymentsData.value = storePayments.getPaymentsByPeriod('day');
   }
 };
+
+const paymentsData = computed(() => storePayments.getPaymentsByPeriod('day'));
 
 // Watch for changes in selectedDateRange to refetch and update the chart data
 watch(selectedDateRange, fetchPayments);
@@ -182,6 +171,7 @@ const chartOption = computed(() => {
   };
 });
 </script>
+
 <style scoped>
 .chart {
   width: 100%;
