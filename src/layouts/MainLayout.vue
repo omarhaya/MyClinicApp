@@ -221,6 +221,11 @@
           <ion-icon aria-hidden="true" :icon="newspaper" />
           <ion-label>Invoices</ion-label>
         </ion-tab-button>
+
+        <ion-tab-button tab="tab5" href="/">
+          <ion-icon aria-hidden="true" :icon="grid" />
+          <ion-label>DashBoard</ion-label>
+        </ion-tab-button>
       </ion-tab-bar>
     </ion-tabs>
   </ion-page>
@@ -240,7 +245,7 @@ import PaymentModal from 'src/components/PaymentModal.vue'
 import { useStorePayments } from 'src/stores/storePayments'
 import { IonPage, IonContent, IonHeader, IonToolbar, IonTabBar, IonTabButton, IonTabs, IonLabel, IonIcon, IonRouterOutlet } from '@ionic/vue'
 import { useStoreSettings } from 'src/stores/storeSettings'
-import { newspaper, people, calendar,swapHorizontalOutline} from 'ionicons/icons'
+import { newspaper, people, calendar,swapHorizontalOutline,grid} from 'ionicons/icons'
 import { useStoreExpenses } from 'src/stores/storeExpenses'
 import ExpenseModal from 'src/components/ExpenseModal.vue'
 import { useTheme } from 'vuetify'

@@ -6,7 +6,7 @@ import {
 import {db} from '/src/js/firebase'
 import { useStoreAuth } from './storeAuth'
 import { useStorePayments } from './storePayments'
-
+import dayjs from 'dayjs'
 
 let worksCollectionRef
 let worksCollectionQuery
@@ -22,6 +22,7 @@ export const useStoreWorks = defineStore('storeWorks', {
       loading:null,
       storeAuth:useStoreAuth(),
       storePayments:useStorePayments(),
+      totalPriceThisMonth: 0,
     }
   },
 
@@ -88,6 +89,7 @@ export const useStoreWorks = defineStore('storeWorks', {
         patientDetails: work.patientDetails,
         teeth: work.teeth,
         uid: this.storeAuth.user.uid,
+        dateUnix:work.dateUnix
       };
 
       // Update the local state immediately
@@ -102,6 +104,7 @@ export const useStoreWorks = defineStore('storeWorks', {
       try {
         // Add to Firestore
         const docRef = await addDoc(worksCollectionRef, newWork);
+        console.log(newWork,'work!!!')
         // Update the docId in local state with the actual doc ID from Firestore
         const addedWork = this.invoiceWorks[work.invoiceId].find(item => item.workId === work.workId);
         if (addedWork) {
@@ -114,6 +117,32 @@ export const useStoreWorks = defineStore('storeWorks', {
         this.loading = false;
       }
     },
+   // Action to listen for real-time updates and calculate the total price for works this month
+   fetchMonthWorksPrice(currentMonthStart,currentMonthEnd) {
+
+    const q = query(
+      worksCollectionRef,
+      where('dateUnix', '>=', currentMonthStart),
+      where('dateUnix', '<=', currentMonthEnd), // Works after the start of this month
+      // Works before the end of this month
+    );
+    // Set up the real-time listener using onSnapshot
+    onSnapshot(q, (querySnapshot) => {
+      let totalPrice = 0;
+
+      querySnapshot.forEach((doc) => {
+
+        const work = doc.data();
+        const price = parseInt(doc.data().price)
+        totalPrice += price|| 0; // Accumulate the price for each work
+      });
+
+      // Update the state with the new total price
+      this.totalPriceThisMonth = totalPrice;
+      console.log(this.totalPriceThisMonth,'doc!')
+    });
+
+     },
      // Update Work
      async updateWork (work) {
       this.loading=true

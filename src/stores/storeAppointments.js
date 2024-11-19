@@ -48,6 +48,7 @@ export const useStoreAppointments= defineStore('storeAppointments', {
        $q:useQuasar(),
        modal:false,
        mobile,
+       appointmentsCount:0,
     }
   },
 
@@ -93,6 +94,31 @@ export const useStoreAppointments= defineStore('storeAppointments', {
       console.log('Updated invoice data successfully');
     } catch (error) {
       console.error('Error updating invoice data:', error);
+    }
+  },
+  async fetchMonthAppointments(startOfMonth,endOfMonth) {
+    // Firestore query
+    const q = query(
+      appointmentsCollectionRef,
+      where('appointmentdate', '>=', startOfMonth),
+      where('appointmentdate', '<=', endOfMonth)
+    );
+   // Set up live listener
+   onSnapshot(q,(querySnapshot) => {
+      // Update the count based on the number of documents in the snapshot
+      this.appointmentsCount = querySnapshot.size;
+    },
+    (error) => {
+      console.error('Error fetching live appointments count:', error);
+    }
+    );
+  },
+
+  clearAppointmentsListener() {
+    // Call this to stop listening when the component is unmounted
+    if (this.unsubscribe) {
+      this.unsubscribe();
+      this.unsubscribe = null;
     }
   },
   // Calendar View

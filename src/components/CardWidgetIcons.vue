@@ -12,7 +12,7 @@
         <ion-card-content class="text-green-7">
           <template v-if="totals.length">
             <div v-for="(total, index) in totals" :key="index">
-              <h1 class="inner-text">
+              <h1 :class="['inner-text', fontSizeClass(total.totalPaid)]">
                 {{ prefix }}<span>{{ total.currency + ' ' }}</span>
                 <GrowingNumeral :value="total.totalPaid" />
               </h1>
@@ -20,9 +20,9 @@
           </template>
 
           <template v-else>
-            <h1 class="inner-text">
-              <span v-if="newValue > 0">+</span>
-              <span class="currency">{{ prefix }}</span>
+            <h1 :class="['inner-text', fontSizeClass(value)]">
+              <span v-if="prefix&&newValue > 0">+</span>
+              <span :class="['left currency', fontSizeClass(value)]">{{ prefix }}</span>
               <GrowingNumeral :prefix="prefix" :suffix="suffix" :value="value" />
               {{ suffix }}
             </h1>
@@ -44,15 +44,15 @@
 import { ref, computed, watch, onMounted } from 'vue';
 import GrowingNumeral from './GrowingNumeral.vue';
 import { addIcons } from 'ionicons';
-import { analyticsOutline,person,cash,card,calendar,newspaper } from 'ionicons/icons';
+import { analyticsOutline, person, cash, card, calendar, newspaper } from 'ionicons/icons';
 
 addIcons({
   'analytics-outline': analyticsOutline,
-  'person':person,
-  'cash' : cash,
-  'card':card,
-  'calendar':calendar,
-  'newspaper':newspaper
+  'person': person,
+  'cash': cash,
+  'card': card,
+  'calendar': calendar,
+  'newspaper': newspaper,
 });
 
 const props = defineProps({
@@ -64,6 +64,11 @@ const props = defineProps({
   label: { type: String, default: 'Total' },
   icon: { type: String, default: null },
 });
+
+// Computed property for font size class
+const fontSizeClass = (totalPaid) => {
+  return props.prefix&&totalPaid > 99999 ? 'small-font' : 'normal-font';
+};
 </script>
 
 <style scoped>
@@ -91,9 +96,11 @@ const props = defineProps({
   align-items: center;
   width: 30%;
 }
+
 .text-h6 {
   font-size: 15px !important;
 }
+
 .icon-square {
   width: 4rem; /* Square size */
   height: 4rem;
@@ -117,5 +124,13 @@ const props = defineProps({
 
 .currency {
   font-size: clamp(0.8rem, 1.5vw + 0.8rem, 1.5rem); /* Adjust currency size */
+}
+
+.small-font {
+  font-size: clamp(1rem, 2vw + 0.7rem, 1.2rem); ;  /* Smaller font for values greater than 6 digits */
+}
+
+.normal-font {
+  font-size: clamp(1rem, 2vw + 0.7rem, 2rem);  /* Default font size for smaller values */
 }
 </style>

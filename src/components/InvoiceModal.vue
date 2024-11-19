@@ -932,6 +932,7 @@ const    handleWorkItemChange=(value)=> {
        storeInvoices.workItemList.forEach(work=>{
         console.log(work,'workkk')
         work.patientDetails=patient.value
+        work.dateUnix=invoiceDateUnix.value
         storeWorks.addWork(work)
         if(work.paymentItemList){
           if(work.paymentItemList.paid!==0)
