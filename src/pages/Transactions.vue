@@ -13,6 +13,7 @@
        </ion-toolbar>
      </ion-header>
    <ion-content class="ion-content" :fullscreen="true">
+
        <div class="q-gutter-y-sm">
          <q-tab-panels
            v-model="tab"
@@ -22,59 +23,7 @@
            class=" text-center"
          >
          <q-tab-panel class="panel-properties" name="payments">
-           <div class="row">
-         <!-- <q-card class=" ">
-           <q-card-section>
-             <div v-if="totals.length<=1" class="text-h6">Total</div>
-             <div v-else class="text-h6">Totals</div>
-             <div v-for="total in totals" class="text-h5"><span class="currency">{{ total.currency+' ' }}</span>{{formatMoney(total.totalPaid)}}</div>
-           </q-card-section>
-         </q-card>
-         <q-card class="total-card col q-ma-sm bg-grey-3 ">
-           <q-card-section>
-             <div class="text-h6">New</div>
-             <div class="text-h5">{{payments.length}}</div>
-           </q-card-section>
-         </q-card> -->
-         <!-- <ion-card class="col q-ma-xs">
-          <div>
-    <ion-card-header>
-      <ion-card-title v-if="totals.length<=1" class="text-h6">Total</ion-card-title>
-    </ion-card-header>
-  </div>
-  <div>
-    <ion-card-content class="text-green-7" v-for="total in totals"><span v-if="total.totalPaid!==0">+</span><span class="currency">{{ total.currency+' ' }}</span>{{formatMoney(total.totalPaid)}}
 
-    </ion-card-content>
-  </div>
-  </ion-card> -->
-  <CardWidget
-      class="col q-ma-xs"
-      label="Total"
-      :totals="groupedTotals"
-    />
-
-    <!-- Card for New Payments -->
-    <CardWidget
-      class="col q-ma-xs"
-      label="Number"
-      :prefix="''"
-      :value="payments.length"
-      :suffix="''"
-    />
-  <!-- <ion-card class="col q-ma-xs">
-    <div>
-    <ion-card-header>
-      <ion-card-title>New</ion-card-title>
-    </ion-card-header>
-  </div>
-    <div>
-    <ion-card-content>
-      {{payments.length}}
-    </ion-card-content>
-  </div>
-  </ion-card> -->
-        </div>
         <ion-card class="q-ma-xs">
        <q-table
        grid
@@ -97,6 +46,7 @@
 
 
      <template v-slot:header="props">
+
    <q-tr :props="props">
      <q-th v-show="editPayments">
        <q-checkbox v-model="props.selected" />
@@ -110,7 +60,24 @@
            </q-th>
    </q-tr>
  </template>
- <template v-slot:top-left>
+ <template v-slot:top>
+  <div class="row">
+
+        <CardWidget
+            class="col q-ma-xs"
+            label="Total"
+            :totals="groupedTotals"
+          />
+
+          <!-- Card for New Payments -->
+          <CardWidget
+            class="col q-ma-xs"
+            label="Number"
+            :prefix="''"
+            :value="payments.length"
+            :suffix="''"
+          />
+              </div>
    <q-btn v-if="!mobile" color="secondary" @click="newPayment">
             New Payment
          </q-btn>
@@ -191,7 +158,11 @@
            <q-icon size="2em" :name="filter ? 'filter_b_and_w' : icon" />
          </div>
        </template>
-
+       <template v-slot:bottom>
+        <!-- <ion-infinite-scroll threshold="0" @ionInfinite="load">
+      <ion-infinite-scroll-content></ion-infinite-scroll-content>
+    </ion-infinite-scroll> -->
+      </template>
      </q-table>
      </ion-card>
          </q-tab-panel>
@@ -203,6 +174,7 @@
          </q-tab-panels>
 
       </div>
+
      </ion-content>
    </ion-page>
 
@@ -215,7 +187,9 @@
   import { storeToRefs } from 'pinia'
   import { useStoreWorks } from 'src/stores/storeWorks';
   import {today} from '@quasar/quasar-ui-qcalendar/src/index.js'
-  import { IonSegment, IonSegmentButton, IonHeader, IonLabel , IonToolbar ,IonPage ,IonContent, modalController,IonCard} from '@ionic/vue';
+  import { IonSegment, IonSegmentButton, IonHeader, IonLabel , IonToolbar ,IonPage ,IonContent, modalController,IonCard,IonList,
+   IonInfiniteScroll,
+   IonInfiniteScrollContent} from '@ionic/vue';
   import MobilePaymentModal from 'src/components/MobilePaymentModal.vue'
   import { Platform } from 'quasar';
   import Expenses from './Expenses.vue';
@@ -297,35 +271,45 @@
 
   ]
   const visibleColumns=ref([ 'invoiceId', 'paid','date','patientName','doctor','work','buttons'])
-  const payments = computed(() => {
-    const selectedPayments = storePayments.dayPayments[storePayments.selectedDate];
+  const limit = ref(10);  // Start with 10 payments
 
-    if (selectedPayments) {
-      selectedPayments.forEach(payment => {
-       const patient = storePatients.patients.find(patient => patient.patientId === payment.patientId);
-       if (patient) {
+const payments = computed(() => {
+  const selectedPayments = storePayments.dayPayments[storePayments.selectedDate];
+
+  if (selectedPayments) {
+    selectedPayments.forEach(payment => {
+      const patient = storePatients.patients.find(patient => patient.patientId === payment.patientId);
+      if (patient) {
         payment.patientName = patient.namef;
-           }
-        if (payment && storeWorks.paymentsWorks[payment.workId]) {
-          const workDetails = storeWorks.paymentsWorks[payment.workId];
-          payment.work = workDetails.label;
-          payment.color = workDetails.color;
-          payment.workTotal = workDetails.price - workDetails.discount;
-          payment.patientName = patient.namef;
-          payment.currency = workDetails.currency;
-          payment.doctor = workDetails.doctor;
-          payment.remaining = payment.workTotal - workDetails.allPaid;
-        }
-      });
+      }
+      if (payment && storeWorks.paymentsWorks[payment.workId]) {
+        const workDetails = storeWorks.paymentsWorks[payment.workId];
+        payment.work = workDetails.label;
+        payment.color = workDetails.color;
+        payment.workTotal = workDetails.price - workDetails.discount;
+        payment.remaining = payment.workTotal - workDetails.allPaid;
+        payment.patientName = patient.namef;
+        payment.currency = workDetails.currency;
+        payment.doctor = workDetails.doctor;
+      }
+    });
 
-      // Sort payments by payment.dateUnix in descending order
-      selectedPayments.sort((a, b) => b.dateUnix - a.dateUnix);
+    // Sort payments by payment.dateUnix in descending order
+    selectedPayments.sort((a, b) => b.dateUnix - a.dateUnix);
 
-      return selectedPayments;
-    } else {
-      return [];
-    }
-  });
+    // Return the limited number of payments based on the current `limit`
+    return selectedPayments;
+  }
+  return [];
+});
+
+// async function load(ev) {
+//   console.log('increasing')
+//   // Increase limit by 10 each time infinite scroll is triggered
+//    limit.value += 10;
+//   setTimeout(() => ev.target.complete(), 50);
+// }
+
 
   function  newPayment() {
   storePayments.TOGGLE_PAYMENT()

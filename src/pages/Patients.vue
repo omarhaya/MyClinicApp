@@ -72,6 +72,10 @@
           v-for="patient in group.patients"
           >
             <ion-item @click="$router.push(`/Patients/${patient.patientId}`)" button >
+              <q-item-section  avatar>
+              <q-avatar v-if="!isArabic(patient.namef)" class="avatar-name" size="45px" font-size="20px" color="green-3" text-color="white"> {{getInitials( patient.namef) }} </q-avatar>
+              <q-avatar v-if="isArabic(patient.namef)" class="avatar-person" font-size="55px" size="45px" color="green-3" text-color="white" icon="person"/>
+               </q-item-section>
 
               <ion-label :style="getLabelStyle('primary')" >
                 <h2>{{patient.namef}}</h2>
@@ -81,7 +85,7 @@
               </ion-label>
               <h6 class="q-pl-md" style="min-width:40px;">#{{patient.index}}</h6>
             </ion-item>
-            <ion-item-options>
+            <!-- <ion-item-options>
               <ion-item-option
                 color="favorite"
                 @click="addFavorite($event, )"
@@ -94,7 +98,7 @@
 
                 >Remove</ion-item-option
               >
-            </ion-item-options>
+            </ion-item-options> -->
           </ion-item-sliding>
         </ion-item-group>
       </ion-list>
@@ -344,7 +348,15 @@ const   mobile=computed(()=>{
         return true
           }
         })
-
+const isArabic=(value) =>{
+            return /[\u0600-\u06FF]/.test(value)
+       }
+function getInitials(name) {
+          const nameParts = name.split(' ');
+          const firstName = nameParts[0].charAt(0).toUpperCase();
+          const lastName = nameParts[nameParts.length - 1].charAt(0).toUpperCase();
+          return `${firstName}${lastName}`;
+       }
 </script>
 
 <style lang="scss" scoped >

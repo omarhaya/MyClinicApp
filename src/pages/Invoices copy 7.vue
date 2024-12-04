@@ -11,13 +11,13 @@
  <ion-content ref="ionContent1" :fullscreen="true" :scroll-y="false" >
 
       <!-- Ensure scroller class properly styled -->
-      <RecycleScroller
+      <DynamicScroller
+
         class="ion-content-scroll-host scroller"
         :items="filteredData"
         :min-item-size="70"
         :items-limit="filteredData.length + 1000"
         :key-field="'invoiceId'"
-        sizeField="size"
       >
       <template #before>
         <ion-header collapse="condense">
@@ -113,22 +113,31 @@
  </div>
   </template>
         <template #default="{ item,index ,active}">
-       <Invoice
-      :active="active"
+          <DynamicScrollerItem
+        :item="item"
+        :active="active"
+        :size-dependencies="[
+          item.workItemList,
+        ]"
+        :data-index="index"
+        :style="!mobile ? 'max-width:850px;margin:auto; padding-bottom: 10px;' : 'padding-bottom: 10px;padding-left:4px;padding-right:4px;'"
+      >
+          <Invoice
       @openPaymentModal="openPaymentModal"
       :invoice="item"
       :mobile="mobile"
       :key="item.invoiceId"
       :pageRef="page"
         />
+      </DynamicScrollerItem>
         </template>
-    <template #after>
-      <ion-infinite-scroll threshold="0" @ionInfinite="load">
-        <ion-infinite-scroll-content></ion-infinite-scroll-content>
-      </ion-infinite-scroll>
-    </template>
+        <template #after>
+          <ion-infinite-scroll threshold="0" @ionInfinite="load">
+      <ion-infinite-scroll-content></ion-infinite-scroll-content>
+    </ion-infinite-scroll>
+  </template>
 
-      </RecycleScroller>
+      </DynamicScroller>
 
     </ion-content>
 
@@ -149,7 +158,7 @@ import { Platform } from 'quasar'
 import MobileInvoiceModal from 'src/components/MobileInvoiceModal.vue'
 import MobilePaymentModal from 'src/components/MobilePaymentModal.vue'
 import { useStorePayments } from "src/stores/storePayments"
-import { RecycleScroller,DynamicScrollerItem } from "vue-virtual-scroller";
+import { DynamicScroller,DynamicScrollerItem } from "vue-virtual-scroller";
 const $q=useQuasar()
 /*
   Stores
@@ -178,18 +187,10 @@ const $q=useQuasar()
       }
       filteredInvoice.value = e.target.innerText
     }
-   const $=useQuasar()
+
    const filteredData = computed(() => {
       return invoiceData.value.filter((invoice) => {
-        const nameSize=invoice.patientName.length>18?15:0
-        const size=$q.screen.lt.sm?nameSize+75:45
 
-        if (invoice.workItemList.length<=1){
-           invoice.size=size*1.5
-        }
-        if (invoice.workItemList.length>1) {
-          invoice.size=size*1.5+(invoice.workItemList.length*15)
-        }
 
         if (filteredInvoice.value === "Draft") {
           return invoice.invoiceDraft === true
@@ -385,7 +386,6 @@ box-sizing: border-box;
           }
 .ion-content::part(scroll) {
 --offset-top: 0px !important;
-z-index: 1000 !important;
 // --offset-bottom: 0px !important;
 }
 .list-md {
@@ -394,7 +394,10 @@ z-index: 1000 !important;
 
 </style>
 <style scoped>
-
+.invoice-wrap {
+  /* Adjust modal styling */
+  z-index: 9998; /* Ensure the modal's z-index is lower than the action sheet */
+}
 
 ion-action-sheet {
   z-index: 9999 !important; /* Ensure the action sheet appears above the modal */
@@ -402,9 +405,17 @@ ion-action-sheet {
 /* Ensure proper styling for scroller and Ionic components */
 .scroller {
   height: 100%; /* Full height for the scroller */
-}
-.vue-recycle-scroller.direction-vertical:not(.page-mode) {
-  z-index: 1000000 !important;
+  overflow: auto; /* Allow scrolling */
+  position: relative; /* Necessary for virtual scroller calculations */
 }
 
+ion-content {
+  display: flex; /* Flex container for content scaling */
+  flex-direction: column;
+}
+
+ion-list {
+  flex: 1; /* Ensure the list scales properly */
+  margin: 0; /* Remove default Ionic spacing */
+}
 </style>

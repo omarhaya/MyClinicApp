@@ -50,7 +50,7 @@ const props = defineProps({
 const newValue = ref(0);
 
 // Access the prop value as a computed property
-const value = computed(() => props.value);
+const value = computed(() => parseInt(props.value));
 
 // The grow method to incrementally increase newValue
 const grow = (m) => {
@@ -71,6 +71,7 @@ const grow = (m) => {
 
 // Initializes the grow effect
 const growInit = () => {
+  console.log('newValue.value',props.value)
   newValue.value = 0; // Reset the value before starting the grow effect
   grow(props.value / (props.duration / 25)); // Divide the target value across the specified duration
 };
@@ -84,6 +85,7 @@ watch(value, () => {
 onMounted(() => {
   growInit();
 });
+
 </script>
 
 <style scoped>

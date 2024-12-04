@@ -23,7 +23,7 @@ module.exports = configure(function (/* ctx */) {
     // --> boot files are part of "main.js"
     // https://v2.quasar.dev/quasar-cli/boot-files
     boot: [
-      'addressbar-color','vuetify','ionic','maz-ui','echarts'
+      'addressbar-color','vuetify','ionic','maz-ui','echarts','virtual-scroller'
 
     ],
 
@@ -51,6 +51,9 @@ module.exports = configure(function (/* ctx */) {
       target: {
         browser: [ 'es2019', 'edge88', 'firefox78', 'chrome87', 'safari13.1' ],
         node: 'node16',
+      },
+      vueOptions: {
+        reactivityTransform: true, // Optional: Enables reactivity transform (useful for VueUse)
       },
 
       vueRouterMode: 'hash', // available values: 'hash', 'history'

@@ -6,6 +6,7 @@
             <q-toolbar-title >
               <!-- Add New Appointment -->
             </q-toolbar-title>
+
             <q-btn flat round color="white" icon="edit"     @click="
     storeAppointments.editAppointment = true;
     storeAppointments.currentAppointment= event
@@ -66,25 +67,58 @@
       </q-slide-transition>
 
       <q-card-actions  :props="props">
+        <q-fab
+        v-model="props.fab"
+        label="Add"
+        label-position="top"
+        external-label
+        :color="event.extendedProps.background"
+        icon="add"
+        padding="sm"
+        direction="left"
+      >
+      <template v-slot:icon="{ opened }">
+          <q-icon  name="add" />
+        </template>
 
-        <q-btn round icon="add" @click="modals.addAppointment=true" :color="event.extendedProps.background"/>
+        <template v-slot:active-icon="{ opened }">
+          <q-icon :class="{ 'example-fab-animate': opened === true }" name="close" />
+        </template>
+        <q-fab-action external-label label-position="top" color="yellow-8" @click="onClick" icon="note">
+        <q-tooltip>
+         Add Notes
+        </q-tooltip>
+          </q-fab-action>
+        <q-fab-action external-label label-position="top" color="orange" @click="onClick" icon="work">
+          <q-tooltip>
+         Add Work
+        </q-tooltip>
+        </q-fab-action>
+        <q-fab-action external-label label-position="top" color="accent" @click="onClick" icon="request_page">
+        <q-tooltip>
+         Add Invoice
+        </q-tooltip>
+          </q-fab-action>
+          <q-fab-action external-label label-position="top" color="green" @click="onClick" icon="payment">
+        <q-tooltip>
+         Add Payment
+        </q-tooltip>
+          </q-fab-action>
+          <q-fab-action external-label label-position="top" color="primary" @click="onClick" icon="mail">
+        <q-tooltip>
+         Send E-Mail
+        </q-tooltip>
+      </q-fab-action>
+        <q-fab-action external-label label-position="top" color="secondary" @click="onClick" icon="alarm" >
+          <q-tooltip>
+         Add Appointment
+        </q-tooltip>
+        </q-fab-action>
+      </q-fab>
         <q-btn flat :color="event.extendedProps.background" label="Casesheet" />
         <q-space />
         <v-spacer></v-spacer>
 
-<v-btn
-  variant="text"
-  @click="storeAppointments.menu[event.extendedProps.appointmentId] = false"
->
-  Cancel
-</v-btn>
-<v-btn
-  :color="event.extendedProps.background"
-  variant="text"
-  @click="storeAppointments.menu[event.extendedProps.appointmentId] = false"
->
-  Save
-</v-btn>
         <q-btn
           color="grey"
           round
@@ -141,3 +175,30 @@ function getInitials(name) {
    const   message=ref(true)
     const  hints= ref( true)
 </script>
+<style lang="scss" scoped>
+.example-fab-animate,
+.q-fab:hover .example-fab-animate--hover {
+  animation: example-fab-animate 0.82s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+  transform: translate3d(0, 0, 0);
+  backface-visibility: hidden;
+  perspective: 1000px;
+}
+
+@keyframes example-fab-animate {
+  10%, 90% {
+    transform: translate3d(-1px, 0, 0);
+  }
+
+  20%, 80% {
+    transform: translate3d(2px, 0, 0);
+  }
+
+  30%, 50%, 70% {
+    transform: translate3d(-4px, 0, 0);
+  }
+
+  40%, 60% {
+    transform: translate3d(4px, 0, 0);
+  }
+}
+</style>

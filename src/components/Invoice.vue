@@ -6,7 +6,7 @@
         <ion-item-option expandable @click="newPayment" color="success"><q-icon size="25px" name="payment"/>Pay</ion-item-option>
       </ion-item-options>
 
-      <ion-item lines="none" :disabled="!storeWorks.invoiceWorks[invoice.invoiceId]" :button="true" @click="$router.push(`/Invoices/${invoice.invoiceId}`)" detail="false" class="sliding-item" >
+      <ion-item lines="none" :disabled="!Works" :button="true" @click="$router.push(`/Invoices/${invoice.invoiceId}`)" detail="false" class="sliding-item" >
         <div class="left flex q-pt-xs q-pb-xs ">
       <span class="tracking-number">#{{ invoice.invoiceId }}</span>
 
@@ -15,7 +15,7 @@
         <q-avatar v-if="!isArabic(invoice.patientName)" class="q-mr-xs avatar-name" size="35px" font-size="16px" color="green-3" text-color="white"> {{getInitials( invoice.patientName) }} </q-avatar>
               <q-avatar v-if="isArabic(invoice.patientName)" class="q-mr-xs avatar-person" font-size="42px" size="35px" color="green-3" text-color="white" icon="person"/>
         <span class="text-bold" > {{ invoice.patientName }}</span></span>
-      <span> <div class="column" v-if="storeWorks.invoiceWorks[invoice.invoiceId]" v-for="item in storeWorks.invoiceWorks[invoice.invoiceId]">  <q-badge :color="item.color" class="col q-mt-xs">{{ item.label}}
+      <span> <div class="column" v-if="Works" v-for="item in Works">  <q-badge :color="item.color" class="col q-mt-xs">{{ item.label}}
 
         <q-badge  v-if="item.teeth&&item.teeth.length" color="white" class="q-ml-xs text-black">      <!-- Render the first two items -->
       <span v-for="(tooth, index) in getDisplayedItems(item.teeth)" :key="index" >
@@ -30,7 +30,7 @@
       </span>
      </div>
      <div class="right justify-end flex row">
-      <span> <div v-if="storeWorks.invoiceWorks[invoice.invoiceId]" v-for="subtotal in storeWorks.invoiceWorks[invoice.invoiceId].subTotals" class="price center column">
+      <span> <div v-if="invoice.workItemList" v-for="subtotal in Works.subTotals" class="price center column">
       <div  class="col flex"><span class="currency">{{(subtotal.currency)}} </span>{{formatMoney(subtotal.totalAmount) }}</div>
      </div>
         <!-- <div class="center column price">
@@ -49,22 +49,22 @@
       </q-circular-progress>
         </div> -->
       </span>
-  <span v-if="storeWorks.invoiceWorks[invoice.invoiceId]" class="flex">
+  <span v-if="Works" class="flex">
     <v-progress-linear
-      v-model="storeWorks.invoiceWorks[invoice.invoiceId].overallPercentage"
+      v-model="Works.overallPercentage"
       height="37"
       bg-opacity="0.8"
       rounded="10"
       class="progress-buttom"
-      :class="{ paid: storeWorks.invoiceWorks[invoice.invoiceId].overallPercentage==100, draft: invoice.invoiceDraft, pending: storeWorks.invoiceWorks[invoice.invoiceId].overallPercentage==0,partiallyPaid: storeWorks.invoiceWorks[invoice.invoiceId].overallPercentage<100&&storeWorks.invoiceWorks[invoice.invoiceId].overallPercentage>0,overDue: storeWorks.invoiceWorks[invoice.invoiceId].overDue&&storeWorks.invoiceWorks[invoice.invoiceId].overallPercentage<100&&!invoice.invoiceDraft, }"
+      :class="{ paid: Works.overallPercentage==100, draft: invoice.invoiceDraft, pending: Works.overallPercentage==0,partiallyPaid: Works.overallPercentage<100&&Works.overallPercentage>0,overDue: Works.overDue&&Works.overallPercentage<100&&!invoice.invoiceDraft, }"
     >
       <template v-slot:default="{ value }">
-        <span class="paid-text" v-if="storeWorks.invoiceWorks[invoice.invoiceId].overallPercentage==100">Paid <q-icon name="done" size="15px" color="teal-4" > </q-icon></span>
+        <span class="paid-text" v-if="Works.overallPercentage==100">Paid <q-icon name="done" size="15px" color="teal-4" > </q-icon></span>
         <span class="draft-text" v-if="invoice.invoiceDraft">Draft</span>
 
-        <span class="pending-text" v-if="storeWorks.invoiceWorks[invoice.invoiceId].overallPercentage==0&&!invoice.invoiceDraft&&!storeWorks.invoiceWorks[invoice.invoiceId].overDue">Pending</span>
-        <span class="partiallyPaid-text" v-if="storeWorks.invoiceWorks[invoice.invoiceId].overallPercentage<100&&storeWorks.invoiceWorks[invoice.invoiceId].overallPercentage>0&&!storeWorks.invoiceWorks[invoice.invoiceId].overDue">Partly</span>
-        <span class="overDue-text" v-if="storeWorks.invoiceWorks[invoice.invoiceId].overallPercentage<100&&storeWorks.invoiceWorks[invoice.invoiceId].overDue&&!invoice.invoiceDraft">Over Due</span>
+        <span class="pending-text" v-if="Works.overallPercentage==0&&!invoice.invoiceDraft&&!Works.overDue">Pending</span>
+        <span class="partiallyPaid-text" v-if="Works.overallPercentage<100&&Works.overallPercentage>0&&!Works.overDue">Partly</span>
+        <span class="overDue-text" v-if="Works.overallPercentage<100&&Works.overDue&&!invoice.invoiceDraft">Over Due</span>
       </template>
     </v-progress-linear>
   </span>
@@ -88,7 +88,7 @@ import { useStorePayments } from 'src/stores/storePayments'
 import { useStoreWorks } from 'src/stores/storeWorks'
 import { useStorePatients } from 'src/stores/storePatients'
 import { useStoreInvoices } from 'src/stores/storeInvoices'
-import { ref,watch,getCurrentInstance,toRefs } from 'vue'
+import { ref,watch,getCurrentInstance,toRefs,computed } from 'vue'
 import { IonItem,IonActionSheet, IonItemOption, IonItemOptions, IonItemSliding, IonLabel, modalController } from '@ionic/vue';
 import MobileInvoiceModal from 'src/components/MobileInvoiceModal.vue'
 
@@ -130,6 +130,127 @@ watch(() => props.invoice.deleted, (newValue) => {
     }, 100)
   }
 })
+const Works = computed(() => {
+  const invoice = props.invoice || {};
+  const works = invoice.workItemList || [];
+  const payments = storePayments.invoicePayments?.[invoice.invoiceId] || [];
+  const currencies = [...new Set(works.map((item) => item.currency))];
+
+  // Calculate subtotals for each currency
+  const subTotals = currencies.map((currency) => {
+    const paid = payments.reduce((accumulator, item) => {
+      if (item.currency === currency) {
+        return accumulator + Number(item.paid || 0);
+      }
+      return accumulator;
+    }, 0);
+
+    const paymentDates = payments.map((payment) => Number(payment.dateUnix || 0));
+    const highestPaymentDate = Math.max(...paymentDates, 0);
+
+    const paymentDueDates = works.map((work) => Number(work.paymentDueDateUnix || 0));
+    const highestPaymentDueDate = Math.max(...paymentDueDates, 0);
+
+    const subTotal = works.reduce((accumulator, item) => {
+      if (item.currency === currency) {
+        const priceValue = Number(item.price.replace(/,/g, '') || 0);
+        return accumulator + priceValue;
+      }
+      return accumulator;
+    }, 0);
+
+    const totalDiscount = works.reduce((accumulator, item) => {
+      if (item.currency === currency) {
+        const discountValue = Number(item.discount?.replace(/,/g, '') || 0);
+        return accumulator + discountValue;
+      }
+      return accumulator;
+    }, 0);
+
+    const totalAmount = subTotal - totalDiscount;
+    const dueAmount = totalAmount - paid;
+    const paidPercentage = totalAmount > 0 ? (paid / totalAmount) * 100 : 0;
+
+    return {
+      currency,
+      subTotal,
+      totalDiscount,
+      tax: 0,
+      totalAmount,
+      paid,
+      dueAmount,
+      paidPercentage,
+      highestPaymentDate,
+      highestPaymentDueDate,
+    };
+  });
+
+  // Calculate overall percentage and overdue status
+  const overallPercentage = subTotals.length > 0
+    ? (subTotals.reduce((acc, subtotal) => acc + subtotal.paidPercentage, 0) / subTotals.length).toFixed(1)
+    : 0;
+
+  const overDue = subTotals.some((subtotal) => {
+    const currentDate = new Date().getTime();
+    return subtotal.highestPaymentDueDate && currentDate > subtotal.highestPaymentDueDate;
+  });
+
+  // Add payment details to works
+  const worksWithDetails = works.map((work) => {
+    const allPaid = payments.reduce((accumulator, item) => {
+      if (item.workId === work.workId) {
+        return accumulator + Number(item.paid || 0);
+      }
+      return accumulator;
+    }, 0);
+
+    const price = Number(work.price.replace(/,/g, '') || 0);
+    const discount = Number(work.discount?.replace(/,/g, '') || 0);
+    const total = price - discount;
+
+    return {
+      ...work,
+      allPaid,
+      paidPercentage: total > 0 ? ((allPaid / total) * 100).toFixed(2) : 0,
+    };
+  });
+
+  // Function to handle doctor label modifications
+  function manipulateRepeatedDoctorLabels(arr) {
+    const copiedArray = JSON.parse(JSON.stringify(arr)); // Deep copy to avoid mutation
+    const doctorLabels = {};
+
+    copiedArray.forEach((obj, index) => {
+      const doctorLabel = obj.doctor.name;
+      if (!doctorLabels[doctorLabel]) {
+        doctorLabels[doctorLabel] = index; // Store index of the last occurrence
+      } else {
+        doctorLabels[doctorLabel] = index; // Update index for repeated doctor.label
+      }
+    });
+
+    copiedArray.forEach((obj, index) => {
+      const doctorLabel = obj.doctor.name;
+      if (index !== doctorLabels[doctorLabel]) {
+        obj.doctor.name = ''; // Clear label for non-last occurrences
+      }
+    });
+
+    return copiedArray;
+  }
+
+  const modifiedWorks = manipulateRepeatedDoctorLabels(worksWithDetails);
+
+  // Add subtotals, overall percentage, and overdue status
+  modifiedWorks.subTotals = subTotals;
+  modifiedWorks.overallPercentage = overallPercentage;
+  modifiedWorks.overDue = overDue;
+
+  console.log("SubTotals:", subTotals);
+  console.log("Updated works with overallPercentage and overDue:", modifiedWorks);
+
+  return modifiedWorks;
+});
 /*
  Filters
 */
@@ -179,7 +300,7 @@ watch(() => props.invoice.deleted, (newValue) => {
           // }
           isDeleted.value = true
           setTimeout(() => {
-            storeInvoices.DELETE_INVOICE(props.invoice.docId)
+            storeInvoices.DELETE_INVOICE(props.invoice.invoiceId)
           }, 280)
 
           const slidingItem = document.querySelector('.invoice')
@@ -238,6 +359,8 @@ const openInvoiceModal = async () => {
 
 <style lang="scss" scoped>
 .invoice {
+  max-width:850px;
+  margin:auto;
   text-decoration: none;
   cursor: pointer;
   // gap: 16px;

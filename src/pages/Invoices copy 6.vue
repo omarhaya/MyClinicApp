@@ -12,12 +12,12 @@
 
       <!-- Ensure scroller class properly styled -->
       <RecycleScroller
+
         class="ion-content-scroll-host scroller"
         :items="filteredData"
-        :min-item-size="70"
+        :item-size="120"
         :items-limit="filteredData.length + 1000"
         :key-field="'invoiceId'"
-        sizeField="size"
       >
       <template #before>
         <ion-header collapse="condense">
@@ -61,60 +61,9 @@
 
     </ion-toolbar>
     </ion-header>
-
-    <div class="home container">
-     <!-- Header -->
-
-     <div v-if="!mobile" class="header flex">
-       <div class="left flex flex-column">
-         <div class="m1">Invoices</div>
-         <span class="m2">There are {{ invoiceData.length }} total invoices</span>
-       </div>
-       <div class="right flex">
-         <div  class="filter flex">
-           <span
-             >Filter by status <span v-if="filteredInvoice">: {{ filteredInvoice }}</span></span
-           >
-           <img src="../assets/icon-arrow-down.svg" alt="" >
-
-          <q-menu :offset="[-10, 0]"   auto-close>
-           <q-list class="filter-menu"  style="min-width: 100px">
-             <q-item  @click="filteredInvoices" clickable>
-               <q-item-section>Draft</q-item-section>
-             </q-item>
-             <q-item @click="filteredInvoices" clickable>
-               <q-item-section >Pending</q-item-section>
-             </q-item>
-             <q-separator dark />
-             <q-item @click="filteredInvoices" clickable>
-               <q-item-section >Paid</q-item-section>
-             </q-item>
-             <q-item @click="filteredInvoices" clickable>
-               <q-item-section >Partially Paid</q-item-section>
-             </q-item>
-             <q-item @click="filteredInvoices" clickable>
-               <q-item-section >Over Due</q-item-section>
-             </q-item>
-             <q-item @click="filteredInvoices" clickable>
-               <q-item-section >Clear Filter</q-item-section>
-             </q-item>
-           </q-list>
-         </q-menu>
-
-         </div>
-         <div @click="newInvoice" class="button flex">
-           <div class="inner-button flex">
-             <img src="../assets/icon-plus.svg" alt="" />
-           </div>
-           <span v-if="$q.screen.gt.xs">New Invoice</span>
-         </div>
-       </div>
- </div>
- </div>
   </template>
-        <template #default="{ item,index ,active}">
-       <Invoice
-      :active="active"
+        <template #default="{ item }">
+          <Invoice
       @openPaymentModal="openPaymentModal"
       :invoice="item"
       :mobile="mobile"
@@ -122,11 +71,11 @@
       :pageRef="page"
         />
         </template>
-    <template #after>
-      <ion-infinite-scroll threshold="0" @ionInfinite="load">
-        <ion-infinite-scroll-content></ion-infinite-scroll-content>
-      </ion-infinite-scroll>
-    </template>
+        <template #after>
+          <ion-infinite-scroll threshold="0" @ionInfinite="load">
+      <ion-infinite-scroll-content></ion-infinite-scroll-content>
+    </ion-infinite-scroll>
+  </template>
 
       </RecycleScroller>
 
@@ -149,7 +98,7 @@ import { Platform } from 'quasar'
 import MobileInvoiceModal from 'src/components/MobileInvoiceModal.vue'
 import MobilePaymentModal from 'src/components/MobilePaymentModal.vue'
 import { useStorePayments } from "src/stores/storePayments"
-import { RecycleScroller,DynamicScrollerItem } from "vue-virtual-scroller";
+import { RecycleScroller } from "vue-virtual-scroller";
 const $q=useQuasar()
 /*
   Stores
@@ -178,18 +127,10 @@ const $q=useQuasar()
       }
       filteredInvoice.value = e.target.innerText
     }
-   const $=useQuasar()
+
    const filteredData = computed(() => {
       return invoiceData.value.filter((invoice) => {
-        const nameSize=invoice.patientName.length>18?15:0
-        const size=$q.screen.lt.sm?nameSize+75:45
 
-        if (invoice.workItemList.length<=1){
-           invoice.size=size*1.5
-        }
-        if (invoice.workItemList.length>1) {
-          invoice.size=size*1.5+(invoice.workItemList.length*15)
-        }
 
         if (filteredInvoice.value === "Draft") {
           return invoice.invoiceDraft === true
@@ -385,7 +326,6 @@ box-sizing: border-box;
           }
 .ion-content::part(scroll) {
 --offset-top: 0px !important;
-z-index: 1000 !important;
 // --offset-bottom: 0px !important;
 }
 .list-md {
@@ -394,7 +334,10 @@ z-index: 1000 !important;
 
 </style>
 <style scoped>
-
+.invoice-wrap {
+  /* Adjust modal styling */
+  z-index: 9998; /* Ensure the modal's z-index is lower than the action sheet */
+}
 
 ion-action-sheet {
   z-index: 9999 !important; /* Ensure the action sheet appears above the modal */
@@ -402,9 +345,17 @@ ion-action-sheet {
 /* Ensure proper styling for scroller and Ionic components */
 .scroller {
   height: 100%; /* Full height for the scroller */
-}
-.vue-recycle-scroller.direction-vertical:not(.page-mode) {
-  z-index: 1000000 !important;
+  overflow: auto; /* Allow scrolling */
+  position: relative; /* Necessary for virtual scroller calculations */
 }
 
+ion-content {
+  display: flex; /* Flex container for content scaling */
+  flex-direction: column;
+}
+
+ion-list {
+  flex: 1; /* Ensure the list scales properly */
+  margin: 0; /* Remove default Ionic spacing */
+}
 </style>

@@ -8,19 +8,8 @@
       </ion-buttons>
     </ion-toolbar>
   </ion-header>
- <ion-content ref="ionContent1" :fullscreen="true" :scroll-y="false" >
-
-      <!-- Ensure scroller class properly styled -->
-      <RecycleScroller
-        class="ion-content-scroll-host scroller"
-        :items="filteredData"
-        :min-item-size="70"
-        :items-limit="filteredData.length + 1000"
-        :key-field="'invoiceId'"
-        sizeField="size"
-      >
-      <template #before>
-        <ion-header collapse="condense">
+  <ion-content class="ion-content" :fullscreen="true">
+    <ion-header collapse="condense">
       <ion-toolbar class="home container">
         <ion-title size="large">Invoices</ion-title>
             <!-- Header -->
@@ -61,8 +50,27 @@
 
     </ion-toolbar>
     </ion-header>
-
-    <div class="home container">
+    <!-- <ion-button id="open-modal" expand="block">Open</ion-button> -->
+<!--
+<ion-modal ref="modal" trigger="open-modal" :can-dismiss="canDismiss" :presenting-element="presentingElement">
+  <ion-header>
+    <ion-toolbar>
+      <ion-title>Modal</ion-title>
+      <ion-buttons slot="end">
+        <ion-button @click="dismiss()">Close</ion-button>
+      </ion-buttons>
+    </ion-toolbar>
+  </ion-header>
+  <ion-content>
+    <p class="ion-padding-horizontal">You must accept the terms and conditions to close this modal.</p>
+    <ion-item>
+      <ion-checkbox id="terms" @ionChange="onTermsChanged" :checked="canDismiss">
+        <div class="ion-text-wrap">Do you accept the terms and conditions?</div>
+      </ion-checkbox>
+    </ion-item>
+  </ion-content>
+</ion-modal> -->
+      <div class="home container">
      <!-- Header -->
 
      <div v-if="!mobile" class="header flex">
@@ -110,30 +118,35 @@
          </div>
        </div>
  </div>
- </div>
-  </template>
-        <template #default="{ item,index ,active}">
-       <Invoice
-      :active="active"
+    <ion-list>
+    <!-- Invoices -->
+    <div v-if="invoiceData.length > 0">
+      <Invoice
       @openPaymentModal="openPaymentModal"
-      :invoice="item"
-      :mobile="mobile"
-      :key="item.invoiceId"
-      :pageRef="page"
+      v-for="(invoice, index) in filteredData"
+  :invoice="invoice"
+  :mobile="mobile"
+  :key="invoice.invoiceId"
+  :pageRef="page"
+
         />
-        </template>
-    <template #after>
-      <ion-infinite-scroll threshold="0" @ionInfinite="load">
-        <ion-infinite-scroll-content></ion-infinite-scroll-content>
-      </ion-infinite-scroll>
-    </template>
-
-      </RecycleScroller>
-
+     </div>
+     <div v-else-if="storeInvoices.loading||storeInvoices.moreDataAvailable"><invoiceLoading v-for="index in 3" :key="index"/></div>
+     <div v-else class="empty flex flex-column">
+       <img src="../assets/illustration-empty.svg" alt="" />
+       <h3>There is nothing here</h3>
+       <p>Create a new invoice by clicking the New Invoice button and get started</p>
+     </div>
+    </ion-list>
+    <ion-infinite-scroll threshold="0" @ionInfinite="load">
+      <ion-infinite-scroll-content></ion-infinite-scroll-content>
+    </ion-infinite-scroll>
+</div>
     </ion-content>
-
   </ion-page>
+
 </template>
+
 <script setup>
 import Invoice from "src/components/Invoice.vue"
 import invoiceLoading from "src/components/InvoiceLoading.vue"
@@ -142,14 +155,13 @@ import { useStoreInvoices } from 'src/stores/storeInvoices'
 import {computed,ref,onMounted} from 'vue'
 import {IonList,
    IonInfiniteScroll,
-   IonInfiniteScrollContent,IonPage,IonModal,IonCheckbox,IonContent, IonHeader, IonToolbar, IonTitle ,IonButtons, IonButton,modalController} from '@ionic/vue';
+   IonInfiniteScrollContent,IonPage,IonModal,IonCheckbox,IonItem, IonHeader, IonToolbar, IonTitle, IonContent ,IonButtons, IonButton,modalController} from '@ionic/vue';
 import { useStoreWorks } from "src/stores/storeWorks"
 import { useQuasar } from "quasar"
 import { Platform } from 'quasar'
 import MobileInvoiceModal from 'src/components/MobileInvoiceModal.vue'
 import MobilePaymentModal from 'src/components/MobilePaymentModal.vue'
 import { useStorePayments } from "src/stores/storePayments"
-import { RecycleScroller,DynamicScrollerItem } from "vue-virtual-scroller";
 const $q=useQuasar()
 /*
   Stores
@@ -178,18 +190,10 @@ const $q=useQuasar()
       }
       filteredInvoice.value = e.target.innerText
     }
-   const $=useQuasar()
+
    const filteredData = computed(() => {
       return invoiceData.value.filter((invoice) => {
-        const nameSize=invoice.patientName.length>18?15:0
-        const size=$q.screen.lt.sm?nameSize+75:45
 
-        if (invoice.workItemList.length<=1){
-           invoice.size=size*1.5
-        }
-        if (invoice.workItemList.length>1) {
-          invoice.size=size*1.5+(invoice.workItemList.length*15)
-        }
 
         if (filteredInvoice.value === "Draft") {
           return invoice.invoiceDraft === true
@@ -385,7 +389,6 @@ box-sizing: border-box;
           }
 .ion-content::part(scroll) {
 --offset-top: 0px !important;
-z-index: 1000 !important;
 // --offset-bottom: 0px !important;
 }
 .list-md {
@@ -394,17 +397,12 @@ z-index: 1000 !important;
 
 </style>
 <style scoped>
-
+.invoice-wrap {
+  /* Adjust modal styling */
+  z-index: 9998; /* Ensure the modal's z-index is lower than the action sheet */
+}
 
 ion-action-sheet {
   z-index: 9999 !important; /* Ensure the action sheet appears above the modal */
 }
-/* Ensure proper styling for scroller and Ionic components */
-.scroller {
-  height: 100%; /* Full height for the scroller */
-}
-.vue-recycle-scroller.direction-vertical:not(.page-mode) {
-  z-index: 1000000 !important;
-}
-
 </style>

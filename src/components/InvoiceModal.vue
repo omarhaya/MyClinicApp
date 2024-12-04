@@ -746,6 +746,7 @@ const    handleWorkItemChange=(value)=> {
  Edit Modal Data
  */
    if (storeInvoices.editInvoice) {
+    console.log(storeInvoices.currentInvoiceArray,'storeInvoices.currentInvoiceArray')
     //  console.log(storeInvoices.currentInvoiceArray[0],'currentinvoicearray00')
        const currentInvoice = storeInvoices.currentInvoiceArray
        docId.value = currentInvoice.docId
@@ -950,9 +951,11 @@ const    handleWorkItemChange=(value)=> {
     invoicePending: invoicePending.value,
     invoiceDraft: invoiceDraft.value,
     invoiceId: storeInvoices.currentInvoiceArray.invoiceId,
-    docId: docId.value
-  };
+    docId: docId.value,
+    workItemList:storeInvoices.workItemList,
 
+  };
+  data.workItemList.forEach(item=>item.invoiceId=storeInvoices.currentInvoiceArray.invoiceId)
   const workIdsInWorkItemList = new Set(storeInvoices.workItemList.map(item => item.workId));
   const currentWorkItems = storeInvoices.currentInvoiceArray.workItemList;
   console.log(currentWorkItems, 'currentWorkItems');
@@ -996,12 +999,12 @@ const    handleWorkItemChange=(value)=> {
   }
    else {
     // No items to delete, proceed with updating the invoice
-    storeInvoices.updateInvoice(data);
+    await storeInvoices.updateInvoice(data);
     await handleWorkUpdates(data);
+    console.log(data,'dataa')
   }
 }
 async function handleDeleteItems (data,itemsToDelete) {
-  storeWorks.loading=true
   storeInvoices.loading=true
   console.log(itemsToDelete)
   for (const item of itemsToDelete) {

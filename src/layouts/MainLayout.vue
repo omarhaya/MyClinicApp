@@ -1,4 +1,5 @@
 <template>
+
   <!-- InvoiceModal -->
   <q-dialog
     v-if="!mobile"
@@ -114,6 +115,7 @@
   </q-dialog>
 
   <q-layout v-if="!mobile" view="lHh Lpr lFf">
+
     <q-header>
       <q-toolbar>
         <q-btn flat @click="toggleLeftDrawer()" round dense icon="menu" />
@@ -198,6 +200,7 @@
     </ion-page>
   </q-layout>
   <ion-page v-else ref="page">
+
     <ion-tabs>
       <ion-router-outlet></ion-router-outlet>
       <ion-tab-bar class="q-pb-lg" slot="bottom">

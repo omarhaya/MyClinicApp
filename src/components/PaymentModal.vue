@@ -2,25 +2,7 @@
   <div class="payment-wrap flex flex-column">
      <LoadingPaymentModal v-if="!mobile" v-show="loadingModal" />
      <form ref="paymentFormRef" id="form" name="name" @submit.prevent="submitForm" class="payment-content">
-      <!-- <v-banner
-      v-if="mobile"
-      :sticky="true"
-      lines="one"
-    >
-    <div class="row justify-between">
-     <div >
-     <q-btn flat @click="closePayment">Cancel</q-btn>
-       </div>
-       <div >
-        <h5 v-if="!storePayments.editPayment">New Payment</h5>
-       <span v-else>Edit Payment</span>
-      </div>
-      <div class="justify-end">
-   <q-btn flat v-if="!storePayments.editPayment" type="submit">Create</q-btn>
-   <q-btn flat v-if="storePayments.editPayment" type="sumbit">Update</q-btn>
-  </div>
-    </div>
-    </v-banner> -->
+
        <div class="m1" v-if="!storePayments.editPayment&&!mobile">New Payment</div>
        <div class="m1" v-if="storePayments.editPayment&&!mobile">Edit Payment</div>
 
@@ -153,7 +135,7 @@
             <q-circular-progress
       show-value
       font-size="13px"
-      :value="work.paidPercentage"
+      :value="parseInt(work.paidPercentage)"
       :color="work.paidPercentage==100?'teal-4':'orange'"
       track-color="grey-3"
       size="50px"
@@ -213,31 +195,22 @@
               </template>
 
             </v-select>
-            <div v-if="storePayments.paymentInvoices"  v-for="currency in uniqueCurrencies">
-            <!-- <q-input v-if="paymentItemList[currency]" mask="###,###,###" reverse-fill-mask  :suffix="currency" dense  type="text" v-model="paymentItemList[currency].paid" :rules="[ val => val!=='0' || 'Please use maximum 3 characters']" required >
-                         <template v-slot:append>
-                          <q-knob
-                          reverse
-                          :step="25"
-                          v-model="paymentItemList[currency].percentage"
-                          show-value
-                          size="30px"
-                          :thickness="0.22"
-                          :color="paymentItemList[currency].percentage==100?'green':'orange'"
-                          track-color="grey-2"
-                          :class="paymentItemList[currency].percentage==100?'text-green':''"
-                        > {{ paymentItemList[currency].percentage }}</q-knob>
-                          </template>
-                       </q-input> -->
-
-                       <v-text-field   :disabled="storeInvoices.loadingInvoices||storePayments.loading||storeWorks.loading"  required autofocus  density="compact" @input="calculatePercentage2(paymentItemList[currency])" color="primary" :prefix="currency" dense  type="tel" v-model="paymentItemList[currency].paid" >
-                         <template v-slot:append>
-                          </template>
-                       </v-text-field>
-                       <!-- <ion-input  ref="paidRef" required v-model="paymentItemList[currency].paid" @input="calculatePercentage2(paymentItemList[currency])" type="tel" placeholder="Enter Amount">
-                        <div slot="start" aria-hidden="true">{{ currency }}</div>
-                      </ion-input> -->
-        </div>
+            <div v-if="storePayments.paymentInvoices" v-for="(currency, index) in uniqueCurrencies" :key="index">
+              <v-text-field
+                ref="currencyFields"
+                :disabled="storeInvoices.loadingInvoices || storePayments.loading || storeWorks.loading"
+                required
+                density="compact"
+                @input="calculatePercentage2(paymentItemList[currency])"
+                color="primary"
+                :prefix="currency"
+                dense
+                type="tel"
+                v-model="paymentItemList[currency].paid"
+              >
+                <template v-slot:append></template>
+              </v-text-field>
+            </div>
        </div>
          </div>
 
@@ -295,7 +268,8 @@ const   mobile=computed(()=>{
  const     paymentItemList=ref({})
  const     patientInvoices=computed(()=>{
 if(storePayments.patient){
-  return storeInvoices.GET_PATIENT_INVOICES(storePayments.patient.patientId)||[]
+  const patientInvoices=storeInvoices.GET_PATIENT_INVOICES(storePayments.patient.patientId)||[]
+  return patientInvoices
 }
 else return storeInvoices.invoiceData
 
@@ -325,6 +299,13 @@ watch(uniqueCurrencies, (newVal, oldVal) => {
         percentage: 0,
         currency,
       };
+      setTimeout(() => {
+    // Focus on the first currency field if it exists
+    if (currencyFields.value.length > 0 && currencyFields.value[0]) {
+      currencyFields.value[0].focus();
+    }
+  }, 400); // Delay of 5 seconds
+
     });
   }
   paymentItemList.value = paymentItemListCurrency;
@@ -339,9 +320,6 @@ const selectWorksInvoice = (option) => {
     }
   });
 };
-function comeflywithme() {
-  console.log(storePayments.paymentInvoices,'comeflywithme()')
-}
  function closePayment() {
        storePayments.TOGGLE_PAYMENT()
        if (storePayments.editInvoice) {
@@ -427,7 +405,7 @@ function comeflywithme() {
        const options = ref(storePatients.patients)
 async function getPatientInvoices(invoiceId){
         if(storePayments.patient)
-        storeInvoices.SET_PATIENT_INVOICES(storePayments.patient.patientId)
+      await  storeInvoices.SET_PATIENT_INVOICES(storePayments.patient.patientId)
       if (invoiceId) {
        console.log(storeInvoices.GET_PATIENT_INVOICES(storePayments.patient.patientId)||[],'patientIVOICES')
       }
@@ -435,6 +413,7 @@ async function getPatientInvoices(invoiceId){
 const selectWork=(work,works)=>{
   work.selected=!work.selected
 }
+ const currencyFields=ref([])
 /*
  Edit Modal Data
  */
@@ -444,47 +423,50 @@ onMounted(async () => {
     const currentPayment = storePayments.currentPaymentArray;
 
     // Set the patient from the payment information
-    storePayments.patient = storePatients.patients.find(doc => doc.patientId === currentPayment.patientId);
-    console.log(storePayments.patient,'currentPaymentcurrentPayment')
+     storePayments.patient = storePatients.patients.find(doc => doc.patientId === currentPayment.patientId);
+     const patient=storePayments.patient
     // Call getPatientInvoices and wait for it to finish
-    await getPatientInvoices();
+    console.log(patient,'storePayments.patient')
+    await storeInvoices.SET_PATIENT_INVOICES(patient.patientId,currentPayment.invoiceId)
+  // Add delay and autofocus the first input field
 
     // Use a watcher to wait until patientInvoices is populated
-    watch(
-      () => storeInvoices.patientInvoices,
-      (newPatientInvoices) => {
-        // Find the current invoice based on the currentPayment.invoiceId
-        const currentInvoice = newPatientInvoices.find(
-          doc => doc.invoiceId === currentPayment.invoiceId
-        );
+    // watch(
+    //   () => storeInvoices.patientInvoices,
+    //   (newPatientInvoices) => {
+    //     // Find the current invoice based on the currentPayment.invoiceId
+    //     const currentInvoice = newPatientInvoices.find(
+    //       doc => doc.invoiceId === currentPayment.invoiceId
+    //     )
+    //     // If the currentInvoice is found
+    //     if (currentInvoice) {
+    //       console.log(currentInvoice.payments,'fsfs')
+    //     //  currentInvoice.works=storeInvoices.GET_CURRENT_INVOICE_WORKS(currentInvoice)
+    //       // Clear the paymentInvoices array before adding the new invoice
+    //       storePayments.paymentInvoices = [];
 
-        // If the currentInvoice is found
-        if (currentInvoice) {
-          // Clear the paymentInvoices array before adding the new invoice
-          storePayments.paymentInvoices = [];
+    //       // Create a new works array where the work with the same workId is marked as selected
+    //       const updatedWorks = currentInvoice.works.map(work => {
+    //         return {
+    //           ...work,
+    //           selected: work.workId === currentPayment.workId // Set selected to true if workId matches
+    //         };
+    //       });
 
-          // Create a new works array where the work with the same workId is marked as selected
-          const updatedWorks = currentInvoice.works.map(work => {
-            return {
-              ...work,
-              selected: work.workId === currentPayment.workId // Set selected to true if workId matches
-            };
-          });
+    //       // Update the currentInvoice with the updated works
+    //       const updatedInvoice = {
+    //         ...currentInvoice,
+    //         works: updatedWorks
+    //       };
 
-          // Update the currentInvoice with the updated works
-          const updatedInvoice = {
-            ...currentInvoice,
-            works: updatedWorks
-          };
+    //       // Push the updated invoice into the reactive array
+    //       storePayments.paymentInvoices.push(updatedInvoice);
 
-          // Push the updated invoice into the reactive array
-          storePayments.paymentInvoices.push(updatedInvoice);
-
-          console.log(updatedInvoice, storePayments.paymentInvoices, 'currentInvoice added to paymentInvoices');
-        }
-      },
-      { immediate: true }
-    );
+    //       console.log(updatedInvoice, storePayments.paymentInvoices, 'currentInvoice added to paymentInvoices');
+    //     }
+    //   },
+    //   { immediate: true }
+    // );
 
     // Use a watcher to wait until patientInvoices is populated
     watch(
@@ -500,7 +482,6 @@ onMounted(async () => {
       { immediate: true }
     );
   }
-  console.log(storePayments.payments,'paymentsStore')
 });
 /*
  Submission
@@ -538,7 +519,7 @@ function submitForm() {
         // Filter the 'works' array to get only the objects where 'selected' is true
         const selectedWorks = works.filter(work => work.selected === true)
         // Check the length of the filtered array
-        console.log(paymentItemList.value[currency].paid,'paid')
+        console.log(paymentItemList.value[currency],'paid')
         if (selectedWorks.length === 1&&paymentItemList.value[currency].paid!==0) {
           const work=({
            paymentItemList:paymentItemList.value[currency],

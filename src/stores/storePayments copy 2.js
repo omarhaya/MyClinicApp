@@ -202,18 +202,11 @@ export const useStorePayments= defineStore('storePayments', {
      // Fetch payments by date range and listen for live updates
      async fetchPaymentsByDate(startDate, endDate) {
       this.loading=true
-      const paymentsCollectionRef = collectionGroup(
-        db,
-        'payments',
-      )
-     // Define query with start and end date for range-based fetching
-     const q = query(
-      paymentsCollectionRef,
-      where('date', '>=', startDate),
-      where('date', '<=', endDate),
-      where('doctorId', '==', this.storeAuth.user.uid),
-      where('Type', '==', 'cash')
-    );
+      const q = query(
+        paymentsCollectionRef,
+        where('date', '>=', startDate),
+        where('date', '<=', endDate)
+      );
 
       onSnapshot(q, (querySnapshot) => {
         const paymentGroups = {};
@@ -325,23 +318,20 @@ export const useStorePayments= defineStore('storePayments', {
        patientId:doc.data().patientId,
        currency:doc.data().currency,
      }
-    //  this.storeInvoices.GET_INVOICE_FOR_PAYMENT(payment.invoiceId)
+     this.storeInvoices.GET_INVOICE_FOR_PAYMENT(payment.invoiceId)
     //  this.getPaymentsForInvoice(payment.invoiceId)
     //  this.storeWorks.getWork(payment.workId)
-    this.storeInvoices.GET_INVOICE_FOR_PAYMENT(payment.invoiceId)
      payments.push(payment)
-
      })
      this.dayPayments[date]=payments
-    //  payments.forEach(payment=>{this.storeInvoices.GET_INVOICE_FOR_PAYMENT(payment.invoiceId)})
      console.log(this.dayPayments[date],'this.dayPayments')
  })
  this.loading=false
 console.log(this.dayPayments,'dayPayments')
 },
-// async getInvoiceForPayment(invoiceId) {
-//   this.storeInvoices.GET_INVOICE_FOR_PAYMENT(invoiceId)
-// },
+async getInvoiceForPayment(invoiceId) {
+  this.storeInvoices.GET_INVOICE_FOR_PAYMENT(invoiceId)
+},
 async getIntervalPayments(startDate, endDate) {
   const paymentsCollectionRef = collectionGroup(
     db,
@@ -373,11 +363,9 @@ onSnapshot(q, (querySnapshot) => {
     };
 
     // Load related invoice and work data
-    // this.getPaymentsForInvoice(payment.invoiceId);
+    this.getPaymentsForInvoice(payment.invoiceId);
     // this.storeWorks.getWork(payment.workId);
-    // this.storeInvoices.GET_INVOICE_FOR_PAYMENT(payment.invoiceId)
-    // this.storeInvoices.GET_INVOICE_FOR_PAYMENT(payment.invoiceId)
-    this.storeInvoices.GET_INVOICE_FOR_PAYMENT(payment.invoiceId)
+
     payments.push(payment);
   });
 
@@ -389,11 +377,7 @@ onSnapshot(q, (querySnapshot) => {
 
 async getPatientPayments(patientId) {
   this.loadingPayments=true
-  const paymentsCollectionRef = collectionGroup(
-    db,
-    'payments',
-  )
- const paymentsCollectionQuery = query(paymentsCollectionRef,where("patientId", "==", patientId),where('Type', '==', 'cash'),orderBy('dateUnix','desc'));
+ const paymentsCollectionQuery = query(paymentsCollectionRef,where("patientId", "==", patientId),orderBy('dateUnix','desc'));
  getPaymentsSnapshot=onSnapshot(paymentsCollectionQuery, (querySnapshot) => {
    const payments=[]
    querySnapshot.forEach((doc) => {
@@ -405,14 +389,15 @@ async getPatientPayments(patientId) {
      workId:doc.data().workId,
      patientId:doc.data().patientId,
    }
-   this.storeInvoices.GET_INVOICE_FOR_PAYMENT(payment.invoiceId)
+   this.getPaymentsForInvoice(payment.invoiceId)
+   this.storeWorks.getWork(payment.workId)
    payments.push(payment)
    })
    this.patientPayments[patientId]=payments
+   console.log(this.patientPayments[patientId],'paymentssss')
 })
 this.loadingPayments=false
 },
-
 async addPayment (work) {
   const paymentsCollectionRef = collection(
     invoicesCollectionRef,
@@ -435,7 +420,6 @@ async addPayment (work) {
           doctorId:work.doctor.doctorId,
           patientId:work.patientDetails.patientId,
           uid:this.storeAuth.user.uid,
-          Type:'cash',
         })
         // Set a timeout to check if the Firestore operation completes within a certain time
         const timeoutDuration = 5000; // Timeout duration in milliseconds (adjust as needed)

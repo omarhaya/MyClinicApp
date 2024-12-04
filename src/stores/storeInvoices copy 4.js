@@ -33,7 +33,6 @@ export const useStoreInvoices = defineStore('storeInvoices', {
     })
     return {
       invoiceData: [],
-      currentInvoice:[],
       patientInvoices:[],
       invoiceModal: null,
       teethModals:[],
@@ -52,7 +51,6 @@ export const useStoreInvoices = defineStore('storeInvoices', {
       moreDataAvailable: true, // Flag to track if more data is available
       mobile,
       loadingInvoices:null,
-      paymentsInvoice:[],
     }
   },
 
@@ -68,7 +66,8 @@ export const useStoreInvoices = defineStore('storeInvoices', {
     TOGGLE_INVOICE(invoiceId) {
       if (!this.mobile){this.invoiceModal = !this.invoiceModal}
       if (invoiceId) {
-        this.currentInvoiceArray=this.invoiceData.find(doc => doc.invoiceId === invoiceId)||this.patientInvoices.find(doc => doc.invoiceId === invoiceId)||this.currentInvoice
+        this.currentInvoiceArray=this.invoiceData.find(doc => doc.invoiceId === invoiceId)||this.patientInvoices.find(doc => doc.invoiceId === invoiceId)
+        this.currentInvoiceArray.workItemList=this.storeWorks.invoiceWorks[invoiceId]
         console.log(this.invoiceData,'currentinvoice')
       }
 
@@ -150,64 +149,19 @@ export const useStoreInvoices = defineStore('storeInvoices', {
     },
     SET_CURRENT_INVOICE(invoiceId) {
       this.loading=true
-      console.log('geting invoice')
       const q =  query(invoicesCollectionRef,where('invoiceId' ,'==',invoiceId))
     onSnapshot(q, (querySnapshot)  => {
     querySnapshot.forEach((doc) => {
       const invoice = {
-        docId: doc.id,
-        invoiceId: doc.data().invoiceId,
-        workItemList: doc.data().workItemList,
-        patientName: doc.data().patientName,
-        patientId: doc.data().patientId,
-        invoiceDateUnix: doc.data().invoiceDateUnix,
-        invoiceDate: doc.data().invoiceDate,
-        // workItemList: doc.data().workItemList,
-        // paymentTerms: doc.data().paymentTerms,
-        // paymentDueDateUnix: doc.data().paymentDueDateUnix,
-        // paymentDueDate: doc.data().paymentDueDate,
-        // productDescription: doc.data().productDescription,
-        // paymentItemList: doc.data().paymentItemList,
-        // invoiceTotal: doc.data().invoiceTotal,
-        // invoicePending: doc.data().invoicePending,
-        invoiceDraft: doc.data().invoiceDraft,
-        // invoicePaid: doc.data().invoicePaid,
-        deleted:doc.data().deleted,
-      }
-      const paymentsCollectionRef = collection(
-        invoicesCollectionRef,
-        invoice.invoiceId,
-        "payments"
-      )
-        console.log(this.storePayments.loading, 'paymentsloading');
-
-
-        const paymentsQuery = query(paymentsCollectionRef);
-
-        // Set up a real-time listener for payments
-        this.unsubscribe = onSnapshot(paymentsQuery, (querySnapshot) => {
-          const payments = [];
-
-          querySnapshot.forEach((doc) => {
-            let payment = {
-              paymentId: doc.id,
-              paid: doc.data().paid,
-              date: doc.data().date,
-              workId: doc.data().workId,
-              currency: doc.data().currency,
-              dateUnix: doc.data().dateUnix,
-            };
-            payments.push(payment);
-            console.log(payment,'paymentforinvoice')
-          });
-
-        this.storePayments.invoicePayments[invoice.invoiceId] = payments;
-        this.storePayments.loading=false
-        })
-          this.currentInvoice=invoice
-          console.log(this.currentInvoice,'geting invoice')
-          // this.storePayments.getPaymentsForInvoice(invoiceId)
-
+            invoiceId: doc.data().invoiceId,
+            patientName: doc.data().patientName,
+            patientId: doc.data().patientId,
+            invoiceDateUnix: doc.data().invoiceDateUnix,
+            invoiceDate: doc.data().invoiceDate,
+            invoiceDraft: doc.data().invoiceDraft,
+          }
+          this.invoiceData[invoiceId]=invoice
+          this.storePayments.getPaymentsForInvoice(invoiceId)
        })
      })
      this.loading=false
@@ -275,7 +229,7 @@ export const useStoreInvoices = defineStore('storeInvoices', {
       const invoicesCollectionQuery = query(invoicesCollectionRef,where("invoiceId", "==", invoiceId))
       getInvoicesSnapshot=onSnapshot(invoicesCollectionQuery, (querySnapshot) => {
     const fbInvoices = []
-    querySnapshot.forEach(async (doc) => {
+    querySnapshot.forEach((doc) => {
       const invoice = {
             docId: doc.id,
             invoiceId: doc.data().invoiceId,
@@ -284,40 +238,29 @@ export const useStoreInvoices = defineStore('storeInvoices', {
             patientId: doc.data().patientId,
             invoiceDateUnix: doc.data().invoiceDateUnix,
             invoiceDate: doc.data().invoiceDate,
+            // workItemList: doc.data().workItemList,
+            // paymentTerms: doc.data().paymentTerms,
+            // paymentDueDateUnix: doc.data().paymentDueDateUnix,
+            // paymentDueDate: doc.data().paymentDueDate,
+            // productDescription: doc.data().productDescription,
+            // paymentItemList: doc.data().paymentItemList,
+            // invoiceTotal: doc.data().invoiceTotal,
+            // invoicePending: doc.data().invoicePending,
             invoiceDraft: doc.data().invoiceDraft,
+            // invoicePaid: doc.data().invoicePaid,
             deleted:doc.data().deleted,
           }
-          const paymentsCollectionRef = collection(
-            invoicesCollectionRef,
-            invoice.invoiceId,
-            'payments'
-          );
-
-          const paymentsQuery = query(paymentsCollectionRef);
-
-          // Real-time listener for payments
-            onSnapshot(paymentsQuery,  (querySnapshot) => {
-            const payments = [];
-            querySnapshot.forEach((doc) => {
-              payments.push({
-                paymentId: doc.id,
-                paid: doc.data().paid,
-                date: doc.data().date,
-                workId: doc.data().workId,
-                currency: doc.data().currency,
-                dateUnix: doc.data().dateUnix,
-              });
-            });
-            invoice.payments=payments
-            console.log(invoice,payments,'invoicey')
-
-             invoice.works=this.GET_CURRENT_INVOICE_WORKS(invoice,payments)
-             this.paymentsInvoice[invoice.invoiceId]=invoice
-          })
-
+          this.invoiceData[invoiceId]=invoice
           console.log(invoice,'invoicc')
-        //  await this.storePayments.getPaymentsForInvoice(invoice.invoiceId)
+          this.storePayments.getPaymentsForInvoice(invoice.invoiceId)
        })
+
+        // Fetch payments and works for each invoice
+        // fbInvoices.forEach(invoice=>{
+        //   this.storePayments.getPaymentsForInvoice(invoice.invoiceId)
+        // }
+        // )
+      //  this.invoiceData[invoiceId] = fbInvoices
        console.log(this.invoiceData,'invoiceData')
      })
 
@@ -325,16 +268,14 @@ export const useStoreInvoices = defineStore('storeInvoices', {
     },
     async SET_PATIENT_INVOICES(patientId, invoiceId) {
       try {
-        this.loadingInvoices = true;
+        this.loadingInvoices = true; // Set loading state to true when data fetching begins
+        console.log(this.loading, 'loading');
 
-        const invoicesCollectionQuery = query(
-          invoicesCollectionRef,
-          where('patientId', '==', patientId),
-          where('deletedDateUnix', '==', null),
-          orderBy('invoiceDateUnix', 'desc')
-        );
+        const invoicesCollectionQuery = query(invoicesCollectionRef, where('patientId', '==', patientId), where("deletedDateUnix", "==", null), orderBy('invoiceDateUnix', 'desc'));
 
+        // Await for the snapshot to get data
         const querySnapshot = await getDocs(invoicesCollectionQuery);
+
         const fbInvoices = [];
         querySnapshot.forEach((doc) => {
           const invoice = {
@@ -345,189 +286,42 @@ export const useStoreInvoices = defineStore('storeInvoices', {
             invoiceDateUnix: doc.data().invoiceDateUnix,
             invoiceDate: doc.data().invoiceDate,
             invoiceDraft: doc.data().invoiceDraft,
-            workItemList: doc.data().workItemList,
           };
-          const paymentsCollectionRef = collection(
-            invoicesCollectionRef,
-            invoice.invoiceId,
-            'payments'
-          );
-
-          const paymentsQuery = query(paymentsCollectionRef);
-
-          // Real-time listener for payments
-            onSnapshot(paymentsQuery,  (querySnapshot) => {
-            const payments = [];
-            querySnapshot.forEach((doc) => {
-              payments.push({
-                paymentId: doc.id,
-                paid: doc.data().paid,
-                date: doc.data().date,
-                workId: doc.data().workId,
-                currency: doc.data().currency,
-                dateUnix: doc.data().dateUnix,
-              });
-            });
-            invoice.payments=payments
-            console.log(invoice,payments,'invoicey')
-
-             invoice.works=this.GET_CURRENT_INVOICE_WORKS(invoice,payments)
-             if (invoiceId && invoice.invoiceId === invoiceId) {
-              this.storePayments.paymentInvoices = reactive([{
-                ...invoice,
-              }]);
-            }
-          })
           fbInvoices.push(invoice);
-
         });
+        // Fetch payments and works for each invoice
+        for (const invoice of fbInvoices) {
+          await this.storePayments.getPaymentsForInvoice(invoice.invoiceId);
+        }
 
         this.patientInvoices = fbInvoices;
-        console.log('this.patientInvoices',this.patientInvoices)
-        this.loadingInvoices = false;
+        console.log(this.patientInvoices, 'fetched invoices');
+
+        // Update payment invoices if invoiceId is provided
+        if (invoiceId) {
+          console.log(invoiceId, 'invoiceId provided');
+          const paymentsInvoices = this.GET_PATIENT_INVOICES(patientId).filter(invoice => invoice.invoiceId === invoiceId);
+
+          const updatedPaymentInvoices = paymentsInvoices.map(paymentInvoice => {
+            const updatedWorks = paymentInvoice.works.map(work => {
+              if (parseInt(work.paidPercentage) !== 100) {
+                return { ...work, selected: true };
+              }
+              return work;
+            });
+            return { ...paymentInvoice, works: updatedWorks };
+          });
+
+          this.storePayments.paymentInvoices = reactive(updatedPaymentInvoices);
+        }
+
+        this.loadingInvoices = false; // Clear loading state when data fetching completes
+        console.log(this.loading, 'loading');
       } catch (error) {
-        console.error('Error fetching invoices:', error);
-        this.loadingInvoices = false;
+        console.error("Error fetching invoices:", error);
+        this.loadingInvoices = true; // Clear loading state if an error occurs
       }
     },
-//     async CALCULATE_WORKS(invoice, payments) {
-//       const works = invoice.workItemList || [];
-//       const currencies = [...new Set(works.map((item) => item.currency))];
-
-//       // Calculate subtotals for each currency
-//       const subTotals = currencies.map((currency) => {
-//         const paid = payments.reduce((accumulator, item) => {
-//           if (item.currency === currency) {
-//             return accumulator + Number(item.paid || 0);
-//           }
-//           return accumulator;
-//         }, 0);
-
-//         const paymentDates = payments.map((payment) => Number(payment.dateUnix || 0));
-//         const highestPaymentDate = Math.max(...paymentDates, 0);
-
-//         const paymentDueDates = works.map((work) => Number(work.paymentDueDateUnix || 0));
-//         const highestPaymentDueDate = Math.max(...paymentDueDates, 0);
-
-//         const subTotal = works.reduce((accumulator, item) => {
-//           if (item.currency === currency) {
-//             let priceValue = 0;
-
-//             if (typeof item.price === 'string') {
-//               // If it's a string, sanitize it and convert to a number
-//               priceValue = Number(item.price.replace(/,/g, '') || 0);
-//             } else if (typeof item.price === 'number') {
-//               // If it's already a number, use it directly
-//               priceValue = item.price;
-//             } else {
-//               // If it's neither, default to 0
-//               console.warn(`Unexpected price type for item:`, item);
-//             }
-
-//             return accumulator + priceValue;
-//           }
-//           return accumulator;
-//         }, 0);
-
-//         const totalDiscount = works.reduce((accumulator, item) => {
-//           if (item.currency === currency) {
-//             let discountValue = 0;
-
-//             if (typeof item.discount === 'string') {
-//               // If it's a string, sanitize it and convert to a number
-//               discountValue = Number(item.discount.replace(/,/g, '') || 0);
-//             } else if (typeof item.discount === 'number') {
-//               // If it's already a number, use it directly
-//               discountValue = item.discount;
-//             } else {
-//               // If it's neither, default to 0
-//               console.warn(`Unexpected discount type for item:`, item);
-//             }
-
-//             return accumulator + discountValue;
-//           }
-//           return accumulator;
-//         }, 0);
-//         const totalAmount = subTotal - totalDiscount;
-//         const dueAmount = totalAmount - paid;
-//         const paidPercentage = totalAmount > 0 ? (paid / totalAmount) * 100 : 0;
-
-//         return {
-//           currency,
-//           subTotal,
-//           totalDiscount,
-//           tax: 0,
-//           totalAmount,
-//           paid,
-//           dueAmount,
-//           paidPercentage,
-//           highestPaymentDate,
-//           highestPaymentDueDate,
-//         };
-//       });
-
-//       // Calculate overall percentage and overdue status
-//       const overallPercentage = subTotals.length > 0
-//         ? (subTotals.reduce((acc, subtotal) => acc + subtotal.paidPercentage, 0) / subTotals.length).toFixed(1)
-//         : 0;
-
-//       const overDue = subTotals.some((subtotal) => {
-//         const currentDate = new Date().getTime();
-//         return subtotal.highestPaymentDueDate && currentDate > subtotal.highestPaymentDueDate;
-//       });
-
-//       // Add payment details to works
-//       const worksWithDetails = works.map((work) => {
-//         const allPaid = payments.reduce((accumulator, item) => {
-//           if (item.workId === work.workId) {
-//             return accumulator + Number(item.paid || 0);
-//           }
-//           return accumulator;
-//         }, 0);
-
-//       let price = 0;
-// if (typeof work.price === 'string') {
-//   price = Number(work.price.replace(/,/g, '') || 0);
-// } else if (typeof work.price === 'number') {
-//   price = work.price;
-// } else {
-//   console.warn(`Unexpected price type for work:`, work);
-// }
-
-// let discount = 0;
-// if (typeof work.discount === 'string') {
-//   discount = Number(work.discount.replace(/,/g, '') || 0);
-// } else if (typeof work.discount === 'number') {
-//   discount = work.discount;
-// } else {
-//   console.warn(`Unexpected discount type for work:`, work);
-// }
-
-// const total = price - discount;
-
-// // Update work object
-// work.price = price;
-// work.discount = discount;
-//         return {
-//           ...work,
-//           allPaid,
-//           paidPercentage: total > 0 ? ((allPaid / total) * 100).toFixed(2) : 0,
-//         };
-//       });
-
-//       const updatedWorks = worksWithDetails.map(work => {
-//         if (parseInt(work.paidPercentage) !== 100) {
-//           return { ...work, selected: true };
-//         }
-//         return work;
-//       });
-
-//       updatedWorks.subTotals = subTotals;
-//       updatedWorks.overallPercentage = overallPercentage;
-//       updatedWorks.overDue = overDue;
-//       console.log(updatedWorks,'updatedWorks')
-//       return updatedWorks;
-//     },
 
     async GET_INVOICES_NEXT()  {
 
@@ -563,36 +357,7 @@ export const useStoreInvoices = defineStore('storeInvoices', {
             deleted:doc.data().deleted,
           }
           fbInvoices.push(invoice)
-          const paymentsCollectionRef = collection(
-            invoicesCollectionRef,
-            invoice.invoiceId,
-            "payments"
-          )
-            this.loading = true; // Set loading state to true when data fetching begins
-            console.log(this.loading, 'paymentsloading');
-
-
-            const paymentsQuery = query(paymentsCollectionRef);
-
-            // Set up a real-time listener for payments
-            this.unsubscribe = onSnapshot(paymentsQuery, (querySnapshot) => {
-              const payments = [];
-
-              querySnapshot.forEach((doc) => {
-                let payment = {
-                  paymentId: doc.id,
-                  paid: doc.data().paid,
-                  date: doc.data().date,
-                  workId: doc.data().workId,
-                  currency: doc.data().currency,
-                  dateUnix: doc.data().dateUnix,
-                };
-                payments.push(payment);
-                console.log(payment,'paymentforinvoice')
-              });
-
-            this.storePayments.invoicePayments[invoice.invoiceId] = payments;
-            })
+          console.log(invoice,'invoicc')
        })
        if (querySnapshot.size < this.limit) {
         // If the number of retrieved documents is less than the requested limit,
@@ -601,7 +366,6 @@ export const useStoreInvoices = defineStore('storeInvoices', {
       } else {
         this.limit += 4; // Increase the limit for the next query
       }
-
         // Fetch payments and works for each invoice
         // fbInvoices.forEach(invoice=>{
         //   this.storePayments.getPaymentsForInvoice(invoice.invoiceId)
@@ -782,8 +546,7 @@ export const useStoreInvoices = defineStore('storeInvoices', {
     async updateInvoice(data) {
       try {
         this.loadingModal = true;
-           console.log(data,'data.docId')
-           const plainWorkItemList = JSON.parse(JSON.stringify(data.workItemList));
+
         // Get a reference to the existing document using its invoiceId
         const invoiceDocRef = doc(invoicesCollectionRef, data.docId);
 
@@ -796,7 +559,6 @@ export const useStoreInvoices = defineStore('storeInvoices', {
           invoiceDraft: data.invoiceDraft,
           deletedDateUnix: null,
           uid: this.storeAuth.user.uid,
-          workItemList:plainWorkItemList,
         };
 
         // Set a timeout to check if the Firestore operation completes within a certain time
@@ -843,151 +605,8 @@ export const useStoreInvoices = defineStore('storeInvoices', {
 
   getters:{
     GET_CURRENT_INVOICE: (state)=>{
-      return (invoiceId) =>{
-        console.log(state.invoiceData.filter(invoice=> invoice.invoiceId===invoiceId)[0],'ssssZ')
-       return state.invoiceData.filter(invoice=> invoice.invoiceId===invoiceId)[0]
-      }
-     },
-     GET_CURRENT_INVOICE_WORKS: (state)=>{
-      return (invoice,payments) =>{
-        // const payments= state.storePayments.invoicePayments[invoice.invoiceId]||[]
-        const works = invoice.workItemList || [];
-        const currencies = [...new Set(works.map((item) => item.currency))];
-          console.log(payments,works,'sssz')
-        // Calculate subtotals for each currency
-        const subTotals = currencies.map((currency) => {
-          const paid = payments.reduce((accumulator, item) => {
-            if (item.currency === currency) {
-              return accumulator + Number(item.paid || 0);
-            }
-            return accumulator;
-          }, 0);
-
-          const paymentDates = payments.map((payment) => Number(payment.dateUnix || 0));
-          const highestPaymentDate = Math.max(...paymentDates, 0);
-
-          const paymentDueDates = works.map((work) => Number(work.paymentDueDateUnix || 0));
-          const highestPaymentDueDate = Math.max(...paymentDueDates, 0);
-
-          const subTotal = works.reduce((accumulator, item) => {
-            if (item.currency === currency) {
-              let priceValue = 0;
-
-              if (typeof item.price === 'string') {
-                // If it's a string, sanitize it and convert to a number
-                priceValue = Number(item.price.replace(/,/g, '') || 0);
-              } else if (typeof item.price === 'number') {
-                // If it's already a number, use it directly
-                priceValue = item.price;
-              } else {
-                // If it's neither, default to 0
-                console.warn(`Unexpected price type for item:`, item);
-              }
-
-              return accumulator + priceValue;
-            }
-            return accumulator;
-          }, 0);
-
-          const totalDiscount = works.reduce((accumulator, item) => {
-            if (item.currency === currency) {
-              let discountValue = 0;
-
-              if (typeof item.discount === 'string') {
-                // If it's a string, sanitize it and convert to a number
-                discountValue = Number(item.discount.replace(/,/g, '') || 0);
-              } else if (typeof item.discount === 'number') {
-                // If it's already a number, use it directly
-                discountValue = item.discount;
-              } else {
-                // If it's neither, default to 0
-                console.warn(`Unexpected discount type for item:`, item);
-              }
-
-              return accumulator + discountValue;
-            }
-            return accumulator;
-          }, 0);
-          const totalAmount = subTotal - totalDiscount;
-          const dueAmount = totalAmount - paid;
-          const paidPercentage = totalAmount > 0 ? (paid / totalAmount) * 100 : 0;
-
-          return {
-            currency,
-            subTotal,
-            totalDiscount,
-            tax: 0,
-            totalAmount,
-            paid,
-            dueAmount,
-            paidPercentage,
-            highestPaymentDate,
-            highestPaymentDueDate,
-          };
-        });
-
-        // Calculate overall percentage and overdue status
-        const overallPercentage = subTotals.length > 0
-          ? (subTotals.reduce((acc, subtotal) => acc + subtotal.paidPercentage, 0) / subTotals.length).toFixed(0)
-          : 0;
-
-        const overDue = subTotals.some((subtotal) => {
-          const currentDate = new Date().getTime();
-          return subtotal.highestPaymentDueDate && currentDate > subtotal.highestPaymentDueDate;
-        });
-
-        // Add payment details to works
-        const worksWithDetails = works.map((work) => {
-          const allPaid = payments.reduce((accumulator, item) => {
-            if (item.workId === work.workId) {
-              return accumulator + Number(item.paid || 0);
-            }
-            return accumulator;
-          }, 0);
-
-        let price = 0;
-  if (typeof work.price === 'string') {
-    price = Number(work.price.replace(/,/g, '') || 0);
-  } else if (typeof work.price === 'number') {
-    price = work.price;
-  } else {
-    console.warn(`Unexpected price type for work:`, work);
-  }
-
-  let discount = 0;
-  if (typeof work.discount === 'string') {
-    discount = Number(work.discount.replace(/,/g, '') || 0);
-  } else if (typeof work.discount === 'number') {
-    discount = work.discount;
-  } else {
-    console.warn(`Unexpected discount type for work:`, work);
-  }
-
-  const total = price - discount;
-
-  // Update work object
-  work.price = price;
-  work.discount = discount;
-          return {
-            ...work,
-            allPaid,
-            paidPercentage: total > 0 ? ((allPaid / total) * 100).toFixed(0) : 0,
-          };
-        });
-
-        const updatedWorks = worksWithDetails.map(work => {
-          if (parseInt(work.paidPercentage) !== 100) {
-            return { ...work, selected: true };
-          }
-          return work;
-        });
-
-        updatedWorks.subTotals = subTotals;
-        updatedWorks.overallPercentage = overallPercentage;
-        updatedWorks.overDue = overDue;
-        console.log(updatedWorks,'updatedWorks')
-        return updatedWorks;
-
+      return (patientId) =>{
+       return state.invoiceData.filter(invoice=> invoice.invoiceId===patientId)[0]
       }
      },
      GET_PATIENT_INVOICES: (state)=>{

@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
 import {
   collection, onSnapshot,where,
-  query,orderBy,addDoc,deleteDoc,doc,updateDoc,getDocs,collectionGroup,writeBatch,deleteField
+  query,orderBy,addDoc,deleteDoc,doc,updateDoc,getDocs,collectionGroup,writeBatch,limit
 } from 'firebase/firestore'
 import {db} from '/src/js/firebase'
 import { useStoreAuth } from './storeAuth'
@@ -48,6 +48,7 @@ export const useStoreAppointments= defineStore('storeAppointments', {
        $q:useQuasar(),
        modal:false,
        mobile,
+       limit:5,
        appointmentsCount:0,
     }
   },
@@ -146,6 +147,12 @@ export const useStoreAppointments= defineStore('storeAppointments', {
         };
         fbAppointments.push(appointment);
       });
+          // Sort appointments by the `start` time
+    fbAppointments.sort((a, b) => {
+      const timeA = dayjs(a.start, "HH:mm").valueOf(); // Ensure proper time parsing
+      const timeB = dayjs(b.start, "HH:mm").valueOf();
+      return timeA - timeB;
+    });
       // Add the default event to each day's appointments
       const defaultEvent = {
         groupId: 'availableForAppointment',
@@ -204,6 +211,54 @@ export const useStoreAppointments= defineStore('storeAppointments', {
           console.log('error',error.message)
       })
    },
+   async getMyAppointments() {
+    this.loadingAppointments = true;
+    const q = query(appointmentsCollectionRef, where("appointmentdate", ">=", this.selectedDate),this.limit ? limit(this.limit) : undefined);
+    onSnapshot(q, (querySnapshot) => {
+      const appointmentsByDate = {};
+
+      querySnapshot.forEach((doc) => {
+        const appointment = {
+          appointmentId: doc.id,
+          details: doc.data().details,
+          date: doc.data().date,
+          appointmentdate: doc.data().appointmentdate, // Ensure appointmentdate is included
+          patientDetails: doc.data().patientDetails,
+          title: doc.data().patientDetails.namef,
+          completed: doc.data().completed,
+          resourceIds: [doc.data().doctorId],
+          start: doc.data().start,
+          end: doc.data().end,
+          status: doc.data().status || "booked",
+          constraint: "availableForAppointment",
+          background: "orange",
+          sendWhatsAppReminder: doc.data().sendWhatsAppReminder,
+          sendWhatsAppMessage: doc.data().sendWhatsAppMessage,
+        };
+
+        // Group appointments by `appointmentdate`
+        const dateKey = appointment.appointmentdate;
+        if (!appointmentsByDate[dateKey]) {
+          appointmentsByDate[dateKey] = [];
+        }
+        appointmentsByDate[dateKey].push(appointment);
+      });
+
+      // Sort each date's appointments by `start` time
+      Object.keys(appointmentsByDate).forEach((dateKey) => {
+        appointmentsByDate[dateKey].sort((a, b) => {
+          const timeA = dayjs(a.start, "HH:mm").valueOf(); // Ensure proper time parsing
+          const timeB = dayjs(b.start, "HH:mm").valueOf();
+          return timeA - timeB;
+        });
+      });
+
+      // Assign the sorted grouped appointments to `this.dayAppointments`
+      this.dayAppointments = appointmentsByDate;
+      console.log(this.dayAppointments, "Grouped and sorted appointments");
+    });
+    this.loadingAppointments = false;
+  },
   //  async updateAppointmentFields() {
   //   try {
   //     const appointmentsRef = collection(db, 'appointments'); // Replace 'appointments' with your collection name

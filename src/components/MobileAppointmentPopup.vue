@@ -68,7 +68,24 @@
 
       <q-card-actions  :props="props">
 
-        <q-btn round icon="add" @click="modals.addAppointment=true" :color="event.extendedProps.background"/>
+        <q-btn round id="popover-button" icon="add" :color="event.extendedProps.background"/>
+  <ion-popover trigger="popover-button" :dismiss-on-select="true">
+    <ion-content>
+      <ion-list>
+        <ion-item :button="true" :detail="false">Option 1</ion-item>
+        <ion-item :button="true" :detail="false">Option 2</ion-item>
+        <ion-item :button="true" id="nested-trigger">More options...</ion-item>
+
+        <ion-popover trigger="nested-trigger" :dismiss-on-select="true" side="end">
+          <ion-content>
+            <ion-list>
+              <ion-item :button="true" :detail="false">Nested option</ion-item>
+            </ion-list>
+          </ion-content>
+        </ion-popover>
+      </ion-list>
+    </ion-content>
+  </ion-popover>
         <q-btn flat :color="event.extendedProps.background" label="Casesheet" />
         <q-space />
         <v-spacer></v-spacer>

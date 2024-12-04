@@ -26,18 +26,18 @@
       <div class="left flex">
 
         <span>Status</span>
-        <div v-if="storeWorks.invoiceWorks[currentInvoice.invoiceId]"
+        <div v-if="Works&&!loading&&!storePayments.loading"
           class="status-button flex"
           :class="{
-            paid: storeWorks.invoiceWorks[currentInvoice.invoiceId].overallPercentage==100,
+            paid: Works.overallPercentage==100,
             draft: currentInvoice.invoiceDraft,
-            pending: storeWorks.invoiceWorks[currentInvoice.invoiceId].overallPercentage==0&&!currentInvoice.invoiceDraft,
-            partiallyPaid: storeWorks.invoiceWorks[currentInvoice.invoiceId].overallPercentage<100&&storeWorks.invoiceWorks[currentInvoice.invoiceId].overallPercentage>0,
+            pending: Works.overallPercentage==0&&!currentInvoice.invoiceDraft,
+            partiallyPaid: Works.overallPercentage<100&&Works.overallPercentage>0,
           }"
         >
-          <span v-if="storeWorks.invoiceWorks[currentInvoice.invoiceId].overallPercentage==100">Paid</span>
+          <span v-if="Works.overallPercentage==100">Paid</span>
           <span v-if="currentInvoice.invoiceDraft">Draft</span>
-          <span v-if=" storeWorks.invoiceWorks[currentInvoice.invoiceId].overallPercentage==0&&!currentInvoice.invoiceDraft">Pending<q-icon v-if="storeWorks.invoiceWorks[currentInvoice.invoiceId].overDue" name="error_outline" class="q-ml-lg" color="red-5" size="18px">  <q-tooltip
+          <span v-if=" Works.overallPercentage==0&&!currentInvoice.invoiceDraft">Pending<q-icon v-if="Works.overDue" name="error_outline" class="q-ml-lg" color="red-5" size="18px">  <q-tooltip
           anchor="top middle"
           self="bottom middle"
           :offset="[10, 10]"
@@ -46,7 +46,7 @@
         >
           Payment OverDue!
         </q-tooltip></q-icon></span>
-          <span v-if="storeWorks.invoiceWorks[currentInvoice.invoiceId].overallPercentage<100&&storeWorks.invoiceWorks[currentInvoice.invoiceId].overallPercentage>0">Partially Paid<q-icon v-if="storeWorks.invoiceWorks[currentInvoice.invoiceId].overDue" name="error_outline" class="q-ml-lg" color="red-5" size="18px">  <q-tooltip
+          <span v-if="Works.overallPercentage<100&&Works.overallPercentage>0">Partially Paid<q-icon v-if="Works.overDue" name="error_outline" class="q-ml-lg" color="red-5" size="18px">  <q-tooltip
           transition-show="scale"
           transition-hide="scale"
           anchor="top middle"
@@ -56,7 +56,9 @@
           Payment OverDue!
         </q-tooltip></q-icon></span>
         </div>
+        <div v-else ><q-skeleton width="100px" height="35px" class="status-button flex"/></div>
       </div>
+
       <div class="right flex">
         <button v-if="$q.screen.gt.xs" @click="handleClick()" class="grey">Edit</button>
         <q-btn v-else color="grey-7" round flat icon="more_vert">
@@ -68,7 +70,7 @@
             <v-list-item-title >New Payment</v-list-item-title>
           </v-list-item>
             <v-list-item
-            @click="deleteInvoice(currentInvoice.docId)"
+            @click="deleteInvoice(currentInvoice.invoiceId)"
           >
             <v-list-item-title  >Delete</v-list-item-title>
           </v-list-item>
@@ -80,7 +82,7 @@
         </v-list>
       </v-menu>
         </q-btn>
-        <button v-if="$q.screen.gt.xs" @click="deleteInvoice(currentInvoice.docId)" class="red">Delete</button>
+        <button v-if="$q.screen.gt.xs" @click="deleteInvoice(currentInvoice.invoiceId)" class="red">Delete</button>
         <div v-if="$q.screen.gt.xs" @click="newPayment" class="button flex">
           <div class="inner-button ">
             <img src="../assets/icon-plus.svg" alt="" />
@@ -101,39 +103,39 @@
     </div>
 
     <!-- Invoice Details -->
-    <div class="invoice-details flex flex-column">
+    <div v-if="currentInvoice" class="invoice-details flex flex-column">
       <div  class="top row">
         <div class="left col">
           <p><span>#</span>{{ currentInvoice.invoiceId }}</p>
 
     <h4>Bill To</h4>
-          <p> <q-avatar v-if="!isArabic(currentInvoice.patientName)" class="q-mr-xs avatar-name" size="35px" font-size="16px" color="green-3" text-color="white"> {{getInitials( currentInvoice.patientName) }} </q-avatar>
+          <p v-if="currentInvoice.patientName"> <q-avatar v-if="!isArabic(currentInvoice.patientName)" class="q-mr-xs avatar-name" size="35px" font-size="16px" color="green-3" text-color="white"> {{getInitials( currentInvoice.patientName) }} </q-avatar>
               <q-avatar v-if="isArabic(currentInvoice.patientName)" class="q-mr-xs avatar-person" font-size="42px" size="35px" color="green-3" text-color="white" icon="person"/> {{ currentInvoice.patientName }}</p>
           <p>{{ currentInvoice.billerCity }}</p>
           <p>{{ currentInvoice.billerZipCode }}</p>
           <p>{{ currentInvoice.billerCountry }}</p>
 
         </div>
-        <div  v-if="storeWorks.invoiceWorks[currentInvoice.invoiceId].subTotals[0]"  class="middle flex col">
+        <div  v-if="Works.subTotals[0]"  class="middle flex col">
         <div class="payment flex flex-column">
           <h4>Invoice Date</h4>
           <p>
             {{ currentInvoice.invoiceDate }}
           </p>
-          <h4 v-if="storeWorks.invoiceWorks[currentInvoice.invoiceId].subTotals[0].highestPaymentDueDate">Due Date</h4>
+          <h4 v-if="Works.subTotals[0].highestPaymentDueDate">Due Date</h4>
           <p :class="{
-            'text-red': storeWorks.invoiceWorks[currentInvoice.invoiceId].overDue&&storeWorks.invoiceWorks[currentInvoice.invoiceId].overallPercentage<100&&!currentInvoice.invoiceDraft,
-          }" v-if="storeWorks.invoiceWorks[currentInvoice.invoiceId].subTotals[0].highestPaymentDueDate">
-            <span class="q-mr-md">{{ formatDate(storeWorks.invoiceWorks[currentInvoice.invoiceId].subTotals[0].highestPaymentDueDate)}}</span>
+            'text-red': Works.overDue&&Works.overallPercentage<100&&!currentInvoice.invoiceDraft,
+          }" v-if="Works.subTotals[0].highestPaymentDueDate">
+            <span class="q-mr-md">{{ formatDate(Works.subTotals[0].highestPaymentDueDate)}}</span>
           </p>
-          <!-- <h4 v-if="storeWorks.invoiceWorks[currentInvoice.invoiceId].subTotals[0].highestPaymentDate">Last Payment Date</h4>
-          <p v-if="storeWorks.invoiceWorks[currentInvoice.invoiceId].subTotals[0].highestPaymentDate">
-            {{ formatDate(storeWorks.invoiceWorks[currentInvoice.invoiceId].subTotals[0].highestPaymentDate)}}
+          <!-- <h4 v-if="Works.subTotals[0].highestPaymentDate">Last Payment Date</h4>
+          <p v-if="Works.subTotals[0].highestPaymentDate">
+            {{ formatDate(Works.subTotals[0].highestPaymentDate)}}
           </p> -->
         </div>
       </div>
-        <div class="right col"  v-if="storeWorks.invoiceWorks[currentInvoice.invoiceId]">
-    <GrowingCircularProgress class="q-ma-md" :color="storeWorks.invoiceWorks[currentInvoice.invoiceId].overallPercentage==100?'teal-4':'orange'" :value="storeWorks.invoiceWorks[currentInvoice.invoiceId].overallPercentage==100?storeWorks.invoiceWorks[currentInvoice.invoiceId].overallPercentage:storeWorks.invoiceWorks[currentInvoice.invoiceId].overallPercentage-1"/>
+        <div class="right col"  v-if="Works">
+    <GrowingCircularProgress class="q-ma-md" :color="Works.overallPercentage==100?'teal-4':'orange'" :value="Works.overallPercentage"/>
         </div>
       </div>
 
@@ -147,10 +149,10 @@
 
           </div>
           <ion-accordion-group :multiple="true">
-    <ion-accordion v-if="!storeWorks.loading" v-for="(work, index) in storeWorks.invoiceWorks[currentInvoice.invoiceId]" :key="index" :value="index" >
+    <ion-accordion v-for="(work, index) in Works" :key="index" :value="index" >
       <ion-item slot="header" :color="work.color">
         <ion-label>{{ work.label }}</ion-label>
-        <ion-label class="total" slot="end"><p><span class="currency">{{(work.currency)}} </span>{{formatMoney(work.price-work.discount) }}</p></ion-label>
+        <ion-label class="total" slot="end"><p><span class="currency">{{(work.currency)}} </span>{{formatMoney(work.price) }}</p></ion-label>
       </ion-item>
 
   <v-timeline class="time-line"  align="start" side="end" slot="content">
@@ -238,7 +240,7 @@
   </v-timeline>
     </ion-accordion>
   </ion-accordion-group>
-          <!-- <div  v-if="!storeWorks.loading" v-for="work in storeWorks.invoiceWorks[currentInvoice.invoiceId]">
+          <!-- <div  v-if="!storeWorks.loading" v-for="work in Works">
             <div :class="`bg-${work.color}-1 item flex col`">
                <p >{{ work.label}}</p>
 
@@ -256,7 +258,7 @@
           </div>
         </div> -->
         <table class="table-total right-align">
-      <tbody  v-if="storeWorks.invoiceWorks[currentInvoice.invoiceId]" v-for="subtotal in storeWorks.invoiceWorks[currentInvoice.invoiceId].subTotals">
+      <tbody  v-if="Works" v-for="subtotal in Works.subTotals">
         <tr>
           <td><span class="text-bold">Subtotal</span>   <span v-if="subtotal.length>1">IN ({{ subtotal.currency }})</span></td>
           <td><span class="currency">{{(subtotal.currency)}} </span>{{formatMoney(subtotal.subTotal)}}</td>
@@ -286,9 +288,9 @@
           <p>Amount Due</p>
           <p :class="{
             'text-green-9': subtotal.dueAmount==0,
-            // 'text-red': storeWorks.invoiceWorks[currentInvoice.invoiceId].overDue&&subtotal.dueAmount!==0&&!currentInvoice.invoiceDraft,
+            // 'text-red': Works.overDue&&subtotal.dueAmount!==0&&!currentInvoice.invoiceDraft,
           }"
-           class="text-right col-12 col-md" v-if="storeWorks.invoiceWorks[currentInvoice.invoiceId]" v-for="subtotal in storeWorks.invoiceWorks[currentInvoice.invoiceId].subTotals">
+           class="text-right col-12 col-md" v-if="Works" v-for="subtotal in Works.subTotals">
             <span class="currency">{{(subtotal.currency)}} </span>{{ formatMoney(subtotal.dueAmount) }}
           </p>
         </div>
@@ -306,7 +308,7 @@ import { useStoreInvoices } from 'src/stores/storeInvoices'
 import { useStorePatients } from 'src/stores/storePatients';
 import { useStorePayments } from 'src/stores/storePayments'
 import { useStoreWorks } from 'src/stores/storeWorks';
-import {computed,ref,onMounted,watch} from 'vue'
+import {computed,ref,onMounted,onBeforeMount} from 'vue'
 import { useRoute,useRouter } from "vue-router";
 import { IonAccordion, IonAccordionGroup, IonItem, IonLabel, IonPage, IonHeader, IonToolbar, IonTitle, IonContent , IonBackButton, IonButtons,modalController} from '@ionic/vue';
 import { Platform } from 'quasar'
@@ -323,7 +325,7 @@ const page=ref()
     const storePayments=useStorePayments()
     const storeWorks=useStoreWorks()
     const storePatients=useStorePatients()
-    const {  invoicesLoaded,currentInvoiceArray } = storeToRefs(storeInvoices)
+    const {  invoicesLoaded,currentInvoiceArray,loading } = storeToRefs(storeInvoices)
 /*
  Router
 */
@@ -332,25 +334,29 @@ const page=ref()
 /*
   InvoiceData
 */
-onMounted(() => {
-      if(!storeInvoices.GET_CURRENT_INVOICE(route.params.invoiceId)){
+onBeforeMount(() => {
+
         storeInvoices.SET_CURRENT_INVOICE(route.params.invoiceId)
-      }
+
      })
+
     const currentInvoice=computed(()=>{
+      console.log(storeInvoices.currentInvoice,'storeInvoices.currentInvoice')
+      // return storeInvoices.GET_CURRENT_INVOICE(route.params.invoiceId)
       if(!storeInvoices.GET_CURRENT_INVOICE(route.params.invoiceId)){
-        return storeInvoices.invoiceData[route.params.invoiceId]
+        return storeInvoices.currentInvoice
       }
       else{
       return storeInvoices.GET_CURRENT_INVOICE(route.params.invoiceId)
       }
     })
+    console.log(currentInvoice.value,'currentInvoice')
     function toggleEditInvoice() {
       storeInvoices.TOGGLE_EDIT_INVOICE()
       storeInvoices.TOGGLE_INVOICE()
     }
-    async function deleteInvoice(docId) {
-      storeInvoices.DELETE_INVOICE(docId)
+    async function deleteInvoice(invoiceId) {
+      storeInvoices.DELETE_INVOICE(invoiceId)
       router.push({ name: "invoices" })
     }
 
@@ -361,6 +367,129 @@ onMounted(() => {
     function updateStatusToPending(docId) {
       storeInvoices.UPDATE_STATUS_TO_PENDING(docId)
     }
+
+  const Works = computed(() => {
+    loading.value = true; // Start loading when recalculating works
+  const invoice = currentInvoice.value|| {};
+  const works = invoice.workItemList || [];
+  const payments = storePayments.invoicePayments?.[invoice.invoiceId] || [];
+  const currencies = [...new Set(works.map((item) => item.currency))];
+
+  // Calculate subtotals for each currency
+  const subTotals = currencies.map((currency) => {
+    const paid = payments.reduce((accumulator, item) => {
+      if (item.currency === currency) {
+        return accumulator + Number(item.paid || 0);
+      }
+      return accumulator;
+    }, 0);
+
+    const paymentDates = payments.map((payment) => Number(payment.dateUnix || 0));
+    const highestPaymentDate = Math.max(...paymentDates, 0);
+
+    const paymentDueDates = works.map((work) => Number(work.paymentDueDateUnix || 0));
+    const highestPaymentDueDate = Math.max(...paymentDueDates, 0);
+
+    const subTotal = works.reduce((accumulator, item) => {
+      if (item.currency === currency) {
+        const priceValue = Number(item.price.replace(/,/g, '') || 0);
+        return accumulator + priceValue;
+      }
+      return accumulator;
+    }, 0);
+
+    const totalDiscount = works.reduce((accumulator, item) => {
+      if (item.currency === currency) {
+        const discountValue = Number(item.discount?.replace(/,/g, '') || 0);
+        return accumulator + discountValue;
+      }
+      return accumulator;
+    }, 0);
+
+    const totalAmount = subTotal - totalDiscount;
+    const dueAmount = totalAmount - paid;
+    const paidPercentage = totalAmount > 0 ? (paid / totalAmount) * 100 : 0;
+
+    return {
+      currency,
+      subTotal,
+      totalDiscount,
+      tax: 0,
+      totalAmount,
+      paid,
+      dueAmount,
+      paidPercentage,
+      highestPaymentDate,
+      highestPaymentDueDate,
+    };
+  });
+
+  // Calculate overall percentage and overdue status
+  const overallPercentage = subTotals.length > 0
+    ? (subTotals.reduce((acc, subtotal) => acc + subtotal.paidPercentage, 0) / subTotals.length).toFixed(1)
+    : 0;
+
+  const overDue = subTotals.some((subtotal) => {
+    const currentDate = new Date().getTime();
+    return subtotal.highestPaymentDueDate && currentDate > subtotal.highestPaymentDueDate;
+  });
+
+  // Add payment details to works
+  const worksWithDetails = works.map((work) => {
+    const allPaid = payments.reduce((accumulator, item) => {
+      if (item.workId === work.workId) {
+        return accumulator + Number(item.paid || 0);
+      }
+      return accumulator;
+    }, 0);
+
+    const price = Number(work.price.replace(/,/g, '') || 0);
+    const discount = Number(work.discount?.replace(/,/g, '') || 0);
+    const total = price - discount;
+
+    return {
+      ...work,
+      allPaid,
+      paidPercentage: total > 0 ? ((allPaid / total) * 100).toFixed(2) : 0,
+    };
+  });
+
+  // Function to handle doctor label modifications
+  function manipulateRepeatedDoctorLabels(arr) {
+    const copiedArray = JSON.parse(JSON.stringify(arr)); // Deep copy to avoid mutation
+    const doctorLabels = {};
+
+    copiedArray.forEach((obj, index) => {
+      const doctorLabel = obj.doctor.name;
+      if (!doctorLabels[doctorLabel]) {
+        doctorLabels[doctorLabel] = index; // Store index of the last occurrence
+      } else {
+        doctorLabels[doctorLabel] = index; // Update index for repeated doctor.label
+      }
+    });
+    loading.value = false; // End loading after computation
+    copiedArray.forEach((obj, index) => {
+      const doctorLabel = obj.doctor.name;
+      if (index !== doctorLabels[doctorLabel]) {
+        obj.doctor.name = ''; // Clear label for non-last occurrences
+      }
+    });
+
+    return copiedArray;
+  }
+
+  const modifiedWorks = manipulateRepeatedDoctorLabels(worksWithDetails);
+
+  // Add subtotals, overall percentage, and overdue status
+  modifiedWorks.subTotals = subTotals;
+  modifiedWorks.overallPercentage = overallPercentage;
+  modifiedWorks.overDue = overDue;
+
+  console.log("SubTotals:", subTotals);
+  console.log("Updated works with overallPercentage and overDue:", modifiedWorks);
+
+  return modifiedWorks;
+});
 /*
     Styling
 */
@@ -368,6 +497,7 @@ onMounted(() => {
             return /[\u0600-\u06FF]/.test(value)
        }
        function getInitials(name) {
+        console.log(name,'name')
           const nameParts = name.split(' ');
           const firstName = nameParts[0].charAt(0).toUpperCase();
           const lastName = nameParts[nameParts.length - 1].charAt(0).toUpperCase();

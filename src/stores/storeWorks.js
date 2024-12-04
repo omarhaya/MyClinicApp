@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
 import {
   collection, onSnapshot,where,
-  query,doc,addDoc,writeBatch,getDocs,collectionGroup,updateDoc,deleteDoc
+  query,doc,setDoc,writeBatch,getDocs,collectionGroup,updateDoc,deleteDoc
 } from 'firebase/firestore'
 import {db} from '/src/js/firebase'
 import { useStoreAuth } from './storeAuth'
@@ -32,41 +32,47 @@ export const useStoreWorks = defineStore('storeWorks', {
         worksCollectionRef = collection(db, 'users',this.storeAuth.role.clinicId,'works')
         }
         else {worksCollectionRef = collection(db, 'users',this.storeAuth.user.uid,'works') }
-        // this.updateWorks()
+        // this.updateWorksDocIds()
    },
-   async updateWorks() {
+   async  updateWorksDocIds() {
     try {
-      // const doctorsIds = doctors.map(doctor => doctor.doctorId);
-      const worksCollectionAllRef = collectionGroup(db, 'works');
-      const worksCollectionAllQuery = query(worksCollectionAllRef, );
 
-      const snapshot = await getDocs(worksCollectionAllQuery);
 
-      const batch =  writeBatch(db) // Use the batch function from Firestore
+      // Reference to the works collection
+      const worksCollectionRef = collection(db, 'users', 'e1Q5Eg5McWZjGjmuZpDeJCC3bkB3', 'works');
+      const worksCollectionQuery = query(worksCollectionRef);
 
-      snapshot.forEach(doc => {
-        const workData = doc.data();
+      // Fetch the snapshot of all works
+      const snapshot = await getDocs(worksCollectionQuery);
 
-        if (!workData.doctor.doctorId) {
+      // Initialize a batch for batch updates
+      const batch = writeBatch(db);
+
+      // Iterate over each work document
+      for (const docSnapshot of snapshot.docs) {
+        const workData = docSnapshot.data();
+
+        if (workData && workData.workId && workData.workId !== docSnapshot.id) {
+          // Construct the new document reference with the workId
+          const newWorkRef = doc(db, 'users', 'e1Q5Eg5McWZjGjmuZpDeJCC3bkB3', 'works', workData.workId);
+
+          // Prepare the data for updating
           const updatedData = {
             ...workData,
-            doctor: {
-              name: workData.doctor.name,
-              doctorId: this.storeAuth.user.uid
-            },
-            // // id: patientData.id,
-            // id: deleteField(), // Remove the 'id' field
-            // clientDetails: deleteField() // Remove the 'id' field
+            // Add any necessary modifications to the data here
           };
-          const workRef = doc.ref;
-          batch.update(workRef, updatedData);
-        }
-      });
 
+          // Add the update operation to the batch
+          batch.set(newWorkRef, updatedData);  // Set the new document with updated workId
+          batch.delete(docSnapshot.ref); // Delete the old document
+        }
+      }
+
+      // Commit the batch update
       await batch.commit();
-      console.log('Updated invoice data successfully');
+      console.log('Updated works document IDs successfully');
     } catch (error) {
-      console.error('Error updating invoice data:', error);
+      console.error('Error updating works document IDs:', error);
     }
   },
     // Add Work
@@ -102,13 +108,16 @@ export const useStoreWorks = defineStore('storeWorks', {
       });
 
       try {
-        // Add to Firestore
-        const docRef = await addDoc(worksCollectionRef, newWork);
-        console.log(newWork,'work!!!')
-        // Update the docId in local state with the actual doc ID from Firestore
+        // Add to Firestore with the workId as the doc ID
+        const workRef = doc(worksCollectionRef, work.workId); // Use workId as the document ID
+        await setDoc(workRef, newWork); // Set the document with the new work data
+
+        console.log(newWork, 'work!!!');
+
+        // Update the docId in local state with the actual doc ID (workId)
         const addedWork = this.invoiceWorks[work.invoiceId].find(item => item.workId === work.workId);
         if (addedWork) {
-          addedWork.docId = docRef.id;
+          addedWork.docId = work.workId; // Set docId to workId
         }
       } catch (error) {
         console.error('Error adding work:', error);
@@ -168,12 +177,16 @@ export const useStoreWorks = defineStore('storeWorks', {
     this.loading=false
     },
     async deleteWork (workId) {
+      this.loading=true
       console.log('delettting')
       try {
+        console.log('delettting1')
         await deleteDoc(doc(worksCollectionRef, workId));
         console.log('Payment successfully deleted');
+        this.loading=false
       } catch (error) {
         console.error('Error deleting payment:', error);
+        this.loading=false
         // Handle error here
       }
     },
@@ -295,11 +308,11 @@ export const useStoreWorks = defineStore('storeWorks', {
         });
         return arr;
     }
-const modifiedArray = manipulateRepeatedDoctorLabels(works)
-      modifiedArray.subTotals=subTotals
-      modifiedArray.overallPercentage=parseInt(overallPercentage)
-      modifiedArray.overDue=overDue
-       this.invoiceWorks[invoiceId]=manipulateRepeatedDoctorLabels(works)
+    const modifiedArray = manipulateRepeatedDoctorLabels(works)
+          modifiedArray.subTotals=subTotals
+          modifiedArray.overallPercentage=parseInt(overallPercentage)
+          modifiedArray.overDue=overDue
+          this.invoiceWorks[invoiceId]=manipulateRepeatedDoctorLabels(works)
 
    })
   //  console.log(this.invoiceWorks,'works2')
