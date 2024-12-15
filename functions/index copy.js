@@ -1,7 +1,5 @@
-const functions1 = require("firebase-functions/v1");
-const functions = require("firebase-functions");
+const functions = require('firebase-functions')
 const admin = require('firebase-admin');
-const { https } = require('firebase-functions/v2');
 // Initialize Firebase app only if it hasn't been initialized already
 if (!admin.apps.length) {
   admin.initializeApp();
@@ -24,9 +22,7 @@ dayjs.locale('ar') // Set the locale to Arabic
 
 // Initialize Firestore
 // On sign up.
-
-// On sign up.
-exports.processSignUp = functions1.auth.user().onCreate(async (user) => {
+exports.processSignUp = functions.auth.user().onCreate(async (user) => {
   // Check if user meets role criteria.
   if (
     user.email
@@ -36,7 +32,7 @@ exports.processSignUp = functions1.auth.user().onCreate(async (user) => {
       accessLevel: 9,
       clinicId:'',
     };
-  console.log(customClaims,'customClaims')
+
     try {
       // Set custom user claims on this newly created user.
       await getAuth().setCustomUserClaims(user.uid, customClaims)
@@ -60,7 +56,7 @@ exports.processSignUp = functions1.auth.user().onCreate(async (user) => {
 //Twilio messeaging
 //appointment_reservation
 const accountSid = 'AC6714de1ae7d6324a62f0acbc62195ed6';
-const authToken = '21218e9b28252274bc6404dcdd0d17a3';
+const authToken = '54f4eae53868b3cb7f319086cb4678bf';
 const client = new twilio(accountSid, authToken);
 
 exports.sendWhatsAppAppointment = functions.https.onCall((data, context) => {
@@ -139,10 +135,11 @@ exports.sendWhatsAppCancel = functions.https.onCall((data, context) => {
   });
 });
 //appointment_reservation
-exports.sendWhatsAppReservation = functions.https.onCall((request) => {
-  const to = request.data.to; // e.g., 'whatsapp:+1234567890'
-  const message = request.data.message; // e.g., 'Hello from my app!'
-   console.log(request.data,'dataaa')
+exports.sendWhatsAppReservatiion = functions.https.onCall((data, context) => {
+  const to = data.to; // e.g., 'whatsapp:+1234567890'
+fi
+  const message = data.message; // e.g., 'Hello from my app!'
+
   return client.messages.create({
     contentSid: "HX0f3938db6243f631f95a7022d5f2c931",
     contentVariables: JSON.stringify({
@@ -307,7 +304,7 @@ exports.scheduleWhatsAppMessages = onSchedule("every 1 minutes", async (event) =
 });
 
 // Incoming WhatsApp message handler
-exports.incomingWhatsAppMessage = https.onRequest(async (req, res) => {
+exports.incomingWhatsAppMessage = functions.https.onRequest(async (req, res) => {
   const messageSid = req.body.MessageSid;
   const from = req.body.From; // The sender (e.g., 'whatsapp:+1234567890')
   const to = req.body.To;     // Your Twilio WhatsApp number
@@ -326,78 +323,65 @@ exports.incomingWhatsAppMessage = https.onRequest(async (req, res) => {
     });
 
     // Send a response back to Twilio
-    res.status(200).send('<Response><Message>Message received!</Message></Response>');
+    // res.status(200).send('<Response><Message>Message received!</Message></Response>');
+
   } catch (error) {
     console.error('Error saving message to Firestore:', error);
     res.status(500).send('Error processing incoming message');
   }
 });
-// adding Rent Function
+/// adding Rent Function
 // Scheduled function to run daily
 
-exports.addRentPaymentOnSchedule =  onSchedule({
-  schedule: "20 20 * * *", // Cron schedule for 8:20 PM UTC (11:20 PM Baghdad time)
-  timeZone: "Asia/Baghdad", // Set to Baghdad timezone
-}, async (event) => {
-  console.log(event,'userdata1')
-    try {
-      const today = dayjs()
-      const usersSnapshot = await admin.firestore().collection("users").get();
+// exports.addRentPaymentOnSchedule = onSchedule(
+//   {
+//     schedule: "0 20 * * *", // Cron schedule for 8 PM UTC daily
+//     timeZone: "Asia/Baghdad", // Replace "Your/TimeZone" with your actual timezone, e.g., "Asia/Baghdad"
+//   },
+//   async (event) => {
+//     try {
+//       const usersSnapshot = await admin.firestore().collection("users").get();
 
-      usersSnapshot.forEach(async (userDoc) => {
-        const userId = userDoc.id; // Get the user ID
-        const userData = userDoc.data();
-        const rentDate = userData.rentDate; // Assuming this is in "YYYY-MM-DD" format
-         console.log(userData,'userdata')
-        // Check if today matches rentDate
-        const todayDate = today.format('YYYY-MM-DD');
-        const formattedDate = today.format('MMM D, YYYY');
-        const todayUnix = dayjs(todayDate).valueOf()
-        if (todayDate === rentDate) {
-          const invoiceId = '1212'; // Generate a unique 6-character ID
-          const rentAmount = userData.rentAmount || 1000; // Default rent amount if not provided
-          const rentCurrency = userData.rentCurrency || 'IQD'; // Default rent amount if not provided
+//       usersSnapshot.forEach(async (userDoc) => {
+//         const userData = userDoc.data();
+//         const rentDate = userData.rentDate; // Assuming this is in "YYYY-MM-DD" format
 
-          const invoiceRef = admin
-            .firestore()
-            .collection("users")
-            .doc(userDoc.id)
-            .collection("invoices")
-            .doc(invoiceId);
+//         // Check if today matches rentDate
+//         const today = new Date().toISOString().slice(0, 10);
+//         if (today === rentDate) {
+//           const invoiceId = '1212'; // Generate a unique 6-character ID
+//           const rentAmount = userData.rentAmount || 1000; // Default rent amount if not provided
 
-          await invoiceRef.set({
-            invoiceId,
-            price: rentAmount,
-            currency:rentCurrency,
-            // status: "unpaid",
-            invoiceDate:formattedDate,
-            invoiceDateUnix:todayUnix,
-            deletedDateUnix:null,
-            doctorId:userId,
-            uid:userId,
-          });
+//           const invoiceRef = admin
+//             .firestore()
+//             .collection("users")
+//             .doc(userDoc.id)
+//             .collection("invoices")
+//             .doc(invoiceId);
 
-          const paymentRef = invoiceRef.collection("payments").doc();
-          await paymentRef.set({
-            paid: rentAmount,
-            mode: "cash",
-            type: "expense",
-            category: "Rent",
-            dateUnix: todayUnix,
-            date:todayDate,
-            doctorId:userId,
-            invoiceId,
-            currency:rentCurrency,
-            uid:userId,
-          });
+//           await invoiceRef.set({
+//             invoiceId,
+//             createdAt: admin.firestore.FieldValue.serverTimestamp(),
+//             total: rentAmount,
+//             status: "unpaid",
+//           });
 
-          console.log(`Added rent payment for user: ${userDoc.id}`);
-        }
-      });
+//           const paymentRef = invoiceRef.collection("payments").doc();
+//           await paymentRef.set({
+//             amount: rentAmount,
+//             mode: "cash",
+//             type: "payment",
+//             category: "Rent",
+//             date: admin.firestore.FieldValue.serverTimestamp(),
+//           });
 
-      console.log("Rent payments added successfully.");
-    } catch (error) {
-      console.error("Error adding rent payments:", error);
-    }
-  }
-);
+//           console.log(`Added rent payment for user: ${userDoc.id}`);
+//         }
+//       });
+
+//       console.log("Rent payments added successfully.");
+//     } catch (error) {
+//       console.error("Error adding rent payments:", error);
+//     }
+//   }
+// );

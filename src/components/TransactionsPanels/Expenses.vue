@@ -1,75 +1,188 @@
 <template>
-  <ion-page ref="page">
-     <ion-header :translucent="true" collapse="fade">
-      <ion-toolbar class="text-center row">
-         <ion-segment class="segments col" @ionChange="handleSegmentChange" :value="tab">
-           <ion-segment-button class="segment" value="payments">
-             <ion-label>Payments</ion-label>
-           </ion-segment-button>
-           <ion-segment-button class="segment" value="expenses">
-             <ion-label>Expenses</ion-label>
-           </ion-segment-button>
-         </ion-segment>
-       </ion-toolbar>
-     </ion-header>
-   <ion-content class="ion-content" :fullscreen="true">
+    <q-table
+       grid
+       :filter="filter"
+       flat
+       ref="tableRef"
+       :rows="expenses"
+       class="my-sticky-header-table1 col "
+       :columns="columns"
+       color="secondary"
+       row-key="paymentId"
+       virtual-scroll
+       :rows-per-page-options="[0]"
+       selection="multiple"
+       v-model:selected="selected"
+       dense
+       @selection="handleSelection"
+       :visible-columns="visibleColumns"
+     >
+     <template v-slot:header="props">
 
-       <div class="q-gutter-y-sm">
-         <q-tab-panels
-           v-model="tab"
-           animated
-           transition-prev="fade"
-           transition-next="fade"
-           class=" text-center"
-         >
-         <q-tab-panel class="panel-properties" name="payments">
-          <Payments @openPaymentModal="openPaymentModal" :pageRef="page"/>
-         </q-tab-panel>
-           <q-tab-panel class="panel-properties" name="expenses">
-      <Expenses @openPaymentModal="openPaymentModal" :pageRef="page"/>
-           </q-tab-panel>
+   <q-tr :props="props">
+     <q-th v-show="editPayments">
+       <q-checkbox v-model="props.selected" />
+     </q-th>
+     <q-th
+             v-for="col in props.cols"
+             :key="col.name"
+             :props="props"
+           >
+          {{ col.label }}
+           </q-th>
+   </q-tr>
+ </template>
+ <template v-slot:top="props">
+  <div class="top-slot-container">
+    <!-- Row for CardWidgets -->
+    <div class="row items-center justify-around q-gutter-md">
+      <CardWidget
+        class="card-widget col q-ma-xs"
+        label="Total"
+        :totals="groupedTotals"
+        textColor="red"
+        prefix="-"
+        style="min-height: auto;min-width: auto;width: 100%;height: 100px;max-width:400px;"
+      />
+      <CardWidget
+        class="card-widget col q-ma-xs"
+        label="Number"
+        :prefix="''"
+        :value="expenses.length"
+        :suffix="''"
+        textColor="red"
+        style="min-height: auto;min-width: auto;width: 100%;height: 100px;max-width:400px;"
+      />
+    </div>
+    <!-- Row for Buttons and Date Picker -->
+    <div class="row items-center justify-center q-gutter-sm">
+      <div style="min-width: 390px !important; " class="col-4 col-md-8 " :class="{'text-start': $q.screen.gt.sm }">
 
+      <v-btn
+        variant="plain"
+        density="compact"
+        icon="mdi-chevron-left"
+        @click="getPreviousDay"
+        class="col arrow-btn"
+      ></v-btn>
+      <v-btn
+        :disabled="storePayments.loading"
+        :loading="storePayments.loading"
+        variant="plain"
+        class="col"
+      >
+      {{selectedDateInfo}}
+        <q-popup-proxy cover transition-show="scale" transition-hide="scale">
+          <q-date
+            color="teal"
+            v-model="storePayments.selectedDate"
+            mask="YYYY-MM-DD"
+            range
+            today-btn
+          >
+            <div class="row items-center justify-end">
+              <q-btn v-close-popup label="Close" color="primary" flat />
+            </div>
+          </q-date>
+        </q-popup-proxy>
+       </v-btn>
+      <v-btn
+        class="col"
+        variant="plain"
+        density="compact"
+        icon="mdi-chevron-right arrow-btn"
+        @click="getNextDay"
+      ></v-btn>
 
-         </q-tab-panels>
+    </div>
+    <div class=" text-end ">
+     <div class="row">
+      <div class="col">
+      <!-- <v-text-field
+            label="Search"
+            v-model="filter"
+            variant="outlined"
+            append-inner-icon="mdi-magnify"
+            class="text-field"
+              density="compact"
+          ></v-text-field> -->
+          <ion-input   class="text-start search-input" fill="outline"  v-model="filter"  placeholder="Filter">
+            <q-icon slot="end" name="mdi-magnify"></q-icon>
+          </ion-input>
+        </div>
+       <div>
 
+         <q-btn
+           size="16px"
+           padding="0px"
+           unelevated
+          class=" q-mr-xs q-ml-xs"
+          text-color="grey-7"
+          icon="archive"
+          @click="exportTable"
+         />
+         <q-btn v-if="!mobile" size="16px"  padding="0px" text-color="grey-7"   unelevated    @click="newPayment" icon="add"/>
+         <q-btn v-else  padding="0px" size="16px"  unelevated text-color="grey-7" icon="add" @click="instance.emit('openPaymentModal')"/>
+        </div>
       </div>
+        </div>
+    </div>
+  </div>
 
-     </ion-content>
-   </ion-page>
+</template>
 
-  </template>
 
-  <script setup>
-  import { ref , toRaw, nextTick,onMounted,watch,computed} from 'vue';
+       <template v-slot:item="props">
+
+         <div class="payment">
+          <Payment :tableProps="props" :mobile="mobile"    class="payment"  :payment="props.row" :key="props.row.paymentId" :pageRef="pageRef" /></div>
+       </template>
+
+       <template v-slot:no-data="{ icon, message, filter }">
+         <div class="full-width row flex-center text-orange q-gutter-sm">
+           <q-icon size="2em" name="sentiment_dissatisfied" />
+           <span>
+              {{ message }}
+           </span>
+           <q-icon size="2em" :name="filter ? 'filter_b_and_w' : icon" />
+         </div>
+       </template>
+       <template v-slot:bottom>
+        <!-- <ion-infinite-scroll threshold="0" @ionInfinite="load">
+      <ion-infinite-scroll-content></ion-infinite-scroll-content>
+    </ion-infinite-scroll> -->
+      </template>
+     </q-table>
+</template>
+<script setup>
+import { ref , toRaw,getCurrentInstance, nextTick,onMounted,watch,computed} from 'vue';
   import { exportFile, useQuasar } from 'quasar'
   import { useStorePayments } from 'src/stores/storePayments'
   import { storeToRefs } from 'pinia'
   import { useStoreWorks } from 'src/stores/storeWorks';
-  import {today} from '@quasar/quasar-ui-qcalendar/src/index.js'
-  import { IonSegment, IonSegmentButton, IonHeader, IonLabel , IonToolbar ,IonPage ,IonContent, modalController,IonCard,IonList,
-    IonIcon ,
-   IonInfiniteScrollContent,
+  import {
+   modalController,
    IonInput} from '@ionic/vue';
   import MobilePaymentModal from 'src/components/MobilePaymentModal.vue'
   import { Platform } from 'quasar';
-
   import Payment from 'src/components/Payment.vue'
   import { useStorePatients } from 'src/stores/storePatients';
   import CardWidget from 'src/components/CardWidget.vue';
   import dayjs from 'dayjs'
   import { Haptics, ImpactStyle } from '@capacitor/haptics';
-  import { searchCircleOutline} from 'ionicons/icons';
-  import Payments from 'src/components/TransactionsPanels/Payments.vue';
-  import Expenses from 'src/components/TransactionsPanels/Expenses.vue';
+
+  const props = defineProps({
+    pageRef:{
+  type: Object,
+  required: true
+  },
+  })
+ const instance = getCurrentInstance()
  const storePatients=useStorePatients()
   const $q = useQuasar()
   const storePayments=useStorePayments()
   const storeWorks=useStoreWorks()
   const {  selectedDate } = storeToRefs(storePayments)
-  function handleSegmentChange(event) {
-        tab.value = event.detail.value;
-        console.log('hi')
-      }
 const selectedDateInfo = computed (()=>{
   const selectedDate=storePayments.selectedDate
   console.log(selectedDate,'selectedDateInfo')
@@ -80,27 +193,27 @@ const selectedDateInfo = computed (()=>{
         }
         else return dayjs(selectedDate).format('DD/MM/YYYY')
 })
-  // onMounted(() => {
-  //   if (storePayments.selectedDate && storePayments.selectedDate.from) {
-  //        storePayments.getIntervalPayments(storePayments.selectedDate.from, storePayments.selectedDate.to);
-  //       // Perform other actions if needed
-  //     }
-  //     else{
-  //        storePayments.getdayPayments(storePayments.selectedDate);
-  //     }
+onMounted(() => {
+    if (storePayments.selectedDate && storePayments.selectedDate.from) {
+         storePayments.getIntervalPayments(storePayments.selectedDate.from, storePayments.selectedDate.to,'expense');
+        // Perform other actions if needed
+      }
+      else{
+         storePayments.getdayPayments(storePayments.selectedDate,'expense');
+      }
 
-  //       console.log(storePayments.selectedDate,'storePayments.selectedDate')
-  //          watch(selectedDate, async (newValue, oldValue) => {
-  //           console.log(selectedDate, 'gi');
-  //     if (newValue && newValue.from) {
-  //       await storePayments.getIntervalPayments(newValue.from, newValue.to);
-  //       // Perform other actions if needed
-  //     }
-  //     else{
-  //       await storePayments.getdayPayments(newValue);
-  //     }
-  //          })
-  //      })
+        console.log(storePayments.selectedDate,'storePayments.selectedDate')
+           watch(selectedDate, async (newValue, oldValue) => {
+            console.log(selectedDate, 'gi');
+      if (newValue && newValue.from) {
+        await storePayments.getIntervalPayments(newValue.from, newValue.to,'expense');
+        // Perform other actions if needed
+      }
+      else{
+        await storePayments.getdayPayments(newValue,'expense');
+      }
+           })
+       })
   const columns = [
   { name: 'invoiceId', align: 'center', label: 'Invoice #', field: 'invoiceId', align: 'left'},
   { name: 'paid', label: 'Paid', field: 'paid',align: 'center', },
@@ -145,13 +258,16 @@ const selectedDateInfo = computed (()=>{
 
   ]
   const visibleColumns=ref([ 'invoiceId', 'paid','date','patientName','doctor','work','buttons'])
-  const limit = ref(10);  // Start with 10 payments
+  const expenses = computed(() => {
+  // Safeguard against undefined values
+  const expenses = storePayments.dayPayments[storePayments.selectedDate] || [];
 
-const payments = computed(() => {
-  const selectedPayments = storePayments.dayPayments[storePayments.selectedDate];
+  // Filter payments where type is 'expenses'
+  const selectedExpenses = expenses.filter(payment => payment.type === 'expense');
 
-  if (selectedPayments) {
-    selectedPayments.forEach(payment => {
+  // Check if there are any expenses to process
+  if (selectedExpenses.length > 0) {
+    selectedExpenses.forEach(payment => {
       const patient = storePatients.patients.find(patient => patient.patientId === payment.patientId);
       if (patient) {
         payment.patientName = patient.namef;
@@ -169,21 +285,15 @@ const payments = computed(() => {
     });
 
     // Sort payments by payment.dateUnix in descending order
-    selectedPayments.sort((a, b) => b.dateUnix - a.dateUnix);
+    selectedExpenses.sort((a, b) => b.dateUnix - a.dateUnix);
 
     // Return the limited number of payments based on the current `limit`
-    return selectedPayments;
+    return selectedExpenses;
   }
+
+  // Return an empty array if no expenses exist
   return [];
 });
-
-// async function load(ev) {
-//   console.log('increasing')
-//   // Increase limit by 10 each time infinite scroll is triggered
-//    limit.value += 10;
-//   setTimeout(() => ev.target.complete(), 50);
-// }
-
 
   function  newPayment() {
   storePayments.TOGGLE_PAYMENT()
@@ -232,62 +342,18 @@ const payments = computed(() => {
         dateObject.setDate(dateObject.getDate() - 1);
         storePayments.selectedDate= dateObject.toISOString().split('T')[0];
       }
-  const tab= ref('payments')
   const editPayments=ref(true)
   const filter= ref('')
-  // function customFilter(rows, terms,cols,cellValue){
-  //       // rows contain the entire data
-  //       // terms contains whatever you have as filter
-  //     //   rows = rows.filter(row => row.paid ==0);
-  //     //   console.log(rows,'cols')
-  //     //   // console.log(terms,rows,cols,cellValue,'rowsss')
-
-  //     //  let lowerSearch = terms.search ? terms.search: ""
-
-  //       // const filteredRows = rows.filter(
-  //       //   (row, i) =>{
-
-  //       //   let ans = false
-
-
-  //       //   //Gather search condition
-
-
-
-  //       //   //Assume true in case there is no search
-  //       //   let s1 = true
-
-  //       //   //If search term exists, convert to lower case and see which rows contain it
-  //       //   if(lowerSearch != ""){
-  //       //     s1 = false
-  //       //     //Get the values
-  //       //     let s1_values = Object.values(row)
-  //       //     //Convert to lowercase
-  //       //     let s1_lower = s1_values.map(x => x.toString().toLowerCase())
-  //       //     for (let val = 0; val<s1_lower.length; val++){
-  //       //       if (s1_lower[val].includes(lowerSearch)){
-  //       //         s1 = true
-  //       //         break
-  //       //       }
-  //       //     }
-  //       //   }
-  //       //   //assume row doesn't match
-  //       //   ans = false
-  //       //   //check if any of the conditions match
-  //       //   if ( (c1 && s1) || (c2 && s1) || (c3 && s1) ) {
-  //       //     ans = true
-  //       //   }
-  //       //   return ans
-  //       //   })
-  //       return rows
-  //     }
   const totals = computed(() => {
-    const payments = storePayments.dayPayments[storePayments.selectedDate];
+    const expenses = storePayments.dayPayments[storePayments.selectedDate] || [];
 
-    if (payments && payments.length > 0) {
-      const totalByCurrency = payments.reduce((totals, payment) => {
+    // Filter payments where type is 'expenses'
+    const selectedExpenses = expenses.filter(payment => payment.type === 'expense');
+
+    if (selectedExpenses && selectedExpenses.length > 0) {
+      const totalByCurrency = selectedExpenses.reduce((totals, payment) => {
         const { currency, paid } = payment;
-        console.log(payments,'totalByCurrency')
+        console.log(selectedExpenses,'totalByCurrency')
         const currencyIndex = totals.findIndex(item => item.currency === currency);
 
         if (currencyIndex !== -1) {
@@ -301,7 +367,7 @@ const payments = computed(() => {
 
       return totalByCurrency;
     } else {
-      // Return default value when payments is empty or undefined
+      // Return default value when selectedExpenses is empty or undefined
       return [{ currency: '', totalPaid: 0 }];
     }
   });
@@ -380,35 +446,6 @@ const payments = computed(() => {
             })
           }}
 
-  /*
-   page style
-  */
-  const pageStyleFn = (offset, height) =>{
-            return { height: `${ height - offset }px` }
-        }
-  /*
-   Filters
-  */
-  const isArabic=(value) =>{
-    return /[\u0600-\u06FF]/.test(value)
-  }
-  function getInitials(name) {
-            const nameParts = name.split(' ');
-            const firstName = nameParts[0].charAt(0).toUpperCase();
-            const lastName = nameParts[nameParts.length - 1].charAt(0).toUpperCase();
-            return `${firstName}${lastName}`;
-         }
-  const formatMoney = (value) => {
-           const stringValue = value.toString()
-           return stringValue.replace(/\B(?=(\d{3})+(?!\d))/g, ',')
-         }
-  const formatDate= (value) => {
-    const date = new Date(parseInt(value))
-    const timeFormatted = date.toLocaleTimeString('en-US', { hour12: true, hour: '2-digit', minute: '2-digit' });
-    const dateFormatted = date.toISOString().split('T')[0];
-    return timeFormatted +' '+dateFormatted
-  }
-
   const openPaymentModal = async () => {
      const modal = await modalController.create({
        component: MobilePaymentModal,
@@ -479,33 +516,7 @@ const groupedTotals = computed(() => {
       letter-spacing: 0.0125em;
     }
   }
-  .q-dark .panel-properties {
-    background-color:#142325;
-  }
-  .panel-properties {
-    .row, .column, .flex{
-      justify-content:space-evenly;
-      align-content:stretch;
-    }
-    padding: 0 !important;
-    p  {
-      margin:0 !important;
-    }
-  }
- .segment {
-     margin-top: 2px !important;
-     margin-bottom: 2px !important;
- }
- .segments {
-   margin-top: 4px !important;
-   margin-bottom: 4px !important;
-   margin-right:80px !important;
-   margin-left:80px !important;
- }
- .ion-content::part(scroll) {
- --offset-top: 0px !important;
- // --offset-bottom: 0px !important;
- }
+
 .payment{
   flex-wrap: nowrap;
   width: 100%;
@@ -513,10 +524,6 @@ const groupedTotals = computed(() => {
   margin: 5px auto;
   height: 100% !important;
 }
-ion-card {
-    // --background: #000;
-    // --color: #9efff0;
-  }
 
   ion-card-title {
     // --color: #52ffe4;
@@ -591,41 +598,8 @@ min-height: auto !important;
     height: calc(var(--v-btn-height) ) !important;
     padding:0px !important;
 }
-.v-btn--density-compact {
-
-}
 .v-input__details {
     display:contents !important;
 }
-
-ion-input.search-input  {
-    --background: none !important;
-    --color: #000000;
-    --placeholder-color: #ddd;
-    --placeholder-opacity: 0.8;
-
-    --padding-bottom: 0px !important;
-    --padding-end: 10px;
-    --padding-start: 10px;
-    --padding-top: 0px !important;
-    display: unset !important;
-  }
-  .input-wrapper.sc-ion-input-md {
-
-    border:solid 0px grey  !important;
-    border-radius: 5px;
-    min-height: 30px ;
-
-  }
-  /* .sc-ion-input-md {
-    display: unset;
-  } */
-  .input-wrapper.sc-ion-input-ios {
-
-    border-radius: 5px;
-    border:solid 1px grey !important;
-    min-height: 30px ;
-  }
-
 
 </style>

@@ -157,9 +157,9 @@ export const useStoreInvoices = defineStore('storeInvoices', {
       const invoice = {
         docId: doc.id,
         invoiceId: doc.data().invoiceId,
-        workItemList: doc.data().workItemList,
-        patientName: doc.data().patientName,
-        patientId: doc.data().patientId,
+        workItemList: doc.data().workItemList||[],
+        patientName: doc.data().patientName||'',
+        patientId: doc.data().patientId||'',
         invoiceDateUnix: doc.data().invoiceDateUnix,
         invoiceDate: doc.data().invoiceDate,
         // workItemList: doc.data().workItemList,
@@ -170,7 +170,7 @@ export const useStoreInvoices = defineStore('storeInvoices', {
         // paymentItemList: doc.data().paymentItemList,
         // invoiceTotal: doc.data().invoiceTotal,
         // invoicePending: doc.data().invoicePending,
-        invoiceDraft: doc.data().invoiceDraft,
+        invoiceDraft: doc.data().invoiceDraft||'',
         // invoicePaid: doc.data().invoicePaid,
         deleted:doc.data().deleted,
       }
@@ -193,7 +193,7 @@ export const useStoreInvoices = defineStore('storeInvoices', {
               paymentId: doc.id,
               paid: doc.data().paid,
               date: doc.data().date,
-              workId: doc.data().workId,
+              workId: doc.data().workId||'',
               currency: doc.data().currency,
               dateUnix: doc.data().dateUnix,
             };
@@ -279,12 +279,12 @@ export const useStoreInvoices = defineStore('storeInvoices', {
       const invoice = {
             docId: doc.id,
             invoiceId: doc.data().invoiceId,
-            workItemList: doc.data().workItemList,
-            patientName: doc.data().patientName,
-            patientId: doc.data().patientId,
+            workItemList: doc.data().workItemList||[],
+            patientName: doc.data().patientName||'',
+            patientId: doc.data().patientId||'',
             invoiceDateUnix: doc.data().invoiceDateUnix,
             invoiceDate: doc.data().invoiceDate,
-            invoiceDraft: doc.data().invoiceDraft,
+            invoiceDraft: doc.data().invoiceDraft||'',
             deleted:doc.data().deleted,
           }
           const paymentsCollectionRef = collection(
@@ -303,7 +303,7 @@ export const useStoreInvoices = defineStore('storeInvoices', {
                 paymentId: doc.id,
                 paid: doc.data().paid,
                 date: doc.data().date,
-                workId: doc.data().workId,
+                workId: doc.data().workId||'',
                 currency: doc.data().currency,
                 dateUnix: doc.data().dateUnix,
               });
@@ -545,9 +545,9 @@ export const useStoreInvoices = defineStore('storeInvoices', {
       const invoice = {
             docId: doc.id,
             invoiceId: doc.data().invoiceId,
-            workItemList: doc.data().workItemList,
-            patientName: doc.data().patientName,
-            patientId: doc.data().patientId,
+            workItemList: doc.data().workItemList||[],
+            patientName: doc.data().patientName||'',
+            patientId: doc.data().patientId||'',
             invoiceDateUnix: doc.data().invoiceDateUnix,
             invoiceDate: doc.data().invoiceDate,
             // workItemList: doc.data().workItemList,
@@ -558,7 +558,7 @@ export const useStoreInvoices = defineStore('storeInvoices', {
             // paymentItemList: doc.data().paymentItemList,
             // invoiceTotal: doc.data().invoiceTotal,
             // invoicePending: doc.data().invoicePending,
-            invoiceDraft: doc.data().invoiceDraft,
+            invoiceDraft: doc.data().invoiceDraft||'',
             // invoicePaid: doc.data().invoicePaid,
             deleted:doc.data().deleted,
           }
@@ -583,7 +583,7 @@ export const useStoreInvoices = defineStore('storeInvoices', {
                   paymentId: doc.id,
                   paid: doc.data().paid,
                   date: doc.data().date,
-                  workId: doc.data().workId,
+                  workId: doc.data().workId||'',
                   currency: doc.data().currency,
                   dateUnix: doc.data().dateUnix,
                 };

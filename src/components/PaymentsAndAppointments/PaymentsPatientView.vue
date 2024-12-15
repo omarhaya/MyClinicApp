@@ -117,7 +117,7 @@ const tableRef= ref()
 */
   storePayments.getPatientPayments(props.patientId)
   const payments=computed(()=>{
-
+    console.log(storePayments.patientPayments[props.patientId],'paymont')
     const selectedPayments = storePayments.patientPayments[props.patientId]
 
 if (selectedPayments) {

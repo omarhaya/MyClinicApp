@@ -51,6 +51,7 @@
             v-model="queryText"
             :debounce="500"
             @ionInput="updateSearchTerm($event)"
+             @keyup.enter="dissmissKeyboard"
             placeholder="Search"
           ></ion-searchbar>
         </ion-toolbar>
@@ -85,20 +86,20 @@
               </ion-label>
               <h6 class="q-pl-md" style="min-width:40px;">#{{patient.index}}</h6>
             </ion-item>
-            <!-- <ion-item-options>
-              <ion-item-option
+            <ion-item-options>
+              <!-- <ion-item-option
                 color="favorite"
                 @click="addFavorite($event, )"
 
                 >Favorite</ion-item-option
-              >
+              > -->
               <ion-item-option
                 color="danger"
-                @click="removeFavorite($event,  'Remove Favorite')"
+                @click="showActions($event,  'Remove Favorite')"
 
                 >Remove</ion-item-option
               >
-            </ion-item-options> -->
+            </ion-item-options>
           </ion-item-sliding>
         </ion-item-group>
       </ion-list>
@@ -107,7 +108,7 @@
         >No Sessions Found</ion-list-header
       >
       <ion-fab slot="fixed" vertical="bottom" horizontal="end" ref="fab">
-        <ion-fab-button  @click="modals.addPatient=true">
+        <ion-fab-button  @click="AddPatientModal">
           <ion-icon :icon="addOutline"></ion-icon>
         </ion-fab-button>
 
@@ -167,6 +168,10 @@ import appointmentModal from "src/components/appointmentModal.vue";
 import ModalAddPatient from "src/components/Patients/ModalAddPatient.vue";
 import ModalDeletePatient from "src/components/Patients/ModalDeletePatient.vue";
 import { Platform } from "quasar";
+import { Keyboard } from '@capacitor/keyboard';
+import { Haptics, ImpactStyle } from '@capacitor/haptics';
+import { ActionSheet, ActionSheetButtonStyle } from '@capacitor/action-sheet';
+
 const storePatients=useStorePatients()
 const segment = ref("all");
 const queryText = ref("");
@@ -175,7 +180,37 @@ const fabButton = ref(null);
 const fabList = ref(null);
 const store = ref('hi')
 const ionRouter = useIonRouter();
+async function dissmissKeyboard (){
+  await Haptics.impact({ style: ImpactStyle.Light });
+  Keyboard.hide();
+}
 
+const AddPatientModal= async() =>{
+  await Haptics.impact({ style: ImpactStyle.Light });
+  modals.addPatient=true
+
+}
+const showActions = async () => {
+  console.log('show action sheet')
+  const result = await ActionSheet.showActions({
+    title: 'Photo Options',
+    message: 'Select an option to perform',
+    options: [
+      {
+        title: 'Upload',
+      },
+      {
+        title: 'Share',
+      },
+      {
+        title: 'Remove',
+        style: ActionSheetButtonStyle.Destructive,
+      },
+    ],
+  });
+
+  console.log('Action Sheet result:', result);
+};
 const allGroupedRef = ref([]);
 const groupedByFirstLetter = () => {
   const patients = storePatients.patients;

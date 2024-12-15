@@ -67,6 +67,7 @@ export const useStorePayments= defineStore('storePayments', {
         paymentsCollectionRef = collection(db, 'users',this.storeAuth.role.clinicId,'payments')
         }
         else {paymentsCollectionRef = collection(db, 'users',this.storeAuth.user.uid,'payments')}
+        // this.updatePayments()
    },
    TOGGLE_PAYMENT(paymentId) {
     if (!this.mobile){this.paymentModal = !this.paymentModal}
@@ -106,34 +107,37 @@ export const useStorePayments= defineStore('storePayments', {
   },
   async updatePayments() {
     try {
-      // const doctorsIds = doctors.map(doctor => doctor.doctorId);
       const paymentsCollectionAllRef = collectionGroup(db, 'payments');
-      const paymentsCollectionAllQuery = query(paymentsCollectionAllRef, );
+
+      // Query for documents where Type is 'cash'
+      const paymentsCollectionAllQuery = query(paymentsCollectionAllRef,where('type', '==', 'payment'));
       const snapshot = await getDocs(paymentsCollectionAllQuery);
+        console.log('snapshot')
+      // Create a batch for efficient updates
+      const batch = writeBatch(db);
 
-      const batch =  writeBatch(db) // Use the batch function from Firestore
-
-      snapshot.forEach(doc => {
+      snapshot.forEach((doc) => {
         const paymentData = doc.data();
 
         if (paymentData) {
           const updatedData = {
             ...paymentData,
-            patientId:paymentData.clientId,
-            // patientDetails:paymentData.clientDetails,
-            // id: patientData.id,
-            clientId: deleteField(), // Remove the 'id' field
-            // clientDetails: deleteField() // Remove the 'id' field
+            mode: 'cash',
+            type: 'payment',
+            category: 'Service payments',
+            // patientId: paymentData.clientId,
+            Type: deleteField(), // Remove the 'clientId' field
           };
+
           const paymentRef = doc.ref;
           batch.update(paymentRef, updatedData);
         }
       });
 
       await batch.commit();
-      console.log('Updated invoice data successfully');
+      console.log('Updated payments data successfully');
     } catch (error) {
-      console.error('Error updating invoice data:', error);
+      console.error('Error updating payments data:', error);
     }
   },
   async getPaymentsForInvoice(invoiceId) {
@@ -212,7 +216,7 @@ export const useStorePayments= defineStore('storePayments', {
       where('date', '>=', startDate),
       where('date', '<=', endDate),
       where('doctorId', '==', this.storeAuth.user.uid),
-      where('Type', '==', 'cash')
+      where('type', '==', 'payment')
     );
 
       onSnapshot(q, (querySnapshot) => {
@@ -306,13 +310,14 @@ export const useStorePayments= defineStore('storePayments', {
     return currencyGroupedPayments;
 
   },
-  async getdayPayments(date) {
+  async getdayPayments(date,type) {
     this.loading=true
     const paymentsCollectionRef = collectionGroup(
       db,
       'payments',
     )
-   const paymentsCollectionQuery = query(paymentsCollectionRef,where("date", "==", date), where('doctorId', '==', this.storeAuth.user.uid),where('Type', '==', 'cash') );
+    console.log(type,'typeo')
+   const paymentsCollectionQuery = query(paymentsCollectionRef,where("date", "==", date), where('doctorId', '==', this.storeAuth.user.uid),where('type', '==', type) );
    getPaymentsSnapshot=onSnapshot(paymentsCollectionQuery, (querySnapshot) => {
      const payments=[]
      querySnapshot.forEach((doc) => {
@@ -321,9 +326,10 @@ export const useStorePayments= defineStore('storePayments', {
        invoiceId:doc.data().invoiceId,
        paid:doc.data().paid,
        dateUnix:doc.data().dateUnix,
-       workId:doc.data().workId,
-       patientId:doc.data().patientId,
+       workId:doc.data().workId||'',
+       patientId:doc.data().patientId||'',
        currency:doc.data().currency,
+       type:doc.data().type,
      }
     //  this.storeInvoices.GET_INVOICE_FOR_PAYMENT(payment.invoiceId)
     //  this.getPaymentsForInvoice(payment.invoiceId)
@@ -342,7 +348,7 @@ console.log(this.dayPayments,'dayPayments')
 // async getInvoiceForPayment(invoiceId) {
 //   this.storeInvoices.GET_INVOICE_FOR_PAYMENT(invoiceId)
 // },
-async getIntervalPayments(startDate, endDate) {
+async getIntervalPayments(startDate, endDate,type) {
   const paymentsCollectionRef = collectionGroup(
     db,
     'payments',
@@ -353,7 +359,7 @@ async getIntervalPayments(startDate, endDate) {
   where('date', '>=', startDate),
   where('date', '<=', endDate),
   where('doctorId', '==', this.storeAuth.user.uid),
-  where('Type', '==', 'cash')
+  where('type', '==', type)
 );
 
 // Real-time listener for live updates
@@ -370,8 +376,8 @@ onSnapshot(q, (querySnapshot) => {
       workId: doc.data().workId,
       patientId: doc.data().patientId,
       currency: doc.data().currency,
+      type:doc.data().type,
     };
-
     // Load related invoice and work data
     // this.getPaymentsForInvoice(payment.invoiceId);
     // this.storeWorks.getWork(payment.workId);
@@ -380,10 +386,8 @@ onSnapshot(q, (querySnapshot) => {
     this.storeInvoices.GET_INVOICE_FOR_PAYMENT(payment.invoiceId)
     payments.push(payment);
   });
-
   // Store the detailed payment data for the date range in dayPayments
   this.dayPayments[this.selectedDate]=payments
-
 });
 },
 
@@ -393,7 +397,7 @@ async getPatientPayments(patientId) {
     db,
     'payments',
   )
- const paymentsCollectionQuery = query(paymentsCollectionRef,where("patientId", "==", patientId),where('Type', '==', 'cash'),orderBy('dateUnix','desc'));
+ const paymentsCollectionQuery = query(paymentsCollectionRef,where("patientId", "==", patientId),where('type', '==', 'payment'),orderBy('dateUnix','desc'));
  getPaymentsSnapshot=onSnapshot(paymentsCollectionQuery, (querySnapshot) => {
    const payments=[]
    querySnapshot.forEach((doc) => {
@@ -404,6 +408,7 @@ async getPatientPayments(patientId) {
      dateUnix:doc.data().dateUnix,
      workId:doc.data().workId,
      patientId:doc.data().patientId,
+     type:doc.data().type,
    }
    this.storeInvoices.GET_INVOICE_FOR_PAYMENT(payment.invoiceId)
    payments.push(payment)
@@ -435,7 +440,9 @@ async addPayment (work) {
           doctorId:work.doctor.doctorId,
           patientId:work.patientDetails.patientId,
           uid:this.storeAuth.user.uid,
-          Type:'cash',
+          mode: 'cash',
+          type: 'payment',
+          category: 'Service payments',
         })
         // Set a timeout to check if the Firestore operation completes within a certain time
         const timeoutDuration = 5000; // Timeout duration in milliseconds (adjust as needed)

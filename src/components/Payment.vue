@@ -31,7 +31,8 @@
    </div>
    <div class="right justify-end flex row">
      <div v-if="storeInvoices.paymentsInvoice[payment.invoiceId]" class="price center row">
-    <div  class=" flex text-bold text-green-7">+<span class="currency">{{(payment.currency)}} </span>{{formatMoney(payment.paid) }}</div>
+    <div v-if="payment.type=='payment'"  class=" flex text-bold text-green-7">+<span class="currency">{{(payment.currency)}} </span>{{formatMoney(payment.paid) }}</div>
+    <div  v-if="payment.type=='expense'"  class=" flex text-bold text-red-7">-<span class="currency">{{(payment.currency)}} </span>{{formatMoney(payment.paid) }}</div>
      <!-- <span class="col"></span> -->
 
 

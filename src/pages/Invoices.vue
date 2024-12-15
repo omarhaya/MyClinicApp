@@ -4,7 +4,12 @@
     <ion-toolbar>
       <ion-title>Invoices</ion-title>
       <ion-buttons :collapse="true" slot="end">
-        <q-btn round color="secondary" @click="openInvoiceModal" size="10px" icon="add"/>
+
+    <ion-fab-button  @click="openInvoiceModal" size="small">
+      <ion-icon :icon="add"></ion-icon>
+    </ion-fab-button>
+
+        <!-- <q-btn round color="secondary" @click="openInvoiceModal" size="10px" icon="add"/> -->
       </ion-buttons>
     </ion-toolbar>
   </ion-header>
@@ -52,7 +57,9 @@
   </q-menu>
   </q-btn>
         <ion-buttons :collapse="true" slot="end">
-          <q-btn round color="secondary" @click="openInvoiceModal" icon="add"/>
+          <ion-fab-button  @click="openInvoiceModal" size="small">
+      <ion-icon :icon="add"></ion-icon>
+    </ion-fab-button>
         </ion-buttons>
 
         <span class=" header m2">There are {{ invoiceData.length }} total invoices</span>
@@ -142,7 +149,8 @@ import { useStoreInvoices } from 'src/stores/storeInvoices'
 import {computed,ref,onMounted} from 'vue'
 import {IonList,
    IonInfiniteScroll,
-   IonInfiniteScrollContent,IonPage,IonModal,IonCheckbox,IonContent, IonHeader, IonToolbar, IonTitle ,IonButtons, IonButton,modalController} from '@ionic/vue';
+   IonInfiniteScrollContent,IonPage,  IonFab,
+   IonFabButton,IonContent, IonHeader, IonToolbar, IonTitle ,IonButtons, IonButton,modalController} from '@ionic/vue';
 import { useStoreWorks } from "src/stores/storeWorks"
 import { useQuasar } from "quasar"
 import { Platform } from 'quasar'
@@ -150,6 +158,10 @@ import MobileInvoiceModal from 'src/components/MobileInvoiceModal.vue'
 import MobilePaymentModal from 'src/components/MobilePaymentModal.vue'
 import { useStorePayments } from "src/stores/storePayments"
 import { RecycleScroller,DynamicScrollerItem } from "vue-virtual-scroller";
+import { Haptics, ImpactStyle } from '@capacitor/haptics';
+import {add} from "ionicons/icons";
+
+
 const $q=useQuasar()
 /*
   Stores
@@ -243,6 +255,7 @@ const   mobile=computed(()=>{
 
 
 const openInvoiceModal = async () => {
+     await Haptics.impact({ style: ImpactStyle.Light })
     const modal = await modalController.create({
       component: MobileInvoiceModal,
       presentingElement:page.value.$el,
@@ -260,6 +273,7 @@ const openInvoiceModal = async () => {
   };
 
   const openPaymentModal = async () => {
+    await Haptics.impact({ style: ImpactStyle.Light });
     const modal = await modalController.create({
       component: MobilePaymentModal,
       presentingElement:page.value.$el,

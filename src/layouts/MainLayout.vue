@@ -61,7 +61,7 @@
     full-height
     allow-focus-outside
     :persistent="checkContent"
-    :position="$route.path === '/Transactions' ? 'right' : 'left'"
+    :position="$route.path === '/Transactions' ? 'left' : 'left'"
     transition-duration="700"
     @shake="closeWithcontent"
     v-model="storePayments.paymentModal"

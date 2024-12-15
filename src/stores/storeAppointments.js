@@ -345,9 +345,9 @@ export const useStoreAppointments= defineStore('storeAppointments', {
             }
           }
         });
-        console.log(doctorInfo);
-        const sendWhatsAppReservatiion = httpsCallable(functions, 'sendWhatsAppReservatiion');
-        const result = await sendWhatsAppReservatiion({
+        console.log( 'dataaa',{ startDate: newAppointmentDetails.startDate, doctorInfo: doctorInfo.value, timeArabic, dayArabic, type },'doctorInfo');
+        const sendWhatsAppReservation = httpsCallable(functions, 'sendWhatsAppReservation');
+        const result = await sendWhatsAppReservation({
           to: `whatsapp:${newAppointmentDetails.title.phone}`,  // Recipient's WhatsApp number
           message: { startDate: newAppointmentDetails.startDate, doctorInfo: doctorInfo.value, timeArabic, dayArabic, type }
         });

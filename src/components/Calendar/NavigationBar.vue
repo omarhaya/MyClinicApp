@@ -8,7 +8,7 @@
             flat
             icon="eva-arrowhead-left-outline"
             class="date-button direction-button"
-            @click="onPrev();transition=('q-calendar--' + transitionPrev)"
+            @click="onPrev();transition=('q-calendar--' + transitionPrev);Haptics.impact({ style: ImpactStyle.Medium })"
           >
             <span
               class="q-calendar__focus-helper"
@@ -32,7 +32,7 @@
                     tabindex="0"
                     style="width: 100%;"
                     :class="dayClass(day)"
-                    @click="$emit('selectedDate',storeAppointments.selectedDate = day.date);transition=''"
+                    @click="$emit('selectedDate',storeAppointments.selectedDate = day.date);transition='';Haptics.impact({ style: ImpactStyle.Light })"
 
                   >
                     <span
@@ -64,7 +64,7 @@
             tabindex="0"
             icon="eva-arrowhead-right-outline"
             class="date-button direction-button"
-            @click="onNext();transition=('q-calendar--' + transitionNext)"
+            @click="onNext();transition=('q-calendar--' + transitionNext);Haptics.impact({ style: ImpactStyle.Medium })"
           >
             <span
               class="q-calendar__focus-helper"
@@ -87,7 +87,7 @@ import {
 } from '@quasar/quasar-ui-qcalendar/src/index.js'
 import { useStoreAppointments } from 'src/stores/storeAppointments'
 import { ref, reactive,computed,watch } from 'vue'
-
+import { Haptics, ImpactStyle } from '@capacitor/haptics';
 
 /*
   Stores

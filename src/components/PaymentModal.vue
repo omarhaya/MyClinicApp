@@ -197,6 +197,7 @@
             </v-select>
             <div v-if="storePayments.paymentInvoices" v-for="(currency, index) in uniqueCurrencies" :key="index">
               <v-text-field
+              v-if="!mobile"
                 ref="currencyFields"
                 :disabled="storeInvoices.loadingInvoices || storePayments.loading || storeWorks.loading"
                 required
@@ -210,6 +211,18 @@
               >
                 <template v-slot:append></template>
               </v-text-field>
+              <div class="row" v-else>
+              <ion-input label-placement="floating"fill="solid" class="custom" placeholder="Enter Amount"
+                ref="currencyFields"
+                :disabled="storeInvoices.loadingInvoices || storePayments.loading || storeWorks.loading"
+                required
+                type="tel"
+                @ion-input="calculatePercentage2(paymentItemList[currency])"
+                v-model="paymentItemList[currency].paid"
+              >
+              <div slot='start'>{{ currency }}</div>
+            </ion-input>
+          </div>
             </div>
        </div>
          </div>
@@ -244,6 +257,7 @@ import { useQuasar } from 'quasar'
 import { uid } from 'uid'
 import { Platform } from 'quasar';
 import { IonInput, IonItem, IonList } from '@ionic/vue';
+import { Keyboard } from '@capacitor/keyboard';
 /*
  Mobile
 */
@@ -289,6 +303,24 @@ else return storeInvoices.invoiceData
   return uniqueCurrencies;
 });
 
+// Scroll input into view
+const scrollToField = async (currency) => {
+  const fieldIndex = uniqueCurrencies.value.indexOf(currency);
+  if (fieldIndex !== -1 && currencyFields.value[fieldIndex]) {
+    await new Promise((resolve) => setTimeout(resolve, 100)); // Delay for keyboard animation
+    currencyFields.value[fieldIndex].$el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+};
+
+// onMounted(() => {
+//   Keyboard.addListener('keyboardWillShow', (info) => {
+//     console.log('Keyboard height:', info.keyboardHeight);
+//   });
+
+//   Keyboard.addListener('keyboardWillHide', () => {
+//     console.log('Keyboard closed');
+//   });
+// });
 // Define watcher outside the function
 watch(uniqueCurrencies, (newVal, oldVal) => {
   const paymentItemListCurrency = {};
@@ -301,10 +333,13 @@ watch(uniqueCurrencies, (newVal, oldVal) => {
       };
       setTimeout(() => {
     // Focus on the first currency field if it exists
-    if (currencyFields.value.length > 0 && currencyFields.value[0]) {
+    if (currencyFields.value.length > 0 && currencyFields.value[0]&&mobile.value) {
+      currencyFields.value[0].$el.setFocus();
+    }
+    if (currencyFields.value.length > 0 && currencyFields.value[0]&&!mobile.value) {
       currencyFields.value[0].focus();
     }
-  }, 400); // Delay of 5 seconds
+  }, 20); // Delay of 5 seconds
 
     });
   }
@@ -988,4 +1023,16 @@ function addNewClient(patientName) {
 .v-card {
   border-radius: 15px 15px 0px 0px !important; /* Adjust the radius according to your preference */
 }
+  ion-input.custom  {
+    --background: #373737;
+    --color: #fff;
+    --placeholder-color: #ddd;
+    --placeholder-opacity: 0.8;
+
+    --padding-bottom: 10px;
+    --padding-end: 10px;
+    --padding-start: 10px;
+    --padding-top: 10px;
+  }
+
 </style>

@@ -159,7 +159,6 @@
           activator="parent"
         location-strategy="connected"
         scroll-strategy="reposition"
-        close-on-content-click="false"
           class="align-center justify-center"
         >
         <TeethSelectionModal :workItem="workItem" @toothSelected="handleToothSelected(workItem, $event)" />

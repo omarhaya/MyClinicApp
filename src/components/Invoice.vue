@@ -91,6 +91,7 @@ import { useStoreInvoices } from 'src/stores/storeInvoices'
 import { ref,watch,getCurrentInstance,toRefs,computed } from 'vue'
 import { IonItem,IonActionSheet, IonItemOption, IonItemOptions, IonItemSliding, IonLabel, modalController } from '@ionic/vue';
 import MobileInvoiceModal from 'src/components/MobileInvoiceModal.vue'
+import { Haptics, ImpactStyle } from '@capacitor/haptics';
 
 const instance = getCurrentInstance()
 const props = defineProps({
@@ -271,7 +272,8 @@ const Works = computed(() => {
       const maxItemsToShow = 2; // Define the maximum number of items to display
       return teeth.slice(0, maxItemsToShow)
        }
-    function  newPayment() {
+   async function  newPayment() {
+      await Haptics.impact({ style: ImpactStyle.Light });
         storePayments.patient=storePatients.patients.find(
         patient => patient.patientId === props.invoice.patientId)
         storeInvoices.SET_PATIENT_INVOICES(props.invoice.patientId,props.invoice.invoiceId)

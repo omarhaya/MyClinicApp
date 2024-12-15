@@ -10,9 +10,9 @@
       <ion-card-content class="text-green-7">
         <template v-if="totals.length">
           <div v-for="(total, index) in totals" :key="index">
-            <h1 class="inner-text">
-              {{ prefix }}<span>{{ total.currency+' ' }}</span>
-              <GrowingNumeral :value="(total.totalPaid)"/>
+            <h1 class="inner-text" :class="`text-${textColor}`">
+              <span v-if="total.totalPaid!==0&&prefix"> {{ prefix+' ' }}</span><span>{{ total.currency+' ' }}</span>
+              <GrowingNumeral :textColor="textColor" :value="(total.totalPaid)"/>
             </h1>
           </div>
         </template>
@@ -21,7 +21,7 @@
           <h1 class="inner-text">
             <span v-if="newValue > 0">+</span>
             <span class="currency">{{ prefix }}</span>
-            <GrowingNumeral :prefix="prefix" :suffix="suffix" :value="value"/>
+            <GrowingNumeral :prefix="prefix" :textColor="textColor" :suffix="suffix" :value="value"/>
             {{ suffix }}
           </h1>
         </template>
@@ -42,16 +42,17 @@ const props = defineProps({
   totals: { type: Array, default: () => [] },
   duration: { type: Number, default: 500 },
   label: { type: String, default: 'Total' },
+  textColor: {type: String,default:'none'},
 });
 </script>
 
 <style scoped>
 .inner-text {
   font-weight: 600 !important;
-  font-size: clamp(1rem, 2vw + 0.7rem, 2.5rem); /* Dynamically scale with container size */
+  font-size: clamp(1rem, 1.3vw + 0.7rem, 2.5rem); /* Dynamically scale with container size */
 }
 
-.currency {
-  font-size: clamp(0.8rem, 1.5vw + 0.8rem, 1.5rem); /* Adjust currency size */
-}
+/* .currency {
+  font-size: clamp(0.8rem, 1.5vw + 0.8rem, 1.5rem);
+} */
 </style>

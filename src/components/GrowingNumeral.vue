@@ -1,5 +1,5 @@
 <template>
-    <span >{{ newValueFormatted }}</span>
+    <span :class="`text-${textColor}`">{{ newValueFormatted }}</span>
 </template>
 
 <script setup>
@@ -27,6 +27,10 @@ const props = defineProps({
   label: {
     type: String,
     default: 'Total',
+  },
+  textColor: {
+    type: String,
+    default: 'none',
   },
 });
 
