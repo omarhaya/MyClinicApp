@@ -160,6 +160,7 @@ import { useStorePayments } from "src/stores/storePayments"
 import { RecycleScroller,DynamicScrollerItem } from "vue-virtual-scroller";
 import { Haptics, ImpactStyle } from '@capacitor/haptics';
 import {add} from "ionicons/icons";
+import { useStorePatients } from "src/stores/storePatients"
 
 
 const $q=useQuasar()
@@ -168,6 +169,7 @@ const $q=useQuasar()
 */
     const storeInvoices=useStoreInvoices()
     const storePayments=useStorePayments()
+    const storePatients=useStorePatients()
     const storeWorks=useStoreWorks()
     const {  invoicesLoaded } = storeToRefs(storeInvoices)
 /*
@@ -191,36 +193,60 @@ const $q=useQuasar()
       filteredInvoice.value = e.target.innerText
     }
    const $=useQuasar()
-   const filteredData = computed(() => {
-      return invoiceData.value.filter((invoice) => {
-        const nameSize=invoice.patientName.length>18?15:0
-        const size=$q.screen.lt.sm?nameSize+75:45
+   const patientsLoaded = computed(() => {
+  return storePatients.patients && storePatients.patients.length > 0;
+});
 
-        if (invoice.workItemList.length<=1){
-           invoice.size=size*1.5
-        }
-        if (invoice.workItemList.length>1) {
-          invoice.size=size*1.5+(invoice.workItemList.length*15)
-        }
+const filteredData = computed(() => {
+  // Wait until patients are loaded
+  if (!patientsLoaded.value) return [];
 
-        if (filteredInvoice.value === "Draft") {
-          return invoice.invoiceDraft === true
-        }
-        if (filteredInvoice.value === "Pending") {
-          return storeWorks.invoiceWorks[invoice.invoiceId].overallPercentage==0&&!invoice.invoiceDraft
-        }
-        if (filteredInvoice.value === "Paid") {
-          return storeWorks.invoiceWorks[invoice.invoiceId].overallPercentage==100
-        }
-        if (filteredInvoice.value === "Partially Paid") {
-          return storeWorks.invoiceWorks[invoice.invoiceId].overallPercentage<100&&storeWorks.invoiceWorks[invoice.invoiceId].overallPercentage>0
-        }
-        if (filteredInvoice.value === "Over Due") {
-          return storeWorks.invoiceWorks[invoice.invoiceId].overallPercentage<100&&storeWorks.invoiceWorks[invoice.invoiceId].overDue&&!invoice.invoiceDraft
-        }
-        return invoice
-      })
-    })
+  // Perform filtering logic
+  return invoiceData.value.map((invoice) => {
+    if (invoice.patientId) {
+      // Assign patient name from loaded patients
+      const patient = storePatients.patients.find(
+        (patient) => patient.patientId === invoice.patientId
+      );
+      invoice.patientName = patient?.namef || '';
+    }
+
+    const nameSize = invoice.patientName.length > 18 ? 15 : 0;
+    const size = $q.screen.lt.sm ? nameSize + 75 : 45;
+
+    invoice.size =
+      invoice.workItemList.length <= 1
+        ? size * 1.5
+        : size * 1.5 + invoice.workItemList.length * 15;
+
+    if (filteredInvoice.value === 'Draft') {
+      return invoice.invoiceDraft === true;
+    }
+    if (filteredInvoice.value === 'Pending') {
+      return (
+        storeWorks.invoiceWorks[invoice.invoiceId].overallPercentage === 0 &&
+        !invoice.invoiceDraft
+      );
+    }
+    if (filteredInvoice.value === 'Paid') {
+      return storeWorks.invoiceWorks[invoice.invoiceId].overallPercentage === 100;
+    }
+    if (filteredInvoice.value === 'Partially Paid') {
+      return (
+        storeWorks.invoiceWorks[invoice.invoiceId].overallPercentage < 100 &&
+        storeWorks.invoiceWorks[invoice.invoiceId].overallPercentage > 0
+      );
+    }
+    if (filteredInvoice.value === 'Over Due') {
+      return (
+        storeWorks.invoiceWorks[invoice.invoiceId].overallPercentage < 100 &&
+        storeWorks.invoiceWorks[invoice.invoiceId].overDue &&
+        !invoice.invoiceDraft
+      );
+    }
+    return invoice;
+  });
+});
 
    async function load(ev) {
       await storeInvoices.GET_INVOICES_NEXT()

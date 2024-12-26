@@ -12,18 +12,12 @@ const db = admin.firestore();
 const { getAuth } = require('firebase-admin/auth')
 const { onSchedule } = require('firebase-functions/v2/scheduler');
 const twilio = require('twilio');
-
 const dayjs = require('dayjs');
 require('dayjs/locale/ar'); // Import the Arabic locale
 const localeData = require('dayjs/plugin/localeData');
 const customParseFormat = require ('dayjs/plugin/customParseFormat')
 dayjs.extend(localeData)
-dayjs.locale('ar') // Set the locale to Arabic
-// const { uid } = require("uid");
-// const { nanoid } = require('nanoid');
-
-// Initialize Firestore
-// On sign up.
+const { uid } = require("uid");
 
 // On sign up.
 exports.processSignUp = functions1.auth.user().onCreate(async (user) => {
@@ -169,6 +163,7 @@ exports.sendWhatsAppReservation = functions.https.onCall((request) => {
 // Scheduled function to check Firestore for messages to send
 
 exports.scheduleWhatsAppMessages = onSchedule("every 1 minutes", async (event) => {
+  dayjs.locale('ar') // Set the locale to Arabic
   const now = new Date();
   const todayDate = now.toISOString().split('T')[0];
   const nowUnix = Math.floor(now.getTime() / 1000);
@@ -335,29 +330,37 @@ exports.incomingWhatsAppMessage = https.onRequest(async (req, res) => {
 // adding Rent Function
 // Scheduled function to run daily
 
-exports.addRentPaymentOnSchedule =  onSchedule({
-  schedule: "20 20 * * *", // Cron schedule for 8:20 PM UTC (11:20 PM Baghdad time)
-  timeZone: "Asia/Baghdad", // Set to Baghdad timezone
-}, async (event) => {
-  console.log(event,'userdata1')
-    try {
-      const today = dayjs()
-      const usersSnapshot = await admin.firestore().collection("users").get();
+exports.addRentPaymentOnSchedule = onSchedule("every 1 minutes", async (event) => {
+  try {
+    const today = dayjs();
+    const todayDayOfMonth = today.date(); // Day of the month (1-31)
+    const todayDate = today.format("YYYY-MM-DD");
+    const formattedDate = today.format("MMM D, YYYY");
+    const todayUnix = today.valueOf();
 
-      usersSnapshot.forEach(async (userDoc) => {
-        const userId = userDoc.id; // Get the user ID
-        const userData = userDoc.data();
-        const rentDate = userData.rentDate; // Assuming this is in "YYYY-MM-DD" format
-         console.log(userData,'userdata')
-        // Check if today matches rentDate
-        const todayDate = today.format('YYYY-MM-DD');
-        const formattedDate = today.format('MMM D, YYYY');
-        const todayUnix = dayjs(todayDate).valueOf()
-        if (todayDate === rentDate) {
-          const invoiceId = '1212'; // Generate a unique 6-character ID
-          const rentAmount = userData.rentAmount || 1000; // Default rent amount if not provided
-          const rentCurrency = userData.rentCurrency || 'IQD'; // Default rent amount if not provided
+    const usersSnapshot = await admin.firestore().collection("users").get();
 
+    usersSnapshot.forEach(async (userDoc) => {
+      const userId = userDoc.id; // Get the user ID
+      const userData = userDoc.data();
+      const scheduledInvoices = userData.scheduledInvoices;
+
+      if (Array.isArray(scheduledInvoices)) {
+        scheduledInvoices.forEach(async (item) => {
+          const itemDate = dayjs(item.date); // Start date
+          const itemDayOfMonth = itemDate.date(); // Day of the month for item.date
+          const itemMonth = itemDate.month(); // Month (0-indexed, January is 0)
+          const paymentTerms = item.paymentTerms;
+          const repeat=item.repeat;
+          const repeatInterval=parseInt(repeat);
+          const paymentInterval = parseInt(paymentTerms); // Convert to integer
+          const invoiceId = uid(6); // Generate unique invoice ID
+          const workId = uid();
+          const price = item.price || 0; // Default price
+          const currency = item.currency || "IQD"; // Default currency
+          const category=item.category || 'fixed'
+          const patientId=item.patientId
+          const doctor=item.doctor
           const invoiceRef = admin
             .firestore()
             .collection("users")
@@ -365,39 +368,184 @@ exports.addRentPaymentOnSchedule =  onSchedule({
             .collection("invoices")
             .doc(invoiceId);
 
-          await invoiceRef.set({
-            invoiceId,
-            price: rentAmount,
-            currency:rentCurrency,
-            // status: "unpaid",
-            invoiceDate:formattedDate,
-            invoiceDateUnix:todayUnix,
-            deletedDateUnix:null,
-            doctorId:userId,
-            uid:userId,
-          });
-
           const paymentRef = invoiceRef.collection("payments").doc();
-          await paymentRef.set({
-            paid: rentAmount,
-            mode: "cash",
-            type: "expense",
-            category: "Rent",
-            dateUnix: todayUnix,
-            date:todayDate,
-            doctorId:userId,
-            invoiceId,
-            currency:rentCurrency,
-            uid:userId,
-          });
 
-          console.log(`Added rent payment for user: ${userDoc.id}`);
+          if (repeat === "monthly") {
+            // Handle "monthly" payments
+            if (todayDayOfMonth === itemDayOfMonth) {
+              await createInvoiceAndPayment({
+                invoiceRef,
+                paymentRef,
+                userId,
+                formattedDate,
+                todayUnix,
+                todayDate,
+                item,
+                workId,
+                invoiceId,
+                price,
+                currency,
+                category,
+                patientId,
+                doctor,
+                paymentTerms,
+              });
+            }
+          } else if (repeat === "yearly") {
+            // Handle "yearly" payments
+            if (todayDayOfMonth === itemDayOfMonth && today.month() === itemMonth) {
+              await createInvoiceAndPayment({
+                invoiceRef,
+                paymentRef,
+                userId,
+                formattedDate,
+                todayUnix,
+                todayDate,
+                item,
+                workId,
+                invoiceId,
+                price,
+                currency,
+                category,
+                patientId,
+                doctor,
+                paymentTerms,
+              });
+            }
+          } else if (repeatInterval > 0 && repeat !== "monthly" && repeat !== "yearly") {
+            // Handle periodic payments based on `paymentInterval`
+            const daysSinceStart = today.diff(itemDate, "day"); // Days since start date
+
+            if (daysSinceStart >= 0 && daysSinceStart % paymentInterval === 0) {
+              await createInvoiceAndPayment({
+                invoiceRef,
+                paymentRef,
+                userId,
+                formattedDate,
+                todayUnix,
+                todayDate,
+                item,
+                workId,
+                invoiceId,
+                price,
+                currency,
+                category,
+                patientId,
+                doctor,
+                paymentTerms,
+              });
+            }
+          } else {
+            // Log invalid repeat
+            console.warn(
+              `Invalid repeat '${repeat}' for user: ${userId}, item: ${JSON.stringify(
+                item
+              )}`
+            );
+          }
+        });
+      } else {
+        console.log(`No FixedInvoices for user: ${userId}`);
+      }
+    });
+
+    console.log("Rent payments added successfully.");
+  } catch (error) {
+    console.error("Error adding rent payments:", error);
+  }
+});
+
+async function createInvoiceAndPayment({
+  invoiceRef,
+  paymentRef,
+  userId,
+  formattedDate,
+  todayUnix,
+  todayDate,
+  item,
+  workId,
+  invoiceId,
+  price,
+  currency,
+  category,
+  patientId,
+  doctor,
+  paymentTerms
+}) {
+  // Set invoice data
+  await invoiceRef.set({
+    invoiceId,
+    invoiceDate: formattedDate,
+    invoiceDateUnix: todayUnix,
+    deletedDateUnix: null,
+    uid: userId,
+    category,
+    patientId,
+    workItemList: [
+      {
+        color: item.color,
+        currency,
+        doctor,
+        label: item.label,
+        price,
+        workId,
+        paymentTerms,
+        invoiceId,
+      },
+    ],
+  });
+
+  // Handle autopayment
+  if (item.autopay) {
+    if (Array.isArray(doctor)) {
+      // Iterate over each doctor in the array
+      for (const doctorEntry of doctor) {
+        const { doctorId, percentage } = doctorEntry;
+
+        if (!doctorId || !percentage) {
+          console.warn(
+            `Invalid doctor data for item: ${JSON.stringify(item)}, skipping entry: ${JSON.stringify(doctorEntry)}`
+          );
+          continue;
         }
-      });
 
-      console.log("Rent payments added successfully.");
-    } catch (error) {
-      console.error("Error adding rent payments:", error);
+        const doctorPayment = (price * percentage) / 100;
+
+        // Create payment document for each doctor
+        const doctorPaymentRef = paymentRef.parent.doc(); // Generate a unique payment ID for each payment
+        await doctorPaymentRef.set({
+          paid: doctorPayment,
+          mode: "cash",
+          type: "expense",
+          category,
+          dateUnix: todayUnix,
+          date: todayDate,
+          doctorId,
+          invoiceId,
+          currency,
+          uid: userId,
+          workId,
+          patientId,
+        });
+      }
+    } else {
+      // Handle single doctor case
+      await paymentRef.set({
+        paid: price,
+        mode: "cash",
+        type: "expense",
+        category,
+        dateUnix: todayUnix,
+        date: todayDate,
+        doctorId: doctor?.doctorId || userId,
+        invoiceId,
+        currency,
+        uid: userId,
+        workId,
+        patientId,
+      });
     }
   }
-);
+
+  console.log(`Added rent payment for user: ${userId}`);
+}

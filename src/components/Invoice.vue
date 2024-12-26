@@ -30,8 +30,11 @@
       </span>
      </div>
      <div class="right justify-end flex row">
-      <span> <div v-if="invoice.workItemList" v-for="subtotal in Works.subTotals" class="price center column">
-      <div  class="col flex"><span class="currency">{{(subtotal.currency)}} </span>{{formatMoney(subtotal.totalAmount) }}</div>
+      <span> <div v-if="invoice.workItemList" v-for="subtotal in Works.subTotals" class="price center column" >
+      <div  class="col flex" :class="{
+            'text-green-9': subtotal.subTotal.sign!=='-',
+            'text-red': subtotal.subTotal.sign=='-',
+          }"><span class="currency">{{(subtotal.totalAmount.sign+' ' +subtotal.totalAmount.currency)}} </span>{{formatMoney(subtotal.totalAmount.absoluteValue) }}</div>
      </div>
         <!-- <div class="center column price">
           <q-circular-progress
@@ -92,6 +95,7 @@ import { ref,watch,getCurrentInstance,toRefs,computed } from 'vue'
 import { IonItem,IonActionSheet, IonItemOption, IonItemOptions, IonItemSliding, IonLabel, modalController } from '@ionic/vue';
 import MobileInvoiceModal from 'src/components/MobileInvoiceModal.vue'
 import { Haptics, ImpactStyle } from '@capacitor/haptics';
+import { actionSheetController } from '@ionic/vue';
 
 const instance = getCurrentInstance()
 const props = defineProps({
@@ -136,11 +140,12 @@ const Works = computed(() => {
   const works = invoice.workItemList || [];
   const payments = storePayments.invoicePayments?.[invoice.invoiceId] || [];
   const currencies = [...new Set(works.map((item) => item.currency))];
+  console.log(payments, 'payments');
 
   // Calculate subtotals for each currency
   const subTotals = currencies.map((currency) => {
     const paid = payments.reduce((accumulator, item) => {
-      if (item.currency === currency) {
+      if (item.currency === currency && (item.type === 'payment' || item.type === 'expense')) {
         return accumulator + Number(item.paid || 0);
       }
       return accumulator;
@@ -162,7 +167,7 @@ const Works = computed(() => {
 
     const totalDiscount = works.reduce((accumulator, item) => {
       if (item.currency === currency) {
-        const discountValue = Number(item.discount?.replace(/,/g, '') || 0);
+        const discountValue = Number(item.discount || 0);
         return accumulator + discountValue;
       }
       return accumulator;
@@ -170,16 +175,16 @@ const Works = computed(() => {
 
     const totalAmount = subTotal - totalDiscount;
     const dueAmount = totalAmount - paid;
-    const paidPercentage = totalAmount > 0 ? (paid / totalAmount) * 100 : 0;
+    const paidPercentage = totalAmount !== 0 ? (paid / totalAmount) * 100 : 0;
 
     return {
       currency,
-      subTotal,
-      totalDiscount,
-      tax: 0,
-      totalAmount,
-      paid,
-      dueAmount,
+      subTotal: formatPrice(subTotal, currency),
+      totalDiscount: formatPrice(totalDiscount, currency),
+      tax: formatPrice(0, currency),
+      totalAmount: formatPrice(totalAmount, currency),
+      paid: formatPrice(paid, currency),
+      dueAmount: formatPrice(dueAmount, currency),
       paidPercentage,
       highestPaymentDate,
       highestPaymentDueDate,
@@ -188,7 +193,12 @@ const Works = computed(() => {
 
   // Calculate overall percentage and overdue status
   const overallPercentage = subTotals.length > 0
-    ? (subTotals.reduce((acc, subtotal) => acc + subtotal.paidPercentage, 0) / subTotals.length).toFixed(1)
+    ? (
+        subTotals.reduce(
+          (acc, subtotal) => acc + subtotal.paidPercentage,
+          0
+        ) / subTotals.length
+      ).toFixed(1)
     : 0;
 
   const overDue = subTotals.some((subtotal) => {
@@ -199,20 +209,34 @@ const Works = computed(() => {
   // Add payment details to works
   const worksWithDetails = works.map((work) => {
     const allPaid = payments.reduce((accumulator, item) => {
-      if (item.workId === work.workId) {
+      if (
+        item.workId === work.workId &&
+        (item.type === 'payment' || item.type === 'expense')
+      ) {
         return accumulator + Number(item.paid || 0);
       }
       return accumulator;
     }, 0);
 
     const price = Number(work.price.replace(/,/g, '') || 0);
-    const discount = Number(work.discount?.replace(/,/g, '') || 0);
-    const total = price - discount;
+    const discount = payments.reduce((accumulator, item) => {
+      if (item.workId === work.workId && item.category === 'Discount') {
+        return accumulator + Number(item.paid || 0);
+      }
+      return accumulator;
+    }, 0);
 
+    work.discount = discount;
+    const total = price - discount;
+    // Calculate discount percentage
+    const percent = price !== 0 ? (discount / price) * 100 : 0;
     return {
       ...work,
       allPaid,
-      paidPercentage: total > 0 ? ((allPaid / total) * 100).toFixed(2) : 0,
+      paidPercentage: total !== 0 ? ((allPaid / total) * 100).toFixed(2) : 0,
+      formattedPrice: formatPrice(price, work.currency), // Add formatted price
+      formattedTotal: formatPrice(total, work.currency), // Add formatted total
+      percent: percent.toFixed(2), // Calculate and format percent
     };
   });
 
@@ -255,6 +279,11 @@ const Works = computed(() => {
 /*
  Filters
 */
+       function formatPrice(value, currency) {
+        const absoluteValue = Number( Math.abs(value).toLocaleString().replace(/,/g, '') || 0); // Format the absolute value
+        const sign = value < 0 ? '-' : ''; // Determine the sign
+        return {sign,absoluteValue,currency}; // Format: [sign] [price] [currency]
+       }
        const isArabic=(value) =>{
          return /[\u0600-\u06FF]/.test(value)
        }
@@ -281,10 +310,11 @@ const Works = computed(() => {
           console.log('not mobile')}
         else {instance.emit('openPaymentModal')}
     }
-    async function deleteInvoice(docId) {
-      storeInvoices.DELETE_INVOICE(docId)
-      console.log('itemDeleted')
-    }
+    // async function deleteInvoice(docId) {
+    //   storeInvoices.DELETE_INVOICE(docId)
+    //   console.log('itemDeleted')
+    // }
+
     const actionSheetButtons =ref([
         {
           text: 'Delete',
@@ -292,21 +322,60 @@ const Works = computed(() => {
           data: {
             action: 'delete',
           },
-          handler: () => {
-          // console.log(props.invoice.invoiceId,isOpen.value)
-          // const index = storeInvoices.invoiceData.findIndex(item => item.invoiceId === props.invoice.invoiceId);
-
-          // if (index !== -1) {
-          //   // If the item is found, update the property
-          //   storeInvoices.invoiceData[index].deleted = true;
-          // }
-          isDeleted.value = true
-          setTimeout(() => {
-            storeInvoices.DELETE_INVOICE(props.invoice.invoiceId)
+          handler: async () => {
+          const hasPaymentsToDelete=storePayments.invoicePayments[props.invoice.invoiceId] || []
+          if (hasPaymentsToDelete.length) {
+            const paymentsActionSheet = await actionSheetController.create({
+              header: 'Delete associated payments as well?',
+              buttons: [
+                {
+                  text: 'Delete Payments Too',
+                  role: 'destructive',
+                  handler: async () => {
+                    hasPaymentsToDelete.forEach(async item=>{
+                      item.invoiceId=props.invoice.invoiceId
+                      await storePayments.deletePayment(item)}
+                    )
+                    isDeleted.value = true
+                  setTimeout(async () => {
+                    await  storeInvoices.DELETE_INVOICE(props.invoice.invoiceId)
+                }, 280)
+                const slidingItem = document.querySelector('.invoice')
+                slidingItem.closeOpened()
+                 },
+                },
+                {
+                  text: 'No just Delete Invoice',
+                  role: 'destructive',
+                  handler: async () => {
+                    isDeleted.value = true
+             setTimeout(async () => {
+              await  storeInvoices.DELETE_INVOICE(props.invoice.invoiceId)
+                }, 280)
+                const slidingItem = document.querySelector('.invoice')
+                slidingItem.closeOpened()
+                  },
+                },
+                {
+                  text: 'Cancel',
+                  role: 'cancel',
+                  handler: () => {
+                    const slidingItem = document.querySelector('.invoice')
+                    slidingItem.closeOpened()
+                  },
+                },
+              ],
+              presentingElement: pageRef.value.$el,
+            });
+            await paymentsActionSheet.present();
+          } else {
+            isDeleted.value = true
+             setTimeout(async () => {
+              await  storeInvoices.DELETE_INVOICE(props.invoice.invoiceId)
           }, 280)
-
           const slidingItem = document.querySelector('.invoice')
           slidingItem.closeOpened()
+          }
         }
         },
         {
@@ -322,6 +391,38 @@ const Works = computed(() => {
         },
       ])
 
+      async function handleDeleteItemsAndPayments (data,itemsToDelete) {
+  console.log('deletePaymentsand invoices')
+  storeInvoices.loading=true
+  console.log(itemsToDelete)
+  for (const item of itemsToDelete) {
+    const payments = (storePayments.invoicePayments[item.invoiceId] || []).filter(
+      (payment) => payment.workId === item.workId);
+
+              payments.forEach(async payment=>{
+                payment.invoiceId=item.invoiceId
+                await storePayments.deletePayment(payment)
+              })
+
+              console.log(item,payments,'paymenttttt')
+              await storeWorks.deleteWork(item.docId)
+              console.log(`Deleted work item with docId: ${item.docId}`)
+            }
+            // Update the invoice in storeInvoices after deletion
+          await  storeInvoices.updateInvoice(data);
+          await data.workItemList.forEach(work=>{
+              work.patientDetails=patient.value
+              console.log(work,'wreee2')
+              if(work.paymentItemList){
+                  if(work.paymentItemList.paid!==0)
+                  storePayments.addPayment(work)
+                }
+           })
+          await consolidateDiscountPayments(data.workItemList);
+
+            // Proceed with updating/adding works and payments
+            // await handleWorkUpdates(data);
+}
 
 function handleClick () {
     if (!props.mobile) {

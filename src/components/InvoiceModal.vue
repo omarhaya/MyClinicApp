@@ -280,6 +280,7 @@
               <div class="invoice-payment flex flex-column">
                 <!-- Payments -->
                 <div class="payment-items q-pt-lg">
+                  <div>previously Paid</div>
                   <table class="item-list" v-if="workItem.paymentItemList">
                     <tr class="table-heading flex">
               <th class="paid-item">Paid Amount</th>
@@ -289,6 +290,7 @@
                       <td class="paid-item"><v-text-field  density="compact" @input="calculatePercentage2(workItem)" :color="workItem.color" :prefix="workItem.currency" dense  type="text" v-model="workItem.paymentItemList.paid" >
                          <template v-slot:append>
                           <q-knob
+
                           reverse
                           :step="25"
                           v-model="workItem.paymentItemList.value"
@@ -378,6 +380,7 @@
  import TeethSelectionModal from 'src/components/TeethSelectionModal.vue'
  import { actionSheetController } from '@ionic/vue';
  import { Platform } from 'quasar'
+ import { Haptics, ImpactStyle } from '@capacitor/haptics';
  const $q=useQuasar()
 
 // Check if dark mode is enabled
@@ -430,6 +433,10 @@ const    handleWorkItemChange=(value)=> {
   }, 0)
   return total+ ' '+ currency
   }
+  async function hepticFeedback () {
+     console.log('hepticfeedback')
+    await Haptics.impact({ style: ImpactStyle.Light })
+  }
   const calculateTotalDiscount = (currency) => {
   // You can calculate the total based on the currency here
   const total = storeInvoices.workItemList.reduce((accumulator, item) => {
@@ -462,29 +469,30 @@ const    handleWorkItemChange=(value)=> {
     return total+ ' '+ work.currency
   }
 
-  const calculateRemaining=(item) => {
-  if(item.paymentItemList.paid){
-    const price = parseInt(item.price.replace(/\,/g, '')) || 0;
-    const discount = parseInt(item.discount.replace(/\,/g, '')) || 0;
-    const paid =  parseInt(item.paymentItemList.paid.replace(/\,/g, '')) || 0;
-    const total =(price - discount)
-    if(paid&&paid<=total)
-   return total-paid
-      else return 0
-    }
-    else {
-      return parseInt(item.price.replace(/\,/g, '')-item.discount.replace(/\,/g, ''))
-    }
+  const calculateRemaining=(workItem) => {
+    const payments = storePayments.invoicePayments[workItem.invoiceId] || [];
+    const allPaid = payments.length > 0
+      ? payments.reduce((accumulator, item) => {
+          if (item.workId === workItem.workId && item.category !== 'Discount') {
+            return accumulator + Number(item.paid || 0);
+          }
+          return accumulator;
+        }, 0)
+      : 0;
+    if(workItem.paymentItemList.paid){
+      const price = parseInt(workItem.price.replace(/\,/g, '')) || 0;
+      const discount = parseInt(workItem.discount.replace(/\,/g, '')) || 0;
+      const paid =  parseInt(workItem.paymentItemList.paid.replace(/\,/g, '')) || 0;
+      const total =(price - discount)
+      if(paid&&paid<=total)
+      return total-paid-allPaid
+          else return 0
+        }
+      else {
+        return parseInt(workItem.price.replace(/\,/g, '')-workItem.discount.replace(/\,/g, ''))-allPaid
+      }
     }
 
-  // const paidEqualTotal =(item)=>{
-  //   if(item.price){
-  //   const price = parseInt(item.price.replace(/\,/g, '')) || 0;
-  //   const discount = parseInt(item.discount.replace(/\,/g, '')) || 0;
-  //   const total =(price - discount)
-  //   item.paymentItemList.paid=String(total)
-  //  }
-  //  }
   const filteredItems = computed(() => {
     const uniqueValues = new Set()
     return storeInvoices.workItemList.filter((item) => {
@@ -658,17 +666,28 @@ const    handleWorkItemChange=(value)=> {
           workItem.paymentItemList.paid=0
         }
        }
-       const calculateValue2 = (workItem) => {
+       const calculateValue2 = async (workItem) => {
         const price = parseInt(workItem.price.replace(/\,/g, '')) || 0;
         const discount = parseInt(workItem.discount.replace(/\,/g, '')) || 0;
-        const total =(price - discount)
+        const payments = storePayments.invoicePayments[workItem.invoiceId] || [];
+        const allPaid = payments.length > 0
+          ? payments.reduce((accumulator, item) => {
+              if (item.workId === workItem.workId && item.category !== 'Discount') {
+                return accumulator + Number(item.paid || 0);
+              }
+              return accumulator;
+            }, 0)
+          : 0;
+        const total =(price - discount-allPaid)
         const percent=workItem.paymentItemList.value/100
         if(workItem.paymentItemList.value!==0){
         workItem.paymentItemList.paid=(String((total*percent).toFixed(0)))
         workItem.paymentItemList.paid=formatWithCommas(workItem.paymentItemList.paid)
         }
        else workItem.paymentItemList.paid=0
+       if (mobile.value) await hepticFeedback()
       }
+
       const calculateKnobPercentage=(workItem)=>{
         if(workItem.paymentItemList.value>0)
         return workItem.paymentItemList.value.toFixed(0)
@@ -753,14 +772,15 @@ const    handleWorkItemChange=(value)=> {
        invoiceDate.value=currentInvoice.invoiceDate
        invoiceDateUnix.value =currentInvoice.invoiceDateUnix
        let workItemList = []
+       console.log()
        currentInvoice.workItemList.forEach(work =>{
       let  workItem={}
         workItem.label=work.label
         workItem.color=work.color
         workItem.price=work.price.replace(/\B(?=(\d{3})+(?!\d))/g, ',')
-        workItem.discount=work.discount.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',')
+        workItem.discount=work.discount.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',')||'0'
         workItem.currency=work.currency
-        workItem.percent=(work.discount/work.price*100).toFixed(2)
+        workItem.percent=((work.discount)/parseInt(work.price.replace(/\,/g, ''))*100).toFixed(2)
         workItem.description=work.description
         workItem.doctor=work.doctor
         workItem.teeth=work.teeth
@@ -930,10 +950,12 @@ const    handleWorkItemChange=(value)=> {
          })
        storeInvoices.addInvoice(data)
        storeInvoices.workItemList.forEach(work=>{
-        console.log(work,'workkk')
         work.patientDetails=patient.value
         work.dateUnix=invoiceDateUnix.value
         storeWorks.addWork(work)
+        if (parseInt(work.discount)>0) {
+          storePayments.addDiscount(work)
+        }
         if(work.paymentItemList){
           if(work.paymentItemList.paid!==0)
           storePayments.addPayment(work)
@@ -941,7 +963,7 @@ const    handleWorkItemChange=(value)=> {
       })
 
      }
-     async function updateInvoice() {
+  async function updateInvoice() {
   const data = {
     appointmentDate: appointmentDate.value,
     patientDetails: patient.value,
@@ -951,58 +973,183 @@ const    handleWorkItemChange=(value)=> {
     invoiceDraft: invoiceDraft.value,
     invoiceId: storeInvoices.currentInvoiceArray.invoiceId,
     docId: docId.value,
-    workItemList:storeInvoices.workItemList,
-
+    workItemList: storeInvoices.workItemList,
   };
-  data.workItemList.forEach(item=>item.invoiceId=storeInvoices.currentInvoiceArray.invoiceId)
+
+  data.workItemList.forEach(item => {
+    item.invoiceId = storeInvoices.currentInvoiceArray.invoiceId;
+  });
+
   const workIdsInWorkItemList = new Set(storeInvoices.workItemList.map(item => item.workId));
   const currentWorkItems = storeInvoices.currentInvoiceArray.workItemList;
-  console.log(currentWorkItems, 'currentWorkItems');
 
-  // Find items in currentWorkItems that are not in workItemList based on workId
   const itemsToDelete = currentWorkItems.filter(item => !workIdsInWorkItemList.has(item.workId));
+  itemsToDelete.forEach(item => {
+    item.paymentsToDelete = storePayments.invoicePayments[item.invoiceId] || [];
+  });
 
-  // If there are items to delete, show a single action sheet
-  if (itemsToDelete.length > 0&&mobile.value) {
-    const actionSheet = await actionSheetController.create({
-      header: 'Are you sure you want to delete these work items?',
-      buttons: [
-        {
-          text: 'Delete All',
-          role: 'destructive',
-          handler: async () => {
-            // Perform delete operation for each unmatched item
-           await handleDeleteItems(data,itemsToDelete)
-          }
-        },
-        {
-          text: 'Cancel',
-          role: 'cancel',
-          handler: () => {
-            // Handle the cancel action
-            console.log('Deletion canceled');
-          }
-        }
-      ],
-      presentingElement: modalRef.value.$el,
-    });
+  const hasPaymentsToDelete = itemsToDelete.some(item => item.paymentsToDelete.length > 0);
 
-    // Present the action sheet
-    await actionSheet.present();
-  }
-  else if (itemsToDelete.length > 0&&!mobile.value) {
-    itemsToDelete.itemsToDelete=true
-      deleteAll.value=itemsToDelete
-      dataToDelete.value=data
-      console.log(deleteAll.value,'itemsToDelete')
-  }
-   else {
+  if (itemsToDelete.length > 0) {
+    if (!mobile.value) {
+      // Use q-dialog for desktop
+      await handleDesktopDialog(itemsToDelete, hasPaymentsToDelete, data);
+    } else {
+      // Use actionSheet for mobile
+      await handleMobileActionSheet(itemsToDelete, hasPaymentsToDelete, data);
+    }
+  } else {
     // No items to delete, proceed with updating the invoice
     await storeInvoices.updateInvoice(data);
-    await handleWorkUpdates(data);
-    console.log(data,'dataa')
+    console.log(data,'wreee1')
+    await data.workItemList.forEach(work=>{
+      work.patientDetails=patient.value
+      console.log(work,'wreee2')
+      if(work.paymentItemList){
+          if(work.paymentItemList.paid!==0)
+          storePayments.addPayment(work)
+        }
+    })
+    await consolidateDiscountPayments(data.workItemList);
+    console.log(data, 'Updated invoice data');
   }
 }
+async function handleDesktopDialog(itemsToDelete, hasPaymentsToDelete, data) {
+  return new Promise((resolve) => {
+    $q.dialog({
+        title: 'Confirm',
+        message: 'Are you sure you want to delete these work items?',
+        ok: {
+           label: 'Delete All',
+           color:'red',
+          push: true
+        },
+        cancel: {
+          push: true,
+          color: 'primary'
+        },
+        persistent: true
+      }).onOk(async () => {
+
+          if (hasPaymentsToDelete) {
+            $q.dialog({
+        title: 'Confirm',
+        message: 'Would you like to turn on the wifi?',
+        ok: {
+           label: 'Delete Payments',
+           color:'red',
+          push: true
+        },
+
+        cancel: {
+          push: true,
+          label:'Distribute Payments',
+          color: 'primary'
+        },
+
+        persistent: true
+      }).onOk(async () => {
+        await handleDeleteItemsAndPayments(data, itemsToDelete);
+        resolve(); // Resolve the promise after handling
+      }).onCancel(async () => {
+        await handleDeleteItemsAndDistributePayments(data, itemsToDelete);
+      }).onDismiss(async () => {
+        // console.log('I am triggered on both OK and Cancel')
+      })} else {
+            await handleDeleteItems(data, itemsToDelete);
+          }
+      }).onCancel(async () => {
+
+      }).onDismiss(async () => {
+        // console.log('I am triggered on both OK and Cancel')
+      })
+  });
+}
+async function handleMobileActionSheet(itemsToDelete, hasPaymentsToDelete, data) {
+  const actionSheet = await actionSheetController.create({
+    header: 'Are you sure you want to delete these work items?',
+    buttons: [
+      {
+        text: 'Delete All',
+        role: 'destructive',
+        handler: async () => {
+          if (hasPaymentsToDelete) {
+            const paymentsActionSheet = await actionSheetController.create({
+              header: 'Delete associated payments as well?',
+              buttons: [
+                {
+                  text: 'Delete Payments Too',
+                  role: 'destructive',
+                  handler: async () => {
+                    await handleDeleteItemsAndPayments(data, itemsToDelete);
+                  },
+                },
+                {
+                  text: 'Distribute Payments to Other Works',
+                  role: 'destructive',
+                  handler: async () => {
+                    await handleDeleteItemsAndDistributePayments(data, itemsToDelete);
+                  },
+                },
+                {
+                  text: 'Cancel',
+                  role: 'cancel',
+                  handler: () => {
+                    console.log('Deletion canceled');
+                  },
+                },
+              ],
+              presentingElement: modalRef.value.$el,
+            });
+            await paymentsActionSheet.present();
+          } else {
+            await handleDeleteItems(data, itemsToDelete);
+          }
+        },
+      },
+      {
+        text: 'Cancel',
+        role: 'cancel',
+        handler: () => {
+          console.log('Deletion canceled');
+        },
+      },
+    ],
+    presentingElement: modalRef.value.$el,
+  });
+
+  await actionSheet.present();
+}
+async function consolidateDiscountPayments(workItemList) {
+
+  for (const work of workItemList) {
+    work.patientDetails = patient.value;
+    if (parseInt(work.discount.replace(/\,/g, '')) > 0) {
+
+      const existingDiscountPayments = storePayments.invoicePayments[work.invoiceId]?.filter(
+        (payment) => payment.workId === work.workId && payment.category === 'Discount'
+      );
+      console.log((work.discount.replace(/\,/g, '')) ,'workItemListworkItemList')
+      if (existingDiscountPayments?.length > 0) {
+        // Keep the first discount payment, update its value
+        const primaryPayment = existingDiscountPayments[0];
+        primaryPayment.paid = parseInt(work.discount.replace(/\,/g, ''));
+        primaryPayment.invoiceId=work.invoiceId
+        await storePayments.updatePaymentDiscount(primaryPayment);
+        existingDiscountPayments.forEach(payment=>payment.invoiceId=work.invoiceId)
+        console.log(existingDiscountPayments,'existingDiscountPayments')
+        // Remove all other discount payments
+        for (let i = 1; i < existingDiscountPayments.length; i++) {
+          await storePayments.deletePayment(existingDiscountPayments[i]);
+        }
+      } else {
+        // No existing discount payment, add a new one
+        await storePayments.addDiscount(work);
+      }
+    }
+  }
+}
+
 async function handleDeleteItems (data,itemsToDelete) {
   storeInvoices.loading=true
   console.log(itemsToDelete)
@@ -1014,7 +1161,141 @@ async function handleDeleteItems (data,itemsToDelete) {
             storeInvoices.updateInvoice(data);
 
             // Proceed with updating/adding works and payments
-            await handleWorkUpdates(data);
+            // await handleWorkUpdates(data);
+}
+
+async function handleDeleteItemsAndPayments (data,itemsToDelete) {
+  console.log('deletePaymentsand invoices')
+  storeInvoices.loading=true
+  console.log(itemsToDelete)
+  for (const item of itemsToDelete) {
+    const payments = (storePayments.invoicePayments[item.invoiceId] || []).filter(
+      (payment) => payment.workId === item.workId);
+
+              payments.forEach(async payment=>{
+                payment.invoiceId=item.invoiceId
+                await storePayments.deletePayment(payment)
+              })
+
+              console.log(item,payments,'paymenttttt')
+              await storeWorks.deleteWork(item.docId)
+              console.log(`Deleted work item with docId: ${item.docId}`)
+            }
+            // Update the invoice in storeInvoices after deletion
+          await  storeInvoices.updateInvoice(data);
+          await data.workItemList.forEach(work=>{
+              work.patientDetails=patient.value
+              console.log(work,'wreee2')
+              if(work.paymentItemList){
+                  if(work.paymentItemList.paid!==0)
+                  storePayments.addPayment(work)
+                }
+           })
+          await consolidateDiscountPayments(data.workItemList);
+
+            // Proceed with updating/adding works and payments
+            // await handleWorkUpdates(data);
+}
+async function handleDeleteItemsAndDistributePayments(data, itemsToDelete) {
+  storeInvoices.loading = true;
+
+  // Get remaining works in the workItemList after deletion
+  const remainingWorks = data.workItemList.filter(
+    (work) => !itemsToDelete.some((item) => item.workId === work.workId)
+  );
+    console.log(remainingWorks,'data.workItemList')
+  for (const item of itemsToDelete) {
+    const paymentsToDistribute = (storePayments.invoicePayments[item.invoiceId] || []).filter(
+      (payment) => (payment.workId === item.workId)&&payment.type==="payment"
+    );
+     console.log(paymentsToDistribute,'paymentsToDistribute')
+    console.log(`Payments to redistribute for workId ${item.workId}:`, paymentsToDistribute);
+
+    if (remainingWorks.length > 0) {
+      // Distribute payments among remaining works
+      let remainingAmount = (paymentsToDistribute.reduce((sum, payment) => sum + payment.paid, 0));
+      for (const work of remainingWorks) {
+        if (parseInt(remainingAmount) <= 0) break;
+        const payments=(storePayments.invoicePayments[work.invoiceId] || []).filter(
+      (payment) => payment.workId === work.workId
+    );
+
+        const allPaid = payments.reduce((accumulator, item) => {
+            if (item.workId === work.workId && (item.type === 'payment' || item.type === 'expense')) {
+              return accumulator + Number(item.paid || 0);
+            }
+            return accumulator;
+          }, 0);
+
+          let price = 0;
+          if (typeof work.price === 'string') {
+            price = Number(work.price.replace(/,/g, '') || 0);
+          } else if (typeof work.price === 'number') {
+            price = work.price;
+          } else {
+            console.warn(`Unexpected price type for work:`, work);
+          }
+
+          // Calculate total discount from payments
+          const discount = payments.reduce((accumulator, item) => {
+            if (item.workId === work.workId && item.category === 'Discount') {
+              return accumulator + Number(item.paid || 0);
+            }
+            return accumulator;
+          }, 0);
+
+
+
+        const workCapacity = Math.max(0, price- allPaid-discount); // Remaining unpaid capacity for the work
+        const amountToAssign = Math.min(parseInt(remainingAmount), workCapacity);
+        console.log(workCapacity,amountToAssign,price,discount,allPaid,paymentsToDistribute,remainingAmount,'amountToAssign')
+        if (amountToAssign > 0) {
+        // Add payment to work's paymentItemList
+
+          // work.paymentItemList.paid=amountToAssign
+
+          await storePayments.addPayment({
+            ...work,
+            patientDetails:patient.value,
+            paymentItemList:{paid:amountToAssign}
+          });
+
+
+          console.log(`Distributed ${amountToAssign} to workId ${work.workId}`);
+          remainingAmount -= amountToAssign;
+        }
+      }
+
+      if (remainingAmount > 0) {
+        console.warn(`Some payments could not be redistributed: ${remainingAmount}`);
+      }
+    }
+
+    // Delete the work item and its associated payments
+    for (const payment of paymentsToDistribute) {
+      payment.invoiceId=data.invoiceId
+      await storePayments.deletePayment(payment);
+      console.log(`Deleted payment with paymentId: ${payment.paymentId}`);
+    }
+
+    // await storeWorks.deleteWork(item.docId);
+    console.log(`Deleted work item with docId: ${item.docId}`);
+  }
+
+  // Update the invoice in storeInvoices after deletion and redistribution
+  await storeInvoices.updateInvoice(data);
+  await data.workItemList.forEach(work=>{
+      work.patientDetails=patient.value
+      console.log(work,'wreee2')
+      if(work.paymentItemList){
+          if(work.paymentItemList.paid!==0)
+          storePayments.addPayment(work)
+        }
+    })
+  await consolidateDiscountPayments(data.workItemList);
+  storeInvoices.loading = false;
+
+  console.log('Deleted items and redistributed payments.');
 }
 // Function to handle work updates and additions
 async function handleWorkUpdates(data) {
@@ -1027,20 +1308,24 @@ async function handleWorkUpdates(data) {
     const matchingWork = storeInvoices.currentInvoiceArray.workItemList.find(
       currentWork => currentWork.workId === work.workId
     )
-
+    if (parseInt(work.discount)>0) {
+      console.log('discount',work)
+          // storePayments.addDiscount(work)
+        }
     // If a matching workId is found, trigger storeWorks.updateWork()
     if (matchingWork) {
-      await storeWorks.updateWork(work);
+      // await storeWorks.updateWork(work);
       console.log(work, 'workMatch');
     } else {
       work.invoiceId = data.invoiceId;
-      await storeWorks.addWork(work);
+      // await storeWorks.addWork(work);
       console.log(work, 'workExtra');
     }
 
     // If paymentItemList exists and is paid, trigger storePayments.addPayment()
     if (work.paymentItemList && work.paymentItemList.paid !== 0) {
-      await storePayments.addPayment(work);
+      console.log(work,'paymentss')
+      // await storePayments.addPayment(work);
     }
   }
 }

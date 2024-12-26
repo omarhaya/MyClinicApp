@@ -69,6 +69,7 @@ export const useStorePayments= defineStore('storePayments', {
         else {paymentsCollectionRef = collection(db, 'users',this.storeAuth.user.uid,'payments')}
         // this.updatePayments()
    },
+
    TOGGLE_PAYMENT(paymentId) {
     if (!this.mobile){this.paymentModal = !this.paymentModal}
     if (paymentId) {
@@ -77,12 +78,10 @@ export const useStorePayments= defineStore('storePayments', {
       const foundPayment = this.dayPayments[date].find(payment => payment.paymentId === paymentId);
       return foundPayment ? foundPayment : acc;  // If found, return it, otherwise keep searching
     }, null);
-
     // If payment is not found in dayPayments, search in invoicePayments
     if (!this.currentPaymentArray) {
       this.currentPaymentArray = this.invoicePayments.find(doc => doc.paymentId === paymentId);
     }
-
     // If payment is not found in invoicePayments, search in payments
     if (!this.currentPaymentArray) {
       this.currentPaymentArray = Object.keys(this.patientPayments).reduce((acc, patientId) => {
@@ -90,21 +89,21 @@ export const useStorePayments= defineStore('storePayments', {
         return foundPayment ? foundPayment : acc;  // If found, return it, otherwise keep searching
       }, null);
     }
-
     // If no payment is found in any of the sources, you can handle adding a new payment or return null.
     if (!this.currentPaymentArray) {
       console.log("Payment not found in dayPayments, invoicePayments, or payments.");
       // Optionally, handle the case where no payment is found, e.g., add a new payment
     }
-      // this.currentPaymentArray.workItemList=this.storeWorks.invoiceWorks[invoiceId]
       console.log(this.currentPaymentArray,'currentPayment')
     }
   },
+
   CLEAR_DATA(){
     this.paymentInvoices=[]
     this.patient=null
     this.editPayment=null
   },
+
   async updatePayments() {
     try {
       const paymentsCollectionAllRef = collectionGroup(db, 'payments');
@@ -133,13 +132,13 @@ export const useStorePayments= defineStore('storePayments', {
           batch.update(paymentRef, updatedData);
         }
       });
-
       await batch.commit();
       console.log('Updated payments data successfully');
     } catch (error) {
       console.error('Error updating payments data:', error);
     }
   },
+
   async getPaymentsForInvoice(invoiceId) {
     const paymentsCollectionRef = collection(
       invoicesCollectionRef,
@@ -149,8 +148,6 @@ export const useStorePayments= defineStore('storePayments', {
     try {
       this.loading = true; // Set loading state to true when data fetching begins
       console.log(this.loading, 'paymentsloading');
-
-
       const paymentsQuery = query(paymentsCollectionRef);
 
       // Set up a real-time listener for payments
@@ -174,28 +171,27 @@ export const useStorePayments= defineStore('storePayments', {
         console.log(this.invoicePayments, 'Updated payments');
 
         // Optionally call other methods here if needed
-        // this.storeWorks.getWorksForInvoice(invoiceId);
-
         this.loading = false; // Clear loading state after data is fetched
       }, (error) => {
         console.error("Error listening for payments:", error);
         this.loading = false; // Clear loading state if an error occurs
       });
-
       // Clean up the listener if needed (for example, in component unmount)
-      // this.unsubscribe = null;
     } catch (error) {
       console.error("Error fetching payments:", error);
       this.loading = false; // Clear loading state if an error occurs
     }
   },
+
   async deletePayment(payment) {
+    console.log(payment,'opaymentdelete')
     try {
       const paymentsCollectionRef = collection(
         invoicesCollectionRef,
         payment.invoiceId,
         "payments"
       )
+
       await deleteDoc(doc(paymentsCollectionRef, payment.paymentId));
       console.log('Payment successfully deleted');
     } catch (error) {
@@ -203,6 +199,7 @@ export const useStorePayments= defineStore('storePayments', {
       // Handle error here
     }
   },
+
      // Fetch payments by date range and listen for live updates
      async fetchPaymentsByDate(startDate, endDate) {
       this.loading=true
@@ -242,38 +239,26 @@ export const useStorePayments= defineStore('storePayments', {
       this.loading=false
     },
 
-    // Set the period and trigger re-grouping of payments
-    setPeriod(newPeriod) {
-      this.period = newPeriod;
-      this.groupPaymentsByPeriod();
-    },
-
     // Group payments by selected period ('day' or 'month')
     groupPaymentsByPeriod() {
       this.loading=true
       const currencyGroupedPayments = {};
-
       Object.keys(this.paymentPeriod).forEach(currency => {
         const payments = this.paymentPeriod[currency];
         const groupedPayments = {};
-
         payments.forEach(payment => {
           const formattedDate = dayjs(payment.date).format(this.period === this.period ? 'YYYY-MM-DD' : 'YYYY-MM');
-
           if (!groupedPayments[formattedDate]) {
             groupedPayments[formattedDate] = 0;
           }
-
           groupedPayments[formattedDate] += Number(payment.paid) || 0;
         });
-
         currencyGroupedPayments[currency] = Object.keys(groupedPayments).map(date => ({
           date,
           total: groupedPayments[date],
           currency,
         }));
       });
-
       this.groupedPayments = currencyGroupedPayments;
       this.loading=false
     },
@@ -310,6 +295,7 @@ export const useStorePayments= defineStore('storePayments', {
     return currencyGroupedPayments;
 
   },
+
   async getdayPayments(date,type) {
     this.loading=true
     const paymentsCollectionRef = collectionGroup(
@@ -330,10 +316,8 @@ export const useStorePayments= defineStore('storePayments', {
        patientId:doc.data().patientId||'',
        currency:doc.data().currency,
        type:doc.data().type,
+       label:doc.data().label,
      }
-    //  this.storeInvoices.GET_INVOICE_FOR_PAYMENT(payment.invoiceId)
-    //  this.getPaymentsForInvoice(payment.invoiceId)
-    //  this.storeWorks.getWork(payment.workId)
     this.storeInvoices.GET_INVOICE_FOR_PAYMENT(payment.invoiceId)
      payments.push(payment)
 
@@ -345,9 +329,7 @@ export const useStorePayments= defineStore('storePayments', {
  this.loading=false
 console.log(this.dayPayments,'dayPayments')
 },
-// async getInvoiceForPayment(invoiceId) {
-//   this.storeInvoices.GET_INVOICE_FOR_PAYMENT(invoiceId)
-// },
+
 async getIntervalPayments(startDate, endDate,type) {
   const paymentsCollectionRef = collectionGroup(
     db,
@@ -377,12 +359,8 @@ onSnapshot(q, (querySnapshot) => {
       patientId: doc.data().patientId,
       currency: doc.data().currency,
       type:doc.data().type,
+      label:doc.data().label,
     };
-    // Load related invoice and work data
-    // this.getPaymentsForInvoice(payment.invoiceId);
-    // this.storeWorks.getWork(payment.workId);
-    // this.storeInvoices.GET_INVOICE_FOR_PAYMENT(payment.invoiceId)
-    // this.storeInvoices.GET_INVOICE_FOR_PAYMENT(payment.invoiceId)
     this.storeInvoices.GET_INVOICE_FOR_PAYMENT(payment.invoiceId)
     payments.push(payment);
   });
@@ -397,7 +375,7 @@ async getPatientPayments(patientId) {
     db,
     'payments',
   )
- const paymentsCollectionQuery = query(paymentsCollectionRef,where("patientId", "==", patientId),where('type', '==', 'payment'),orderBy('dateUnix','desc'));
+ const paymentsCollectionQuery = query(paymentsCollectionRef,where("patientId", "==", patientId),orderBy('dateUnix','desc'));
  getPaymentsSnapshot=onSnapshot(paymentsCollectionQuery, (querySnapshot) => {
    const payments=[]
    querySnapshot.forEach((doc) => {
@@ -405,10 +383,12 @@ async getPatientPayments(patientId) {
      paymentId:doc.id,
      invoiceId:doc.data().invoiceId,
      paid:doc.data().paid,
+     currency: doc.data().currency,
      dateUnix:doc.data().dateUnix,
      workId:doc.data().workId,
      patientId:doc.data().patientId,
      type:doc.data().type,
+     category:doc.data().category,
    }
    this.storeInvoices.GET_INVOICE_FOR_PAYMENT(payment.invoiceId)
    payments.push(payment)
@@ -418,15 +398,20 @@ async getPatientPayments(patientId) {
 this.loadingPayments=false
 },
 
-async addPayment (work) {
+async addPayment (work,type) {
   const paymentsCollectionRef = collection(
     invoicesCollectionRef,
     work.invoiceId,
     "payments"
   )
+     type=type||'payment'
       try {
         this.loadingModal = true
-        let paid = work.paymentItemList.paid.replace(/\,/g,'') || 0
+        console.log(work.paymentItemList,'work.paymentItemList.paid')
+        // Ensure 'paid' is handled properly based on its type
+        let paid = typeof work.paymentItemList.paid === "number"
+        ? work.paymentItemList.paid
+        : parseInt(work.paymentItemList.paid.replace(/\,/g, "")) || 0;
         let currentDate = new Date().getTime(),
         dateUnix = currentDate.toString()
         let date=today()
@@ -441,8 +426,65 @@ async addPayment (work) {
           patientId:work.patientDetails.patientId,
           uid:this.storeAuth.user.uid,
           mode: 'cash',
-          type: 'payment',
+          type,
           category: 'Service payments',
+        })
+        // Set a timeout to check if the Firestore operation completes within a certain time
+        const timeoutDuration = 5000; // Timeout duration in milliseconds (adjust as needed)
+        const timeoutPromise = new Promise((resolve) => {
+          setTimeout(() => resolve(false), timeoutDuration);
+        });
+
+        // Wait for either the Firestore write operation or the timeout to complete
+        const isOperationCompleted = await Promise.race([addDocPromise, timeoutPromise]);
+
+        if (isOperationCompleted === false) {
+          // If the timeout occurs and the operation hasn't completed, treat it as an error
+          throw new Error('Timeout: Unable to add invoice');
+        }
+
+        // If the operation completes successfully or within the timeout, proceed to toggle the payment
+        modalController.dismiss(null, 'confirm');
+        this.loadingModal = false;
+        if(this.paymentModal)  this.TOGGLE_PAYMENT();
+        this.moreDataAvailable = true; // If the payment is added, set moreDataAvailable to true
+
+      } catch (error) {
+        console.error('Error adding invoice:', error);
+
+        // Handle error here
+        modalController.dismiss(null, 'confirm');
+        this.loadingModal = false;
+        if(this.paymentModal)  this.TOGGLE_PAYMENT(); // Ensure TOGGLE_PAYMENT is called even in offline scenarios
+
+      }
+    },
+
+async addDiscount (work,type) {
+  const paymentsCollectionRef = collection(
+    invoicesCollectionRef,
+    work.invoiceId,
+    "payments"
+  )
+  console.log(work,'workke')
+      type=type||'payment'
+      try {
+        this.loadingModal = true
+        let paid = work.discount.replace(/\,/g,'') || 0
+        let currentDate = new Date().getTime(),
+        dateUnix = currentDate.toString()
+        let date=today()
+        const addDocPromise = addDoc(paymentsCollectionRef, {
+          paid,
+          currency:work.currency,
+          invoiceId:work.invoiceId,
+          workId:work.workId,
+          dateUnix,
+          date,
+          doctorId:work.doctor.doctorId,
+          patientId:work.patientDetails.patientId,
+          uid:this.storeAuth.user.uid,
+          category: 'Discount',
         })
         // Set a timeout to check if the Firestore operation completes within a certain time
         const timeoutDuration = 5000; // Timeout duration in milliseconds (adjust as needed)
@@ -531,39 +573,71 @@ async addPayment (work) {
         if (this.paymentModal) this.TOGGLE_PAYMENT(); // Ensure TOGGLE_PAYMENT is called even in error scenarios
       }
     },
+    async updatePaymentDiscount (payment) {
+
+      try {
+        this.loadingModal = true;
+        const paymentsCollectionRef = collection(
+          invoicesCollectionRef,
+          payment.invoiceId,
+          "payments"
+        )
+        console.log('geeeee',payment)
+        // Format the payment amount (removing commas)
+        // let paid = payment.paid.replace(/\,/g,'') || 0;
+        let currentDate = new Date().getTime(),
+        updatedDateUnix = currentDate.toString();
+
+        // Create a document reference for the paymentId
+        const paymentDocRef = doc(paymentsCollectionRef, payment.paymentId); // Refers to existing payment
+        console.log(paymentDocRef,'paymentsCollectionRef')
+        // Update the payment document with new data
+        const updateDocPromise = updateDoc(paymentDocRef, {
+          paid:payment.paid,
+          // currency: payment.currency,
+          // invoiceId,
+          // workId: payment.workId,
+          // updatedDateUnix,
+          // doctorId: payment.doctorId,
+          // patientId: payment.patientId,
+          // updatedUid: this.storeAuth.user.uid,
+        });
+
+        // Set a timeout to check if the Firestore operation completes within a certain time
+        const timeoutDuration = 5000; // Timeout duration in milliseconds (adjust as needed)
+        const timeoutPromise = new Promise((resolve) => {
+          setTimeout(() => resolve(false), timeoutDuration);
+        });
+
+        // Wait for either the Firestore write operation or the timeout to complete
+        const isOperationCompleted = await Promise.race([updateDocPromise, timeoutPromise]);
+
+        if (isOperationCompleted === false) {
+          // If the timeout occurs and the operation hasn't completed, treat it as an error
+          throw new Error('Timeout: Unable to update payment');
+        }
+
+        // If the operation completes successfully or within the timeout, proceed to toggle the payment
+        modalController.dismiss(null, 'confirm');
+        this.loadingModal = false;
+        if (this.paymentModal) this.TOGGLE_PAYMENT();
+        this.moreDataAvailable = true; // Update this flag as needed
+
+      } catch (error) {
+        console.error('Error updating payment:', error);
+
+        // Handle error here
+        modalController.dismiss(null, 'confirm');
+        this.loadingModal = false;
+        if (this.paymentModal) this.TOGGLE_PAYMENT(); // Ensure TOGGLE_PAYMENT is called even in error scenarios
+      }
+    },
     clearPayments(){
       this.patientPayments=[]
       this.invoicePayments=[]
       console.log( this.patientPayments,this.invoicePayments,'cleared')
       if (getPaymentsSnapshot) getPaymentsSnapshot() //unsubscribe from any active listener
     },
-
-    // async deletePayment(idToDelete) {
-
-    //   console.log(idToDelete)
-    //   await deleteDoc(doc(paymentsCollectionRef, idToDelete))
-
-    // },
-    // async updatePayment(id,payment){
-    //   await updateDoc(doc(paymentsCollectionRef, id), {
-    //     namef:payment.namef,
-    //     age:payment.age,
-    //     phone:payment.phone,
-    //     gender:payment.gender,
-    //     updatedDate:Date.now()
-    //   })
-    // },
-    // async completePayment(payment){
-    //   await updateDoc(doc(paymentsCollectionRef, payment.id), {
-    //     completed:!payment.completed,
-    //   })
-    // },
-    // async dropPayment(payment){
-    //   await updateDoc(doc(paymentsCollectionRef, payment.id), {
-    //     time:payment.time,
-    //     doctor:payment.doctor,
-    //   })
-    // }
   },
   getters:{
 

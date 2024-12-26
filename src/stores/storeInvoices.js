@@ -12,6 +12,7 @@ import { useStorePayments } from './storePayments'
 import { reactive,computed } from 'vue'
 import {modalController, } from '@ionic/vue';
 import { Platform } from 'quasar';
+import { useStorePatients } from './storePatients'
 
 
 let invoicesCollectionRef
@@ -48,6 +49,7 @@ export const useStoreInvoices = defineStore('storeInvoices', {
       storeWorks:useStoreWorks(),
       storePayments:useStorePayments(),
       storeAuth:useStoreAuth(),
+      storePatients:useStorePatients(),
       limit:10,
       moreDataAvailable: true, // Flag to track if more data is available
       mobile,
@@ -158,8 +160,9 @@ export const useStoreInvoices = defineStore('storeInvoices', {
         docId: doc.id,
         invoiceId: doc.data().invoiceId,
         workItemList: doc.data().workItemList||[],
-        patientName: doc.data().patientName||'',
+        // patientName: doc.data().patientName||'',
         patientId: doc.data().patientId||'',
+        // clientId:doc.data().clientId ||[],
         invoiceDateUnix: doc.data().invoiceDateUnix,
         invoiceDate: doc.data().invoiceDate,
         // workItemList: doc.data().workItemList,
@@ -196,13 +199,33 @@ export const useStoreInvoices = defineStore('storeInvoices', {
               workId: doc.data().workId||'',
               currency: doc.data().currency,
               dateUnix: doc.data().dateUnix,
+              category:doc.data().category,
+              type:doc.data().type,
             };
             payments.push(payment);
             console.log(payment,'paymentforinvoice')
           });
 
+          const patient = this.storePatients.patients.find(patient => patient.patientId === invoice.patientId);
+            invoice.patientName = patient ? patient.namef : "Unknown Client";
+          // if (Array.isArray(invoice.clientId)) {
+          //   // If clientId is an array, map each ID to its corresponding name
+          //   invoice.clientNames = invoice.clientId.map(clientId => {
+          //     const client = this.storePatients.patients.find(patient => patient.patientId === clientId);
+          //     return client ? client.namef : "Unknown Client";
+          //   });
+          // } else if (typeof invoice.clientId === "string") {
+          //   // If clientId is a string, find the corresponding name
+          //   const client = this.storePatients.patients.find(patient => patient.patientId === invoice.clientId);
+          //   invoice.clientName = client ? client.namef : "Unknown Client";
+          // } else {
+          //   console.log("clientId is neither an array nor a string:", invoice.clientId);
+          //   invoice.clientNames = []; // Default to an empty array if clientId is invalid
+          //   invoice.clientName = []
+          // }
         this.storePayments.invoicePayments[invoice.invoiceId] = payments;
         this.storePayments.loading=false
+
         })
           this.currentInvoice=invoice
           console.log(this.currentInvoice,'geting invoice')
@@ -306,6 +329,8 @@ export const useStoreInvoices = defineStore('storeInvoices', {
                 workId: doc.data().workId||'',
                 currency: doc.data().currency,
                 dateUnix: doc.data().dateUnix,
+                type:doc.data().type,
+                category:doc.data().category,
               });
             });
             invoice.payments=payments
@@ -366,6 +391,8 @@ export const useStoreInvoices = defineStore('storeInvoices', {
                 workId: doc.data().workId,
                 currency: doc.data().currency,
                 dateUnix: doc.data().dateUnix,
+                category:doc.data().category,
+                type:doc.data().type,
               });
             });
             invoice.payments=payments
@@ -586,12 +613,14 @@ export const useStoreInvoices = defineStore('storeInvoices', {
                   workId: doc.data().workId||'',
                   currency: doc.data().currency,
                   dateUnix: doc.data().dateUnix,
+                  category:doc.data().category,
+                  type:doc.data().type,
                 };
                 payments.push(payment);
-                console.log(payment,'paymentforinvoice')
               });
 
             this.storePayments.invoicePayments[invoice.invoiceId] = payments;
+            console.log(this.storePayments.invoicePayments[invoice.invoiceId],'paymentforinvoice')
             })
        })
        if (querySnapshot.size < this.limit) {
@@ -853,7 +882,11 @@ export const useStoreInvoices = defineStore('storeInvoices', {
         // const payments= state.storePayments.invoicePayments[invoice.invoiceId]||[]
         const works = invoice.workItemList || [];
         const currencies = [...new Set(works.map((item) => item.currency))];
-          console.log(payments,works,'sssz')
+        function formatPrice(value, currency) {
+          const absoluteValue = Number( Math.abs(value).toLocaleString().replace(/,/g, '') || 0); // Format the absolute value
+          const sign = value < 0 ? '-' : ''; // Determine the sign
+          return {sign,absoluteValue,currency}; // Format: [sign] [price] [currency]
+         }
         // Calculate subtotals for each currency
         const subTotals = currencies.map((currency) => {
           const paid = payments.reduce((accumulator, item) => {
@@ -910,26 +943,32 @@ export const useStoreInvoices = defineStore('storeInvoices', {
           }, 0);
           const totalAmount = subTotal - totalDiscount;
           const dueAmount = totalAmount - paid;
-          const paidPercentage = totalAmount > 0 ? (paid / totalAmount) * 100 : 0;
+          const paidPercentage = totalAmount !== 0 ? (paid / totalAmount) * 100 : 0;
 
           return {
             currency,
-            subTotal,
-            totalDiscount,
-            tax: 0,
-            totalAmount,
-            paid,
-            dueAmount,
+            subTotal: formatPrice(subTotal, currency),
+            totalDiscount: formatPrice(totalDiscount, currency),
+            tax: formatPrice(0, currency),
+            totalAmount: formatPrice(totalAmount, currency),
+            paid: formatPrice(paid, currency),
+            dueAmount: formatPrice(dueAmount, currency),
             paidPercentage,
             highestPaymentDate,
             highestPaymentDueDate,
           };
         });
 
+
         // Calculate overall percentage and overdue status
         const overallPercentage = subTotals.length > 0
-          ? (subTotals.reduce((acc, subtotal) => acc + subtotal.paidPercentage, 0) / subTotals.length).toFixed(0)
-          : 0;
+        ? (
+            subTotals.reduce(
+              (acc, subtotal) => acc + subtotal.paidPercentage,
+              0
+            ) / subTotals.length
+          ).toFixed(1)
+        : 0;
 
         const overDue = subTotals.some((subtotal) => {
           const currentDate = new Date().getTime();
@@ -939,44 +978,48 @@ export const useStoreInvoices = defineStore('storeInvoices', {
         // Add payment details to works
         const worksWithDetails = works.map((work) => {
           const allPaid = payments.reduce((accumulator, item) => {
-            if (item.workId === work.workId) {
+            if (item.workId === work.workId && (item.type === 'payment' || item.type === 'expense')) {
               return accumulator + Number(item.paid || 0);
             }
             return accumulator;
           }, 0);
 
-        let price = 0;
-  if (typeof work.price === 'string') {
-    price = Number(work.price.replace(/,/g, '') || 0);
-  } else if (typeof work.price === 'number') {
-    price = work.price;
-  } else {
-    console.warn(`Unexpected price type for work:`, work);
-  }
+          let price = 0;
+          if (typeof work.price === 'string') {
+            price = Number(work.price.replace(/,/g, '') || 0);
+          } else if (typeof work.price === 'number') {
+            price = work.price;
+          } else {
+            console.warn(`Unexpected price type for work:`, work);
+          }
 
-  let discount = 0;
-  if (typeof work.discount === 'string') {
-    discount = Number(work.discount.replace(/,/g, '') || 0);
-  } else if (typeof work.discount === 'number') {
-    discount = work.discount;
-  } else {
-    console.warn(`Unexpected discount type for work:`, work);
-  }
+          // Calculate total discount from payments
+          const discount = payments.reduce((accumulator, item) => {
+            if (item.workId === work.workId && item.category === 'Discount') {
+              return accumulator + Number(item.paid || 0);
+            }
+            return accumulator;
+          }, 0);
 
-  const total = price - discount;
+          // Update work object
+          work.price = price;
+          work.discount = discount; // Update the discount with calculated value
 
-  // Update work object
-  work.price = price;
-  work.discount = discount;
+          const total = price - discount;
+
+          console.log(total,'formattedAllPaidformattedAllPaid')
           return {
             ...work,
             allPaid,
-            paidPercentage: total > 0 ? ((allPaid / total) * 100).toFixed(0) : 0,
+            formattedAllPaid: formatPrice(allPaid, work.currency),
+            paidPercentage: total !== 0 ? ((allPaid / total) * 100).toFixed(2) : 0,
+            formattedPrice: formatPrice(price, work.currency), // Add formatted price
           };
         });
 
         const updatedWorks = worksWithDetails.map(work => {
-          if (parseInt(work.paidPercentage) !== 100) {
+          if (parseInt(work.paidPercentage) !== 100||state.storePayments.editPayment) {
+
             return { ...work, selected: true };
           }
           return work;

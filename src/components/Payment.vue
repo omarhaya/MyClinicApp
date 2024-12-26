@@ -6,7 +6,7 @@
       <ion-item-option expandable @click="newPayment" color="success"><q-icon size="25px" name="payment"/>Pay</ion-item-option>
     </ion-item-options> -->
 
-    <ion-item v-if="payment.patientName" lines="none" :button="true" @click="$router.push(`/Invoices/${payment.invoiceId}`)" detail="false" class="sliding-item" >
+    <ion-item  lines="none" :button="true" @click="$router.push(`/Invoices/${payment.invoiceId}`)" detail="false" class="sliding-item" >
       <q-checkbox v-if="editActive"  :model-value="tableProps.selected" @update:model-value="(val, evt) => { Object.getOwnPropertyDescriptor(tableProps, 'selected').set(val, evt) }" />
       <div class="left flex q-pt-xs q-pb-xs ">
     <span class="tracking-number column"><span class="col">#{{ payment.invoiceId }}</span>
@@ -22,20 +22,33 @@
 <GrowingLinearProgress class="col" :value="percentageValue"/> -->
     </span>
     </span>
-    <span>
+    <span class="row">
+    <div class="col-12 col-md-8 row" v-if="payment.patientName">
 
-      <q-avatar v-if="!isArabic(payment.patientName)" class="q-mr-xs avatar-name" size="35px" font-size="16px" color="green-3" text-color="white"> {{getInitials( payment.patientName) }} </q-avatar>
-            <q-avatar v-if="isArabic(payment.patientName)" class="q-mr-xs avatar-person" font-size="42px" size="35px" color="green-3" text-color="white" icon="person"/>
-      <span class="text-bold" > {{ payment.patientName }}</span></span>
+      <q-avatar v-if="payment.patientName&&!isArabic(payment.patientName)" class="q-mr-xs avatar-name" size="35px" font-size="16px" color="green-3" text-color="white"> {{getInitials( payment.patientName) }} </q-avatar>
+            <q-avatar v-if="payment.patientName&&isArabic(payment.patientName)" class="q-mr-xs avatar-person" font-size="42px" size="35px" color="green-3" text-color="white" icon="person"/>
+      <div class="text-bold" > {{ payment.patientName }}</div></div>
+      <div class="col-12 col-md-4" v-if="storeInvoices.paymentsInvoice[payment.invoiceId]"  v-for="work in storeInvoices.paymentsInvoice[payment.invoiceId].works.filter(w => w.workId === payment.workId)">
+    <div class="text-bold" ><q-badge :color="work.color" class="col q-mt-xs q-pa-xs">{{ work.label }}</q-badge></div></div>
+    <div class="col-12 col-md-4" v-else-if="payment.category=='Discount'">
+    <div class="text-bold" ><q-badge :color="'grey'" class="col q-mt-xs q-pa-xs">{{ payment.category }}</q-badge></div></div>
+      </span>
       <!-- <q-badge v-if="payment.doctor.name!==''" class="col q-mt-xs" color="grey-5" >{{' by Dr. '+payment.doctor.name }}</q-badge> -->
    </div>
    <div class="right justify-end flex row">
      <div v-if="storeInvoices.paymentsInvoice[payment.invoiceId]" class="price center row">
-    <div v-if="payment.type=='payment'"  class=" flex text-bold text-green-7">+<span class="currency">{{(payment.currency)}} </span>{{formatMoney(payment.paid) }}</div>
-    <div  v-if="payment.type=='expense'"  class=" flex text-bold text-red-7">-<span class="currency">{{(payment.currency)}} </span>{{formatMoney(payment.paid) }}</div>
-     <!-- <span class="col"></span> -->
-
-
+      <div v-if="payment.type=='payment'" class="flex text-bold text-green-7">
+  +<span class="currency">{{ formatPrice(payment.paid, payment.currency).sign+' '+formatPrice(payment.paid, payment.currency).currency }}</span>
+  {{ formatMoney(formatPrice(payment.paid, payment.currency).absoluteValue) }}
+</div>
+<div v-if="payment.type=='expense'" class="flex text-bold text-red-7">
+  {{formatPrice(payment.paid, payment.currency).sign}}<span class="currency">{{formatPrice(payment.paid, payment.currency).currency}}</span>
+  {{ formatMoney(formatPrice(payment.paid, payment.currency).absoluteValue) }}
+</div>
+<div v-if="payment.category=='Discount'" class="flex text-bold text-green-7">
+  {{formatPrice(payment.paid, payment.currency).sign}}<span class="currency">{{formatPrice(payment.paid, payment.currency).currency}}</span>
+   <p class="line-through">  {{ formatMoney(formatPrice(payment.paid, payment.currency).absoluteValue) }}</p>
+</div>
    </div>
    <div v-else  class="price center column">
     <div  class="col flex text-green-7">  <q-skeleton animation="blink" type="text" width="100px" /></div>
@@ -293,12 +306,22 @@ Filters
      const isArabic=(value) =>{
        return /[\u0600-\u06FF]/.test(value)
      }
+    //  function formatPrice(value, currency) {
+    //     const absoluteValue = Number(Math.abs(value).toLocaleString().replace(/,/g, '') || 0); // Format the absolute value
+    //     const sign = value < 0 ? '-' : ''; // Determine the sign
+    //     return { sign, absoluteValue, currency }; // Format: [sign] [price] [currency]
+    //   }
      function getInitials(name) {
         const nameParts = name.split(' ');
         const firstName = nameParts[0].charAt(0).toUpperCase();
         const lastName = nameParts[nameParts.length - 1].charAt(0).toUpperCase();
         return `${firstName}${lastName}`;
      }
+     function formatPrice(value, currency) {
+        const absoluteValue = Number(Math.abs(value).toLocaleString().replace(/,/g, '') || 0); // Format the absolute value
+        const sign = value < 0 ? '-' : ''; // Determine the sign
+        return {sign,absoluteValue,currency}; // Format: [sign] [price] [currency]
+       }
      const formatMoney = (value) => {
        const stringValue = value.toString()
        return stringValue.replace(/\B(?=(\d{3})+(?!\d))/g, ',')
@@ -391,14 +414,15 @@ const formatDateTime = computed(() => {
 });
 
 const percentageValue  = (work) => computed(() => {
-  console.log(work,'worrrrrrk')
-  const price= Number(work.price || 0)
-  const allPaid=work.allPaid
-//  if (storeWorks.invoiceWorks[props.payment.invoiceId]) {
-  // console.log(work,'storeWorks.invoiceWorks[props.invoiceId].overallPercentage')
-  return allPaid/price*100
-
+  const price = Number(work.formattedPrice.absoluteValue || 0);
+  const discount = Number(work.discount || 0);
+  const allPaid = Number(work.allPaid || 0);
+  // Avoid division by zero
+  const netPrice = price - discount;
+  const percentage = (allPaid / netPrice) * 100;
+  return Math.abs(percentage);
 })
+
 const progressColor = computed (()=>{
  if (storeWorks.invoiceWorks[props.payment.invoiceId]) {
   console.log(storeWorks.invoiceWorks[props.payment.invoiceId].overallPercentage,'storeWorks.invoiceWorks[props.invoiceId].overallPercentage')
@@ -510,5 +534,8 @@ position: initial !important;
 .fade-out {
 opacity: 0;
 transition: opacity 0.3s ease-in-out;
+}
+.line-through {
+  text-decoration: line-through;
 }
 </style>

@@ -130,7 +130,7 @@
       </q-card-section>
 
       <q-list>
-        <q-item v-bind="props" :disable="work.paidPercentage==100" @click.stop.prevent v-for="work in item.raw.works" :class="`${work.selected ? `bg-${work.color}-1 selected` : 'non-selected'}`" clickable @click="selectWork(work,item.raw.works)">
+        <q-item v-bind="props" :disable="work.paidPercentage==100&&!storePayments.editPayment" @click.stop.prevent v-for="work in item.raw.works" :class="`${work.selected ? `bg-${work.color}-1 selected` : 'non-selected'}`" clickable @click="selectWork(work,item.raw.works)">
           <q-item-section avatar>
             <q-circular-progress
       show-value
@@ -142,14 +142,14 @@
       :thickness="0.15"
       reverse
     >
-    <span v-if="work.paidPercentage<100">
+    <span v-if="work.paidPercentage!==100">
      {{work.paidPercentage+'%'}}</span>
      <q-icon v-else name="done" size="25px" color="teal-4"> </q-icon>
     </q-circular-progress>
           </q-item-section>
           <q-item-section>
             <q-item-label :class="`q-mt-xs text-${work.color} text-bold`">{{ work.label }}</q-item-label>
-            <q-item-label caption><div class="total">Total: <span class="currency">{{work.currency }}</span>{{ formatMoney(work.price-work.discount) }}</div> <div class="remaining text-orange">Remaining: <span class="currency">{{work.currency }}</span>{{ formatMoney(work.price-work.discount-work.allPaid) }}</div></q-item-label>
+            <q-item-label caption><div class="total">Total: <span class="currency">{{work.formattedPrice.sign+' '+work.formattedPrice.currency }}</span>{{ formatMoney(work.formattedPrice.absoluteValue-work.discount) }}</div> <div class="remaining text-orange">Remaining: <span class="currency">{{work.formattedPrice.sign+' '+work.formattedPrice.currency }}</span>{{ formatMoney(work.formattedPrice.absoluteValue-work.discount-work.formattedAllPaid.absoluteValue) }}</div></q-item-label>
           </q-item-section>
         </q-item>
       </q-list>
@@ -180,7 +180,7 @@
       reverse
     >
 
-    <span v-if="item.raw.works.overallPercentage<100">
+    <span v-if="item.raw.works.overallPercentage!==100">
      {{item.raw.works.overallPercentage+'%'}}</span>
      <q-icon v-else name="done" size="25px" color="teal-4"> </q-icon>
     </q-circular-progress>
@@ -348,9 +348,10 @@ watch(uniqueCurrencies, (newVal, oldVal) => {
 }, { immediate: true }); // Immediate option ensures the watcher runs immediately after setup
 
 const selectWorksInvoice = (option) => {
+
   console.log(option,'option');
   option.works.forEach(work => {
-    if (parseInt(work.paidPercentage) !== 100) {
+    if (parseInt(work.paidPercentage) !== 100&&!storePayments.editPayment) {
       work.selected = true;
     }
   });
@@ -504,18 +505,18 @@ onMounted(async () => {
     // );
 
     // Use a watcher to wait until patientInvoices is populated
-    watch(
-      () => uniqueCurrencies.value,
-      (newCurrency) => {
+    // watch(
+    //   () => uniqueCurrencies.value,
+    //   (newCurrency) => {
+    //     //  if(!storePayments.loadingModal)
+    //     paymentItemList.value[newCurrency] = {
+    //   ...paymentItemList.value[newCurrency],
+    //   paid: formatMoney(currentPayment.paid)
+    // };
 
-        paymentItemList.value[newCurrency] = {
-      ...paymentItemList.value[newCurrency],
-      paid: formatMoney(currentPayment.paid)
-    };
-
-      },
-      { immediate: true }
-    );
+    //   },
+    //   { immediate: true }
+    // );
   }
 });
 /*
@@ -538,51 +539,96 @@ function submitForm() {
        }
        uploadPayment()
      }
-    function uploadPayment() {
-      const worksByCurrency = {}
-      storePayments.paymentInvoices.forEach(paymentInvoice => {
-        paymentInvoice.works.forEach(work => {
-          if (!worksByCurrency[work.currency]) {
-            worksByCurrency[work.currency] = []
-          }
-       worksByCurrency[work.currency].push(work)
-        })
-      })
-      Object.keys(worksByCurrency).forEach(currency => {
-        const works = worksByCurrency[currency]
-        console.log(works,'works')
-        // Filter the 'works' array to get only the objects where 'selected' is true
-        const selectedWorks = works.filter(work => work.selected === true)
-        // Check the length of the filtered array
-        console.log(paymentItemList.value[currency],'paid')
-        if (selectedWorks.length === 1&&paymentItemList.value[currency].paid!==0) {
-          const work=({
-           paymentItemList:paymentItemList.value[currency],
-           currency,
-           workId:selectedWorks[0].workId,
-           invoiceId:selectedWorks[0].invoiceId,
-           doctor:selectedWorks[0].doctor,
-           patientDetails:storePayments.patient,
-         })
-            storePayments.addPayment(work)
-        }
-        else{
+function uploadPayment() {
+  const worksByCurrency = {};
 
-          if(paymentItemList.value[currency].paid<1){
+  // Group works by currency
+  storePayments.paymentInvoices.forEach(paymentInvoice => {
+    paymentInvoice.works.forEach(work => {
+      if (!worksByCurrency[work.currency]) {
+        worksByCurrency[work.currency] = [];
+      }
+      worksByCurrency[work.currency].push(work);
+    });
+  });
+
+  // Process each currency group
+  Object.keys(worksByCurrency).forEach(currency => {
+    const works = worksByCurrency[currency];
+    const selectedWorks = works.filter(work => work.selected === true);
+
+    // Get the total payment for the currency
+    const totalPayment = paymentItemList.value[currency]?.paid || 0;
+
+    if (selectedWorks.length === 0) {
+      $q.notify({
+        type: 'orange',
+        message: 'No works selected to distribute payment!'
+      });
+      return;
+    }
+
+    if (totalPayment < 1) {
+      $q.notify({
+        type: 'orange',
+        message: 'Please add a value to pay!'
+      });
+      return;
+    }
+
+    if (selectedWorks.length === 1) {
+      // Single work selected: assign the full payment
+      const work = selectedWorks[0];
+      const payment = {
+        paymentItemList: paymentItemList.value[currency],
+        currency,
+        workId: work.workId,
+        invoiceId: work.invoiceId,
+        doctor: work.doctor,
+        patientDetails: storePayments.patient,
+      };
+      storePayments.addPayment(payment);
+    } else {
+      // Multiple works selected: distribute payment equally
+      const paymentPerWork = Number(totalPayment.replace(/,/g, ''))/ selectedWorks.length;
+      console.log(paymentPerWork,'paymentPerWork')
+      selectedWorks.forEach(work => {
+        let amountToPay = paymentPerWork;
+
+        // Handle currency conversion if needed
+        if (work.currency !== currency) {
+          const conversionRate = 1500;
+          if (conversionRate) {
+            amountToPay *= conversionRate; // Convert to the work's currency
+          } else {
             $q.notify({
-          type: 'orange',
-          message: 'Please add Value to Pay!'
-        })
+              type: 'negative',
+              message: `No conversion rate available for ${work.currency}!`
+            });
+            return;
           }
-          else
-          $q.notify({
-          type: 'negative',
-          message: 'You Cant Choose Two Works to Pay!'
-        })
         }
-        });
-     }
 
+        // Create payment object
+        const payment = {
+          paymentItemList: {paid:amountToPay},
+          currency: work.currency,
+          workId: work.workId,
+          invoiceId: work.invoiceId,
+          doctor: work.doctor,
+          patientDetails: storePayments.patient,
+        };
+
+        storePayments.addPayment(payment);
+      });
+
+      $q.notify({
+        type: 'positive',
+        message: 'Payment distributed across selected works!'
+      });
+    }
+  });
+}
      function updatePayment() {
 
       const worksByCurrency = {}

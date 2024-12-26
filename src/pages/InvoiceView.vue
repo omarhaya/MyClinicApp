@@ -152,7 +152,7 @@
     <ion-accordion v-for="(work, index) in Works" :key="index" :value="index" >
       <ion-item slot="header" :color="work.color">
         <ion-label>{{ work.label }}</ion-label>
-        <ion-label class="total" slot="end"><p><span class="currency">{{(work.currency)}} </span>{{formatMoney(work.price) }}</p></ion-label>
+        <ion-label class="total" slot="end"><p><span class="currency">{{work.formattedPrice.sign +' '+work.formattedPrice.currency}} </span>{{formatMoney(work.formattedPrice.absoluteValue) }}</p></ion-label>
       </ion-item>
 
   <v-timeline class="time-line"  align="start" side="end" slot="content">
@@ -261,23 +261,29 @@
       <tbody  v-if="Works" v-for="subtotal in Works.subTotals">
         <tr>
           <td><span class="text-bold">Subtotal</span>   <span v-if="subtotal.length>1">IN ({{ subtotal.currency }})</span></td>
-          <td><span class="currency">{{(subtotal.currency)}} </span>{{formatMoney(subtotal.subTotal)}}</td>
+          <td><span class="currency">{{(subtotal.subTotal.sign +' ' +subtotal.subTotal.currency)}} </span>{{formatMoney(subtotal.subTotal.absoluteValue)}}</td>
         </tr>
-        <tr  v-if="subtotal.totalDiscount>0" class="text-red ">
-          <td >Discount ({{((subtotal.totalDiscount/subtotal.subTotal)*100).toFixed(2)}}%)</td>
-          <td>  -<span class="currency">{{(subtotal.currency)}} </span>{{formatMoney(subtotal.totalDiscount)}}</td>
-        </tr>
-        <tr  >
-          <td ><span class="text-bold">Tax</span> ({{subtotal.tax}}%)</td>
-          <td>   +<span class="currency">{{(subtotal.currency)}} </span>{{formatMoney(((subtotal.subTotal-subtotal.totalDiscount)*subtotal.tax))}}</td>
+        <tr  v-if="subtotal.totalDiscount.absoluteValue!==0" class="text-red ">
+          <td >Discount ({{((subtotal.totalDiscount.absoluteValue/subtotal.subTotal.absoluteValue)*100).toFixed(2)}}%)</td>
+          <td>  -<span class="currency">{{(subtotal.subTotal.sign +' ' +subtotal.subTotal.currency)}} </span>{{formatMoney(subtotal.totalDiscount.absoluteValue)}}</td>
         </tr>
         <tr  >
-          <td > <span class="text-bold">Total</span>  <span v-if="subtotal.length>1">IN ({{ subtotal.currency }})</span></td>
-          <td>    <span class="currency">{{(subtotal.currency)}} </span>{{formatMoney((subtotal.subTotal-subtotal.totalDiscount)+((subtotal.subTotal-subtotal.totalDiscount)*subtotal.tax))}}</td>
+          <td ><span class="text-bold">Tax</span> ({{subtotal.tax.absoluteValue}}%)</td>
+          <td>   <span class="currency">{{(subtotal.subTotal.sign +' ' +subtotal.subTotal.currency)}} </span>{{formatMoney((((subtotal.subTotal.absoluteValue)-(subtotal.totalDiscount.absoluteValue))*subtotal.tax.absoluteValue))}}</td>
+        </tr>
+        <tr  >
+          <td > <span class="text-bold">Total</span>  <span v-if="subtotal.length>1">IN ({{ subtotal.subTotal.sign +' ' +subtotal.subTotal.currency }})</span></td>
+          <td>    <span class="currency">{{(subtotal.subTotal.sign +' ' +subtotal.subTotal.currency)}} </span>{{formatMoney(((subtotal.subTotal.absoluteValue)-(subtotal.totalDiscount.absoluteValue))+(((subtotal.subTotal.absoluteValue)-(subtotal.totalDiscount.absoluteValue))*subtotal.tax.absoluteValue))}}</td>
         </tr>
         <tr v-if="subtotal.paid"  >
-          <td class="text-teal-6"> <span class="text-bold">Paid</span> </td>
-          <td class="text-teal-6">    -<span class="currency">{{(subtotal.currency)}} </span >{{formatMoney((subtotal.paid))}}</td>
+          <td :class="{
+            'text-green-6': subtotal.paid.sign!=='-',
+            'text-red': subtotal.paid.sign=='-',
+          }"> <span class="text-bold">Paid</span> </td>
+          <td :class="{
+            'text-green-6 ': subtotal.paid.sign!=='-',
+            'text-red': subtotal.paid.sign=='-',
+          }">  <span class="currency">{{subtotal.paid.sign +' ' +subtotal.paid.currency}} </span >{{formatMoney((subtotal.paid.absoluteValue))}}</td>
         </tr>
       </tbody>
     </table>
@@ -287,11 +293,11 @@
       <div class="due row ">
           <p>Amount Due</p>
           <p :class="{
-            'text-green-9': subtotal.dueAmount==0,
-            // 'text-red': Works.overDue&&subtotal.dueAmount!==0&&!currentInvoice.invoiceDraft,
+            'text-green-9': subtotal.dueAmount.absoluteValue==0&&subtotal.subTotal.sign!=='-',
+            'text-red': subtotal.dueAmount.absoluteValue==0&&subtotal.subTotal.sign=='-',
           }"
            class="text-right col-12 col-md" v-if="Works" v-for="subtotal in Works.subTotals">
-            <span class="currency">{{(subtotal.currency)}} </span>{{ formatMoney(subtotal.dueAmount) }}
+            <span class="currency">{{(subtotal.dueAmount.sign +' ' +subtotal.dueAmount.currency)}} </span>{{ formatMoney(subtotal.dueAmount.absoluteValue) }}
           </p>
         </div>
       </div>
@@ -367,24 +373,27 @@ onBeforeMount(() => {
     function updateStatusToPending(docId) {
       storeInvoices.UPDATE_STATUS_TO_PENDING(docId)
     }
-
-  const Works = computed(() => {
-    loading.value = true; // Start loading when recalculating works
-  const invoice = currentInvoice.value|| {};
+    const Works = computed(() => {
+  loading.value = true; // Start loading when recalculating works
+  const invoice = currentInvoice.value || {};
   const works = invoice.workItemList || [];
   const payments = storePayments.invoicePayments?.[invoice.invoiceId] || [];
+  const filteredPayments = payments.filter((item) =>
+    item.type === "payment" || item.type === "expense"
+  );
+
   const currencies = [...new Set(works.map((item) => item.currency))];
 
   // Calculate subtotals for each currency
   const subTotals = currencies.map((currency) => {
-    const paid = payments.reduce((accumulator, item) => {
+    const paid = filteredPayments.reduce((accumulator, item) => {
       if (item.currency === currency) {
         return accumulator + Number(item.paid || 0);
       }
       return accumulator;
     }, 0);
 
-    const paymentDates = payments.map((payment) => Number(payment.dateUnix || 0));
+    const paymentDates = filteredPayments.map((payment) => Number(payment.dateUnix || 0));
     const highestPaymentDate = Math.max(...paymentDates, 0);
 
     const paymentDueDates = works.map((work) => Number(work.paymentDueDateUnix || 0));
@@ -400,7 +409,7 @@ onBeforeMount(() => {
 
     const totalDiscount = works.reduce((accumulator, item) => {
       if (item.currency === currency) {
-        const discountValue = Number(item.discount?.replace(/,/g, '') || 0);
+        const discountValue = Number(item.discount || 0);
         return accumulator + discountValue;
       }
       return accumulator;
@@ -408,16 +417,17 @@ onBeforeMount(() => {
 
     const totalAmount = subTotal - totalDiscount;
     const dueAmount = totalAmount - paid;
-    const paidPercentage = totalAmount > 0 ? (paid / totalAmount) * 100 : 0;
+    const paidPercentage = totalAmount !== 0 ? (paid / totalAmount) * 100 : 0;
+    const tax = 0;
 
     return {
       currency,
-      subTotal,
-      totalDiscount,
-      tax: 0,
-      totalAmount,
-      paid,
-      dueAmount,
+      subTotal: formatPrice(subTotal, currency),
+      totalDiscount: formatPrice(totalDiscount, currency),
+      tax: formatPrice(tax, currency),
+      totalAmount: formatPrice(totalAmount, currency),
+      paid: formatPrice(paid, currency),
+      dueAmount: formatPrice(dueAmount, currency),
       paidPercentage,
       highestPaymentDate,
       highestPaymentDueDate,
@@ -426,7 +436,12 @@ onBeforeMount(() => {
 
   // Calculate overall percentage and overdue status
   const overallPercentage = subTotals.length > 0
-    ? (subTotals.reduce((acc, subtotal) => acc + subtotal.paidPercentage, 0) / subTotals.length).toFixed(1)
+    ? (
+        subTotals.reduce(
+          (acc, subtotal) => acc + subtotal.paidPercentage,
+          0
+        ) / subTotals.length
+      ).toFixed(1)
     : 0;
 
   const overDue = subTotals.some((subtotal) => {
@@ -436,7 +451,7 @@ onBeforeMount(() => {
 
   // Add payment details to works
   const worksWithDetails = works.map((work) => {
-    const allPaid = payments.reduce((accumulator, item) => {
+    const allPaid = filteredPayments.reduce((accumulator, item) => {
       if (item.workId === work.workId) {
         return accumulator + Number(item.paid || 0);
       }
@@ -444,13 +459,22 @@ onBeforeMount(() => {
     }, 0);
 
     const price = Number(work.price.replace(/,/g, '') || 0);
-    const discount = Number(work.discount?.replace(/,/g, '') || 0);
+    const discount = payments.reduce((accumulator, item) => {
+      if (item.workId === work.workId && item.category === 'Discount') {
+        return accumulator + Number(item.paid || 0);
+      }
+      return accumulator;
+    }, 0);
+
+    work.discount = discount;
     const total = price - discount;
 
     return {
       ...work,
       allPaid,
-      paidPercentage: total > 0 ? ((allPaid / total) * 100).toFixed(2) : 0,
+      paidPercentage: total !== 0 ? ((allPaid / total) * 100).toFixed(2) : 0,
+      formattedPrice: formatPrice(price, work.currency), // Add formatted price
+      formattedTotal: formatPrice(total, work.currency), // Add formatted total
     };
   });
 
@@ -485,8 +509,8 @@ onBeforeMount(() => {
   modifiedWorks.overallPercentage = overallPercentage;
   modifiedWorks.overDue = overDue;
 
-  console.log("SubTotals:", subTotals);
-  console.log("Updated works with overallPercentage and overDue:", modifiedWorks);
+  console.log('SubTotals:', subTotals);
+  console.log('Updated works with overallPercentage and overDue:', modifiedWorks);
 
   return modifiedWorks;
 });
@@ -495,6 +519,11 @@ onBeforeMount(() => {
 */
        const isArabic=(value) =>{
             return /[\u0600-\u06FF]/.test(value)
+       }
+       function formatPrice(value, currency) {
+        const absoluteValue = Number(Math.abs(value).toLocaleString().replace(/,/g, '') || 0); // Format the absolute value
+        const sign = value < 0 ? '-' : ''; // Determine the sign
+        return {sign,absoluteValue,currency}; // Format: [sign] [price] [currency]
        }
        function getInitials(name) {
         console.log(name,'name')

@@ -40,7 +40,7 @@
         class="card-widget col q-ma-xs"
         label="Total"
         :totals="groupedTotals"
-        style="min-height: auto;min-width: auto;width: 100%;height: 100px;max-width:400px;"
+        style="min-height: auto;min-width: auto;width: 100%;min-height: 100px;max-width:400px;"
       />
       <CardWidget
         class="card-widget col q-ma-xs"
@@ -48,7 +48,7 @@
         :prefix="''"
         :value="payments.length"
         :suffix="''"
-        style="min-height: auto;min-width: auto;width: 100%;height: 100px;max-width:400px;"
+        style="min-height: auto;min-width: auto;width: 100%;min-height: 100px;max-width:400px;"
       />
     </div>
     <!-- Row for Buttons and Date Picker -->
@@ -258,7 +258,6 @@ const selectedDateInfo = computed (()=>{
 
 const payments = computed(() => {
   const payments = storePayments.dayPayments[storePayments.selectedDate] || [];
-
   // Filter payments where type is 'expenses'
   const selectedPayments = payments.filter(payment => payment.type === 'payment');
 
@@ -457,7 +456,13 @@ const payments = computed(() => {
        // message.value = `Hello, ${data}!`;
      }
    }
-// Computed property to group totals by currency
+/// Assuming formatPrice is defined somewhere
+function formatPrice(value, currency) {
+        const absoluteValue = Number(Math.abs(value).toLocaleString().replace(/,/g, '') || 0); // Format the absolute value
+        const sign = value < 0 ? '-' : ''; // Determine the sign
+        return {sign,absoluteValue,currency}; // Format: [sign] [price] [currency]
+       }
+
 const groupedTotals = computed(() => {
   const totalsByCurrency = {};
 
@@ -469,10 +474,16 @@ const groupedTotals = computed(() => {
     totalsByCurrency[total.currency].totalPaid += total.totalPaid;
   });
 
-  // Return an array of totals grouped by currency
-  return Object.values(totalsByCurrency);
-});
+  // Apply formatPrice to totalPaid
+  const formattedTotals = Object.values(totalsByCurrency).map(item => {
+    return {
+      currency: item.currency,
+      totalPaid: formatPrice(item.totalPaid).absoluteValue  // Format the totalPaid value
+    };
+  });
 
+  return formattedTotals;
+});
 
    const page = ref();
 
