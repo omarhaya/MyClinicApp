@@ -8,6 +8,7 @@ import Invoices from'src/pages/Invoices.vue'
 import invoice from 'src/pages/InvoiceView.vue'
 import PatientDetails from 'src/pages/PatientDetails.vue'
 import Transactions from 'src/pages/Transactions.vue'
+import Settings from 'src/pages/Settings.vue'
 
 const routes = [
   {
@@ -42,6 +43,10 @@ const routes = [
       component: Invoices,
       name:'invoices'
       },
+      { path: '/Settings',
+        component: Settings,
+        name:'settings'
+        },
       { path: '/Invoices/:invoiceId',
       component: invoice,
       name: 'Invoice',

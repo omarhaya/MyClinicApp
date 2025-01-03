@@ -1,12 +1,12 @@
 <template>
 
-    <ion-item-sliding class="invoice" :class="{ 'fade-out': isDeleted }" >
+    <ion-item-sliding  class="invoice" :class="{ 'fade-out': isDeleted }" >
 
-      <ion-item-options side="start">
+      <ion-item-options v-if="mobile" side="start">
         <ion-item-option expandable @click="newPayment" color="success"><q-icon size="25px" name="payment"/>Pay</ion-item-option>
       </ion-item-options>
 
-      <ion-item lines="none" :disabled="!Works" :button="true" @click="$router.push(`/Invoices/${invoice.invoiceId}`)" detail="false" class="sliding-item" >
+      <ion-item button="false" lines="none" :disabled="!Works" :button="true" @click="$router.push(`/Invoices/${invoice.invoiceId}`)" detail="false" class="sliding-item" >
         <div class="left flex q-pt-xs q-pb-xs ">
       <span class="tracking-number">#{{ invoice.invoiceId }}</span>
 
@@ -72,13 +72,38 @@
     </v-progress-linear>
   </span>
       <div v-else> <q-skeleton class="progress-buttom flex"/></div>
-      <div class="icon">
-        <img src="../assets/icon-arrow-right.svg" alt="" />
+      <div class="icon" >
+        <div v-if="!mobile" @click.stop @ionRippleEffect.stop class="q-pt-xs">
+          <DropdownMenu>
+                <DropdownMenuTrigger >
+                  <SidebarMenuAction show-on-hover>
+                    <MoreHorizontal class="text-grey hover:bg-secondary rounded-lg p-0.5 transition-colors duration-200" />
+                    <span class="sr-only">More</span>
+                  </SidebarMenuAction>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent class="w-48 rounded-lg" side="bottom" align="start">
+                  <DropdownMenuItem @click="newPayment()">
+                    <HandCoins class="text-muted-foreground text-green" />
+                    <span class="text-green">Pay Invoice</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem @click="handleClick()">
+                    <Pencil class="text-muted-foreground" />
+                    <span>Edit Invoice</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator class="bg-grey-4" />
+                  <DropdownMenuItem  @click="isOpen=true">
+                    <Trash2 class="text-muted-foreground text-red " />
+                    <span class="text-red">Delete Invoice</span>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+          </div>
+        <img v-else src="../assets/icon-arrow-right.svg" alt="" />
       </div>
     </div>
       </ion-item>
 
-      <ion-item-options side="end">
+      <ion-item-options v-if="mobile" side="end">
         <ion-item-option  @click="handleClick()"><q-icon size="25px" name="edit"/> Edit</ion-item-option>
         <ion-item-option @click="isOpen=true" expandable color="danger"><q-icon size="25px" name="delete"/>Delete</ion-item-option>
       </ion-item-options>
@@ -96,7 +121,22 @@ import { IonItem,IonActionSheet, IonItemOption, IonItemOptions, IonItemSliding, 
 import MobileInvoiceModal from 'src/components/MobileInvoiceModal.vue'
 import { Haptics, ImpactStyle } from '@capacitor/haptics';
 import { actionSheetController } from '@ionic/vue';
-
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuShortcut,
+  DropdownMenuTrigger,
+} from 'src/components/ui/dropdown-menu'
+import {
+  Pencil,
+  HandCoins,
+  MoreHorizontal,
+  Trash2,
+} from 'lucide-vue-next'
 const instance = getCurrentInstance()
 const props = defineProps({
   invoice:{

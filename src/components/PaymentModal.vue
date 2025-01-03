@@ -195,19 +195,19 @@
               </template>
 
             </v-select>
-            <div v-if="storePayments.paymentInvoices" v-for="(currency, index) in uniqueCurrencies" :key="index">
+            <div v-if="storePayments.paymentInvoices">
               <v-text-field
               v-if="!mobile"
                 ref="currencyFields"
                 :disabled="storeInvoices.loadingInvoices || storePayments.loading || storeWorks.loading"
                 required
                 density="compact"
-                @input="calculatePercentage2(paymentItemList[currency])"
+                @input="calculatePercentage2(paymentItemList)"
                 color="primary"
-                :prefix="currency"
+                :prefix="paymentItemList.currency"
                 dense
                 type="tel"
-                v-model="paymentItemList[currency].paid"
+                v-model="paymentItemList.paid"
               >
                 <template v-slot:append></template>
               </v-text-field>
@@ -258,6 +258,7 @@ import { uid } from 'uid'
 import { Platform } from 'quasar';
 import { IonInput, IonItem, IonList } from '@ionic/vue';
 import { Keyboard } from '@capacitor/keyboard';
+import { useStoreSettings } from 'src/stores/storeSettings'
 /*
  Mobile
 */
@@ -274,6 +275,7 @@ const   mobile=computed(()=>{
  const storePatients=useStorePatients()
  const storeWorks=useStoreWorks()
  const storeInvoices=useStoreInvoices()
+ const storeSettings=useStoreSettings()
  const {loadingModal} = storeToRefs(storePayments)
  const $q= useQuasar()
  const     patient= ref(null)
@@ -288,8 +290,8 @@ if(storePayments.patient){
 else return storeInvoices.invoiceData
 
  })
-
- const uniqueCurrencies = computed(() => {
+  const mainCurrency=ref(storeSettings.userSettings.mainCurrency)
+  const selectedWorks = computed(() => {
   const selectedWorks = [];
   // Add a check to ensure storePayments.paymentInvoices is not null or undefined
   if (storePayments.paymentInvoices) {
@@ -298,19 +300,19 @@ else return storeInvoices.invoiceData
       selectedWorks.push(...filteredWorks);
     });
   }
-  const uniqueCurrencies = [...new Set(selectedWorks.map(item => item.currency))];
-  console.log('uniqueCurrencies:', uniqueCurrencies); // Debugging
-  return uniqueCurrencies;
+  // const uniqueCurrencies = [...new Set(selectedWorks.map(item => item.currency))];
+
+  return selectedWorks;
 });
 
 // Scroll input into view
-const scrollToField = async (currency) => {
-  const fieldIndex = uniqueCurrencies.value.indexOf(currency);
-  if (fieldIndex !== -1 && currencyFields.value[fieldIndex]) {
-    await new Promise((resolve) => setTimeout(resolve, 100)); // Delay for keyboard animation
-    currencyFields.value[fieldIndex].$el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-  }
-};
+// const scrollToField = async (currency) => {
+//   const fieldIndex = uniqueCurrencies.value.indexOf(currency);
+//   if (fieldIndex !== -1 && currencyFields.value[fieldIndex]) {
+//     await new Promise((resolve) => setTimeout(resolve, 100)); // Delay for keyboard animation
+//     currencyFields.value[fieldIndex].$el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+//   }
+// };
 
 // onMounted(() => {
 //   Keyboard.addListener('keyboardWillShow', (info) => {
@@ -322,29 +324,43 @@ const scrollToField = async (currency) => {
 //   });
 // });
 // Define watcher outside the function
-watch(uniqueCurrencies, (newVal, oldVal) => {
-  const paymentItemListCurrency = {};
-  if (Array.isArray(newVal)) {
-    newVal.forEach(currency => {
-      paymentItemListCurrency[currency] = {
-        paid: 0,
-        percentage: 0,
-        currency,
-      };
+watch(selectedWorks, (newVal, oldVal) => {
+  if (newVal) {
+    console.log(selectedWorks.value,'uniqueCurrencies')
+      // const paymentItemList = {
+      //   paid: 0,
+      //   percentage: 0,
+      //   currency:'IQD',
+      // };
+      if (newVal.length===1) {
+        paymentItemList.value.currency=newVal[0].currency
+      }
+     else if (newVal.length>1) {
+    // Check if any item in newVal has a currency matching the main currency
+    const containsMainCurrency = newVal.some(item => item.currency === mainCurrency.value);
+    if (containsMainCurrency) {
+      // Handle the case where one of the items has the main currency
+      paymentItemList.value.currency = mainCurrency.value;
+    } else {
+      // Handle the case where none of the items match the main currency
+      // Add your logic here, e.g., prompt the user to choose a currency or set a default
+      paymentItemList.value.currency=newVal[0].currency
+    }
+      }
+
+  // paymentItemList.value = paymentItemList;
+  console.log('paymentItemList:', paymentItemList.value);
       setTimeout(() => {
     // Focus on the first currency field if it exists
-    if (currencyFields.value.length > 0 && currencyFields.value[0]&&mobile.value) {
-      currencyFields.value[0].$el.setFocus();
+    if (currencyFields.value&&mobile.value) {
+      currencyFields.value.$el.setFocus();
     }
-    if (currencyFields.value.length > 0 && currencyFields.value[0]&&!mobile.value) {
-      currencyFields.value[0].focus();
+    if (currencyFields.value&&!mobile.value) {
+      currencyFields.value.focus();
     }
   }, 20); // Delay of 5 seconds
 
-    });
   }
-  paymentItemList.value = paymentItemListCurrency;
-  console.log('paymentItemList:', paymentItemList.value);
 }, { immediate: true }); // Immediate option ensures the watcher runs immediately after setup
 
 const selectWorksInvoice = (option) => {
@@ -455,6 +471,7 @@ const selectWork=(work,works)=>{
  */
 
 onMounted(async () => {
+  paymentItemList.value.currency=mainCurrency.value
   if (storePayments.editPayment) {
     const currentPayment = storePayments.currentPaymentArray;
 
@@ -463,6 +480,8 @@ onMounted(async () => {
      const patient=storePayments.patient
     // Call getPatientInvoices and wait for it to finish
     console.log(patient,'storePayments.patient')
+    paymentItemList.value.paid=formatMoney(currentPayment.paid)
+    paymentItemList.value.currency=currentPayment.currency
     await storeInvoices.SET_PATIENT_INVOICES(patient.patientId,currentPayment.invoiceId)
   // Add delay and autofocus the first input field
 
@@ -505,18 +524,18 @@ onMounted(async () => {
     // );
 
     // Use a watcher to wait until patientInvoices is populated
-    // watch(
-    //   () => uniqueCurrencies.value,
-    //   (newCurrency) => {
-    //     //  if(!storePayments.loadingModal)
-    //     paymentItemList.value[newCurrency] = {
-    //   ...paymentItemList.value[newCurrency],
-    //   paid: formatMoney(currentPayment.paid)
-    // };
-
-    //   },
-    //   { immediate: true }
-    // );
+  //   watch(
+  //     () => uniqueCurrencies.value,
+  //     (newValue) => {
+  //        if(newValue) {
+  //       paymentItemList.value = {
+  //     ...paymentItemList.value,
+  //     paid: formatMoney(currentPayment.paid)
+  //   };
+  // }
+  //     },
+  //     { immediate: true }
+  //   );
   }
 });
 /*
@@ -540,126 +559,104 @@ function submitForm() {
        uploadPayment()
      }
 function uploadPayment() {
-  const worksByCurrency = {};
+  const selectedWorks = [];
+  const paymentItemListCurrency = paymentItemList.value.currency; // Define the main currency
+  const conversionRates = {
+    $: 1500, // Example conversion rate from IQD to USD
+    EUR: 0.00058, // Example conversion rate from IQD to EUR
+    IQD: 1,       // Main currency always has a rate of 1
+  };
 
-  // Group works by currency
+  // Gather all selected works from payment invoices
   storePayments.paymentInvoices.forEach(paymentInvoice => {
     paymentInvoice.works.forEach(work => {
-      if (!worksByCurrency[work.currency]) {
-        worksByCurrency[work.currency] = [];
+      if (work.selected) {
+        selectedWorks.push(work);
       }
-      worksByCurrency[work.currency].push(work);
     });
   });
 
-  // Process each currency group
-  Object.keys(worksByCurrency).forEach(currency => {
-    const works = worksByCurrency[currency];
-    const selectedWorks = works.filter(work => work.selected === true);
+  const totalPayment = Number(paymentItemList.value.paid.replace(/,/g, ''));
+  if (selectedWorks.length === 0) {
+    $q.notify({
+      type: 'orange',
+      message: 'No works selected to distribute payment!',
+    });
+    return;
+  }
 
-    // Get the total payment for the currency
-    const totalPayment = paymentItemList.value[currency]?.paid || 0;
+  if (totalPayment < 1) {
+    $q.notify({
+      type: 'orange',
+      message: 'Please add a value to pay!',
+    });
+    return;
+  }
 
-    if (selectedWorks.length === 0) {
-      $q.notify({
-        type: 'orange',
-        message: 'No works selected to distribute payment!'
-      });
-      return;
+  // Calculate payment per work
+  const paymentPerWorkInMainCurrency = totalPayment / selectedWorks.length;
+
+  selectedWorks.forEach(work => {
+    let amountToPay = paymentPerWorkInMainCurrency;
+
+    // Convert payment to the work's currency if it's not the main currency
+    if (work.currency !== paymentItemListCurrency) {
+      const rateToMain = conversionRates[work.currency];
+      if (!rateToMain) {
+        $q.notify({
+          type: 'negative',
+          message: `No conversion rate found for currency: ${work.currency}`,
+        });
+        return;
+      }
+      amountToPay = paymentPerWorkInMainCurrency / rateToMain;
     }
 
-    if (totalPayment < 1) {
-      $q.notify({
-        type: 'orange',
-        message: 'Please add a value to pay!'
-      });
-      return;
-    }
+    // Create payment object
+    const payment = {
+      paymentItemList: { paid: amountToPay },
+      currency: work.currency,
+      workId: work.workId,
+      invoiceId: work.invoiceId,
+      doctor: work.doctor,
+      patientDetails: storePayments.patient,
+    };
 
-    if (selectedWorks.length === 1) {
-      // Single work selected: assign the full payment
-      const work = selectedWorks[0];
-      const payment = {
-        paymentItemList: paymentItemList.value[currency],
-        currency,
-        workId: work.workId,
-        invoiceId: work.invoiceId,
-        doctor: work.doctor,
-        patientDetails: storePayments.patient,
-      };
-      storePayments.addPayment(payment);
-    } else {
-      // Multiple works selected: distribute payment equally
-      const paymentPerWork = Number(totalPayment.replace(/,/g, ''))/ selectedWorks.length;
-      console.log(paymentPerWork,'paymentPerWork')
-      selectedWorks.forEach(work => {
-        let amountToPay = paymentPerWork;
+    storePayments.addPayment(payment);
+  });
 
-        // Handle currency conversion if needed
-        if (work.currency !== currency) {
-          const conversionRate = 1500;
-          if (conversionRate) {
-            amountToPay *= conversionRate; // Convert to the work's currency
-          } else {
-            $q.notify({
-              type: 'negative',
-              message: `No conversion rate available for ${work.currency}!`
-            });
-            return;
-          }
-        }
-
-        // Create payment object
-        const payment = {
-          paymentItemList: {paid:amountToPay},
-          currency: work.currency,
-          workId: work.workId,
-          invoiceId: work.invoiceId,
-          doctor: work.doctor,
-          patientDetails: storePayments.patient,
-        };
-
-        storePayments.addPayment(payment);
-      });
-
-      $q.notify({
-        type: 'positive',
-        message: 'Payment distributed across selected works!'
-      });
-    }
+  $q.notify({
+    type: 'positive',
+    message: 'Payment successfully distributed across all selected works!',
   });
 }
      function updatePayment() {
+      // console.log(uniqueCurrencies.value,'wrk')
+      const selectedWorks = [];
 
-      const worksByCurrency = {}
+      // Gather all selected works from payment invoices
       storePayments.paymentInvoices.forEach(paymentInvoice => {
         paymentInvoice.works.forEach(work => {
-          if (!worksByCurrency[work.currency]) {
-            worksByCurrency[work.currency] = []
+          if (work.selected) {
+            selectedWorks.push(work);
           }
-       worksByCurrency[work.currency].push(work)
-        })
-      })
-      Object.keys(worksByCurrency).forEach(currency => {
-        const works = worksByCurrency[currency]
-        console.log(works,'works')
-        // Filter the 'works' array to get only the objects where 'selected' is true
-        const selectedWorks = works.filter(work => work.selected === true)
-        // Check the length of the filtered array
-        console.log(paymentItemList.value[currency].paid,'paid')
-        if (selectedWorks.length === 1&&paymentItemList.value[currency].paid!==0) {
+        });
+      });
+
+        if (selectedWorks.length === 1&&paymentItemList.value.paid!==0) {
           const work=({
-           paymentItemList:paymentItemList.value[currency],
-           currency,
+           paymentItemList:{paid:paymentItemList.value.paid},
+           currency:selectedWorks[0].currency,
            workId:selectedWorks[0].workId,
            invoiceId:selectedWorks[0].invoiceId,
            doctor:selectedWorks[0].doctor,
            patientDetails:storePayments.patient,
          })
+
             storePayments.updatePayment(work)
         }
         else{
-          if(paymentItemList.value[currency].paid<1){
+          if(paymentItemList.value.paid<1){
             $q.notify({
           type: 'orange',
           message: 'Please add Value to Pay!'
@@ -671,7 +668,6 @@ function uploadPayment() {
           message: 'You Cant Choose Two Works to Pay!'
         })
         }
-        });
      }
 const removeInvoice = (invoiceId) => {
 

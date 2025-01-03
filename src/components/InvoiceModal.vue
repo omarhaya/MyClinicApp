@@ -851,6 +851,7 @@ const    handleWorkItemChange=(value)=> {
        }
      }
      function addNewWorkItem(opt) {
+       console.log(opt,'szz')
        storeInvoices.workItemList.push({
          workId: opt.workId,
          label: opt.label,

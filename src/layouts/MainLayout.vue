@@ -87,32 +87,7 @@
     </v-card>
   </v-bottom-sheet>
 
-  <!-- ExpenseModal -->
-  <q-dialog
-    v-if="!mobile"
-    full-width
-    full-height
-    allow-focus-outside
-    :persistent="checkContent"
-    :position="$route.path === '/Transactions' ? 'right' : 'left'"
-    transition-duration="700"
-    @shake="closeWithcontent"
-    v-model="storeExpenses.expenseModal"
-    class="dialog-addInvoice"
-  >
-    <q-dialog v-model="storeExpenses.modalActive">
-      <q-card>
-        <q-card-section>
-          <div class="text-h6">Second dialog</div>
-        </q-card-section>
-        <q-card-section class="row items-center q-gutter-sm">
-          <q-btn v-close-popup="2" label="Close" color="red" />
-          <q-btn v-close-popup label="Return" color="purple" />
-        </q-card-section>
-      </q-card>
-    </q-dialog>
-    <ExpenseModal />
-  </q-dialog>
+
 
   <q-layout v-if="!mobile" view="lHh Lpr lFf">
 
@@ -163,6 +138,7 @@
             </q-item-section>
 
           </q-item>
+
           <div v-if="storeAuth.user.uid">
             <EssentialLink v-for="link in essentialLinks" :key="link.title" v-bind="link" />
           </div>
@@ -183,7 +159,7 @@
             </q-item-section>
           </q-item>
           <q-separator />
-          <q-item v-ripple clickable :active="link === '/'" @click="link = 'inbox'" active-class="my-menu-link">
+          <q-item v-ripple  to="/settings" clickable :active="$route.fullPath === '/settings'" active-class="my-menu-link">
             <q-item-section avatar>
               <q-icon name="settings" />
             </q-item-section>
@@ -249,8 +225,6 @@ import { useStorePayments } from 'src/stores/storePayments'
 import { IonPage, IonContent, IonHeader, IonToolbar, IonTabBar, IonTabButton, IonTabs, IonLabel, IonIcon, IonRouterOutlet } from '@ionic/vue'
 import { useStoreSettings } from 'src/stores/storeSettings'
 import { newspaper, people, calendar,swapHorizontalOutline,grid} from 'ionicons/icons'
-import { useStoreExpenses } from 'src/stores/storeExpenses'
-import ExpenseModal from 'src/components/ExpenseModal.vue'
 import { useTheme } from 'vuetify'
 
 
@@ -261,7 +235,6 @@ const storeAuth = useStoreAuth()
 const storeInvoices = useStoreInvoices()
 const storePayments = useStorePayments()
 const storeSettings = useStoreSettings()
-const storeExpenses = useStoreExpenses()
 const essentialLinks = [
 {
     title: 'DashBoard',

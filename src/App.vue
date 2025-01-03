@@ -144,7 +144,7 @@ ion-content {
   @media (min-width: 900px) {
     padding-top: 72px;
     .button {
-        padding: 8px 10px;
+
         background-color:#09665e;
         border-radius: 40px;
         color:#fff !important;

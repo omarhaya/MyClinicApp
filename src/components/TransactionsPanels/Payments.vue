@@ -118,6 +118,7 @@
           icon="archive"
           @click="exportTable"
          />
+
          <q-btn v-if="!mobile" size="16px"  padding="0px" text-color="grey-7"   unelevated    @click="newPayment" icon="add"/>
          <q-btn v-else  padding="0px" size="16px"  unelevated text-color="grey-7" icon="add" @click="instance.emit('openPaymentModal')"/>
         </div>

@@ -10,8 +10,9 @@
 
 
 const { configure } = require('quasar/wrappers');
-
-
+const autoprefixer = require('autoprefixer');
+const tailwind = require('tailwindcss');
+const { resolve } = require('path');
 module.exports = configure(function (/* ctx */) {
 
   return {
@@ -57,6 +58,7 @@ module.exports = configure(function (/* ctx */) {
       },
 
       vueRouterMode: 'hash', // available values: 'hash', 'history'
+
       // vueRouterBase,
       // vueDevtools,
       // vueOptionsAPI: false,
@@ -72,9 +74,12 @@ module.exports = configure(function (/* ctx */) {
       // polyfillModulePreload: true,
       // distDir
 
-      // extendViteConf (viteConf) {},
+      extendViteConf(viteConf) {
+        viteConf.css = viteConf.css || {};
+        viteConf.css.postcss = viteConf.css.postcss || {};
+        viteConf.css.postcss.plugins = [tailwind(), autoprefixer()];
+      },
       // viteVuePluginOptions: {},
-
 
       // vitePlugins: [
       //   [ 'package-name', { ..options.. } ]
@@ -85,6 +90,9 @@ module.exports = configure(function (/* ctx */) {
           '@': path.resolve(__dirname, 'src')
         };
       }
+    },
+    alias: {
+      '@': resolve(__dirname, './src'),
     },
 
     // Full list of options: https://v2.quasar.dev/quasar-cli-vite/quasar-config-js#devServer

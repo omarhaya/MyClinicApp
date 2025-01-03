@@ -1007,7 +1007,6 @@ export const useStoreInvoices = defineStore('storeInvoices', {
 
           const total = price - discount;
 
-          console.log(total,'formattedAllPaidformattedAllPaid')
           return {
             ...work,
             allPaid,
@@ -1016,14 +1015,17 @@ export const useStoreInvoices = defineStore('storeInvoices', {
             formattedPrice: formatPrice(price, work.currency), // Add formatted price
           };
         });
-
         const updatedWorks = worksWithDetails.map(work => {
-          if (parseInt(work.paidPercentage) !== 100||state.storePayments.editPayment) {
+          if (parseInt(work.paidPercentage) !== 100&&!state.storePayments.editPayment) {
 
+            return { ...work, selected: true };
+          }
+          else if (state.storePayments.editPayment&&work.workId==state.storePayments.currentPaymentArray.workId) {
             return { ...work, selected: true };
           }
           return work;
         });
+
 
         updatedWorks.subTotals = subTotals;
         updatedWorks.overallPercentage = overallPercentage;

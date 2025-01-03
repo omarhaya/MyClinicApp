@@ -88,10 +88,30 @@ rounded
 
 <span v-if="storeInvoices.paymentsInvoice[payment.invoiceId]" class="dateFormat">{{ formatDateTime }}</span>
 <span v-else class="dateFormat">  <q-skeleton animation="blink" type="text" class="text-caption" width="100px" /></span>
-
+<div v-if="!mobile" @click.stop @ionRippleEffect.stop class="q-pt-xs">
+          <DropdownMenu>
+                <DropdownMenuTrigger >
+                  <SidebarMenuAction show-on-hover>
+                    <MoreHorizontal class="text-grey hover:bg-secondary rounded-lg p-0.5 transition-colors duration-200" />
+                    <span class="sr-only">More</span>
+                  </SidebarMenuAction>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent class="w-48 rounded-lg" side="bottom" align="start">
+                  <DropdownMenuItem @click="handleClick()">
+                    <Pencil class="text-muted-foreground" />
+                    <span>Edit Payment</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator class="bg-grey-4" />
+                  <DropdownMenuItem  @click="isOpen=true">
+                    <Trash2 class="text-muted-foreground text-red " />
+                    <span class="text-red">Delete Payment</span>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+          </div>
   </div>
     </ion-item>
-    <ion-item-options side="end">
+    <ion-item-options v-if="mobile" side="end">
       <ion-item-option  @click="handleClick()" ><q-icon size="25px" name="edit"/> Edit</ion-item-option>
       <ion-item-option @click="isOpen=true" expandable color="danger"><q-icon size="25px" name="delete"/>Delete</ion-item-option>
     </ion-item-options>
@@ -110,6 +130,23 @@ import MobilePaymentModal from './MobilePaymentModal.vue'
 import dayjs from 'dayjs'
 import GrowingCircularProgress from './GrowingCircularProgress.vue'
 import GrowingLinearProgress from './GrowingLinearProgress.vue'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuShortcut,
+  DropdownMenuTrigger,
+} from 'src/components/ui/dropdown-menu'
+import {
+  Pencil,
+  Plus,
+  MoreHorizontal,
+  Trash2,
+} from 'lucide-vue-next'
+
 const instance = getCurrentInstance()
 const props = defineProps({
 payment:{

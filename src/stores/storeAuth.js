@@ -7,7 +7,7 @@ import { useStoreAppointments } from './storeAppointments'
 import { useStorePayments } from './storePayments'
 import { useStoreInvoices } from './storeInvoices'
 import { useStoreWorks } from './storeWorks'
-import { useStoreExpenses } from './storeExpenses'
+import { useStoreSettings } from './storeSettings'
 
 let getDoctorsSnapshot = null
 let getUserRoleSnapshot = null
@@ -19,7 +19,7 @@ export const useStoreAuth = defineStore('storeAuth', {
     const storeAppointments = useStoreAppointments()
     const storeInvoices = useStoreInvoices()
     const storeWorks = useStoreWorks()
-    const storeExpenses = useStoreExpenses()
+    const storeSettings=useStoreSettings()
     return {
       user: {},
       doctors: [],
@@ -28,7 +28,7 @@ export const useStoreAuth = defineStore('storeAuth', {
       storeAppointments,
       storePayments,
       storeInvoices,
-      storeExpenses,
+      storeSettings,
       storeWorks,
       errorMessageLogin: '',
       errorMessageRegister: '',
@@ -71,7 +71,8 @@ export const useStoreAuth = defineStore('storeAuth', {
                     this.storePayments.init();
                     this.storeInvoices.init();
                     this.storeWorks.init();
-                    this.storeExpenses.init();
+                    this.storeSettings.init();
+                    this.storeSettings.getSettings()
                     this.initialized = true;
                     resolve();
                   });
