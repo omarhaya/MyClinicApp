@@ -480,7 +480,7 @@ const groupedTotals = computed(() => {
     }
   }
   .q-dark .panel-properties {
-    background-color:#142325;
+    background-color:#0c0a09;
   }
   .panel-properties {
     .row, .column, .flex{

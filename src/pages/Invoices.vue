@@ -1,5 +1,5 @@
 <template>
-  <ion-page ref="page">
+<ion-page ref="page">
     <ion-header v-if="mobile" :translucent="true">
     <ion-toolbar>
       <ion-title>Invoices</ion-title>
@@ -18,9 +18,9 @@
       <!-- Ensure scroller class properly styled -->
       <RecycleScroller
         class="ion-content-scroll-host scroller"
-        :items="filteredData"
+        :items="sortedAndFilteredData"
         :min-item-size="70"
-        :items-limit="filteredData.length + 1000"
+        :items-limit="sortedAndFilteredData.length + 1000"
         :key-field="'invoiceId'"
         sizeField="size"
       >
@@ -29,32 +29,8 @@
       <ion-toolbar class="home container">
         <ion-title size="large">Invoices</ion-title>
             <!-- Header -->
-
-
             <q-btn slot="end"  round flat color="secondary" icon="filter_alt">
-  <q-menu :offset="[-10, 0]"   auto-close>
-    <q-list class="filter-menu"  style="min-width: 100px">
-      <q-item  @click="filteredInvoices" clickable>
-        <q-item-section>Draft</q-item-section>
-      </q-item>
-      <q-item @click="filteredInvoices" clickable>
-        <q-item-section >Pending</q-item-section>
-      </q-item>
-      <q-separator dark />
-      <q-item @click="filteredInvoices" clickable>
-        <q-item-section >Paid</q-item-section>
-      </q-item>
-      <q-item @click="filteredInvoices" clickable>
-        <q-item-section >Partially Paid</q-item-section>
-      </q-item>
-      <q-item @click="filteredInvoices" clickable>
-        <q-item-section >Over Due</q-item-section>
-      </q-item>
-      <q-item @click="filteredInvoices" clickable>
-        <q-item-section >Clear Filter</q-item-section>
-      </q-item>
-    </q-list>
-  </q-menu>
+
   </q-btn>
         <ion-buttons :collapse="true" slot="end">
           <ion-fab-button  @click="openInvoiceModal" size="small">
@@ -76,47 +52,31 @@
        <div class="left flex flex-column">
          <div class="m1">Invoices</div>
          <span class="m2">There are {{ invoiceData.length }} total invoices</span>
+
        </div>
        <div class="right flex">
-         <div  class="filter flex">
-           <span
-             >Filter by status <span v-if="filteredInvoice">: {{ filteredInvoice }}</span></span
-           >
-           <img src="../assets/icon-arrow-down.svg" alt="" >
-
-          <q-menu :offset="[-10, 0]"   auto-close>
-           <q-list class="filter-menu"  style="min-width: 100px">
-             <q-item  @click="filteredInvoices" clickable>
-               <q-item-section>Draft</q-item-section>
-             </q-item>
-             <q-item @click="filteredInvoices" clickable>
-               <q-item-section >Pending</q-item-section>
-             </q-item>
-             <q-separator dark />
-             <q-item @click="filteredInvoices" clickable>
-               <q-item-section >Paid</q-item-section>
-             </q-item>
-             <q-item @click="filteredInvoices" clickable>
-               <q-item-section >Partially Paid</q-item-section>
-             </q-item>
-             <q-item @click="filteredInvoices" clickable>
-               <q-item-section >Over Due</q-item-section>
-             </q-item>
-             <q-item @click="filteredInvoices" clickable>
-               <q-item-section >Clear Filter</q-item-section>
-             </q-item>
-           </q-list>
-         </q-menu>
-
-         </div>
-         <div @click="newInvoice" class="button flex">
-           <div class="inner-button flex">
+        <Button @click="newInvoice" class="button" >
+          <div class="inner-button ">
              <img src="../assets/icon-plus.svg" alt="" />
            </div>
            <span v-if="$q.screen.gt.xs">New Invoice</span>
-         </div>
+      </Button>
        </div>
  </div>
+   <div  class="filter flex">
+          <DataTableFacetedFilter
+        title="Status"
+        :options="[
+          { label: 'Draft', value: 'Draft' },
+          { label: 'Pending', value: 'Pending' },
+          { label: 'Paid', value: 'Paid' },
+          { label: 'Partially Paid', value: 'Partially Paid' },
+          { label: 'Over Due', value: 'Over Due' }
+        ]"
+        :column="table.getColumn('status')"
+      />
+
+         </div>
  </div>
   </template>
         <template #default="{ item,index ,active}">
@@ -146,7 +106,7 @@ import Invoice from "src/components/Invoice.vue"
 import invoiceLoading from "src/components/InvoiceLoading.vue"
 import { storeToRefs } from 'pinia'
 import { useStoreInvoices } from 'src/stores/storeInvoices'
-import {computed,ref,onMounted} from 'vue'
+import {computed,ref,h,watch} from 'vue'
 import {IonList,
    IonInfiniteScroll,
    IonInfiniteScrollContent,IonPage,  IonFab,
@@ -161,12 +121,21 @@ import { RecycleScroller,DynamicScrollerItem } from "vue-virtual-scroller";
 import { Haptics, ImpactStyle } from '@capacitor/haptics';
 import {add} from "ionicons/icons";
 import { useStorePatients } from "src/stores/storePatients"
-
+import DataTableFacetedFilter from 'src/components/InvoicesTable/DataTableFacetedFilter.vue'
+import {
+  useVueTable,
+  getCoreRowModel,
+  getFacetedRowModel,
+  getFacetedUniqueValues,
+  getFilteredRowModel,
+} from '@tanstack/vue-table'
+import Button from "src/components/ui/button/Button.vue"
 
 const $q=useQuasar()
 /*
   Stores
-*/
+// */
+
     const storeInvoices=useStoreInvoices()
     const storePayments=useStorePayments()
     const storePatients=useStorePatients()
@@ -180,73 +149,24 @@ const $q=useQuasar()
 /*
  FilterRef
 */
-   const   filteredInvoice= ref(null)
+
    function  newInvoice() {
       storeInvoices.TOGGLE_INVOICE()
     }
 
-   function filteredInvoices(e) {
-      if (e.target.innerText === "Clear Filter") {
-        filteredInvoice.value = null
-        return
-      }
-      filteredInvoice.value = e.target.innerText
-    }
+
    const $=useQuasar()
-   const patientsLoaded = computed(() => {
-  return storePatients.patients && storePatients.patients.length > 0;
-});
 
-const filteredData = computed(() => {
-  // Wait until patients are loaded
-  if (!patientsLoaded.value) return [];
 
-  // Perform filtering logic
-  return invoiceData.value.map((invoice) => {
-    if (invoice.patientId) {
-      // Assign patient name from loaded patients
-      const patient = storePatients.patients.find(
-        (patient) => patient.patientId === invoice.patientId
-      );
-      invoice.patientName = patient?.namef || '';
-    }
-
-    const nameSize = invoice.patientName.length > 18 ? 15 : 0;
-    const size = $q.screen.lt.sm ? nameSize + 75 : 45;
-
-    invoice.size =
-      invoice.workItemList.length <= 1
-        ? size * 1.5
-        : size * 1.5 + invoice.workItemList.length * 15;
-
-    if (filteredInvoice.value === 'Draft') {
-      return invoice.invoiceDraft === true;
-    }
-    if (filteredInvoice.value === 'Pending') {
-      return (
-        storeWorks.invoiceWorks[invoice.invoiceId].overallPercentage === 0 &&
-        !invoice.invoiceDraft
-      );
-    }
-    if (filteredInvoice.value === 'Paid') {
-      return storeWorks.invoiceWorks[invoice.invoiceId].overallPercentage === 100;
-    }
-    if (filteredInvoice.value === 'Partially Paid') {
-      return (
-        storeWorks.invoiceWorks[invoice.invoiceId].overallPercentage < 100 &&
-        storeWorks.invoiceWorks[invoice.invoiceId].overallPercentage > 0
-      );
-    }
-    if (filteredInvoice.value === 'Over Due') {
-      return (
-        storeWorks.invoiceWorks[invoice.invoiceId].overallPercentage < 100 &&
-        storeWorks.invoiceWorks[invoice.invoiceId].overDue &&
-        !invoice.invoiceDraft
-      );
-    }
-    return invoice;
-  });
-});
+// function getStatus(invoice) {
+//   if (invoice.invoiceDraft) return 'Draft';
+//   const percentage = invoice.works?.overallPercentage;
+//   console.log('percentage',percentage)
+//   if (percentage == 100&& !invoice.invoiceDraft) return 'Paid';
+//   if (percentage == 0 && !invoice.invoiceDraft) return 'Pending';
+//   if (percentage < 100) return invoice.works?.overDue ? 'Over Due' : 'Partially-Paid';
+//   return 'Unknown';
+// }
 
    async function load(ev) {
       await storeInvoices.GET_INVOICES_NEXT()
@@ -314,13 +234,113 @@ const openInvoiceModal = async () => {
     }
   };
   const page = ref();
+
+  const columns = [
+    {
+      accessorKey: 'invoiceId',
+      header: 'Invoice #',
+      cell: ({ row }) => h('div', { class: 'font-medium' }, row.getValue('invoiceId'))
+    },
+    {
+      accessorKey: 'workItemList',
+      header: 'Services',
+      cell: ({ row }) => {
+        const workItems = row.getValue('workItemList')
+        return h('div', { class: 'text-sm' },
+          workItems.map(work => work.label).join(', ')
+        )
+      }
+    },
+    {
+      accessorKey: 'doctor',
+      header: 'Doctor',
+      cell: ({ row }) => {
+        const workItems = row.getValue('workItemList')
+        const doctors = [...new Set(workItems.map(work => work.doctor))]
+        return h('div', { class: 'text-sm' }, doctors.join(', '))
+      }
+    },
+    {
+      accessorKey: 'invoice',
+      header: '',
+      cell: ({ row }) => {
+        return h(Invoice, {
+          invoice: row.original,
+          mobile: mobile.value,
+          onOpenPaymentModal: openPaymentModal
+        })
+      }
+    }
+  ]
+  const currentSort = ref({ key: '', direction: 'asc' })
+  function toggleSort(key) {
+    if (currentSort.value.key === key) {
+      currentSort.value.direction = currentSort.value.direction === 'asc' ? 'desc' : 'asc'
+    } else {
+      currentSort.value.key = key
+      currentSort.value.direction = 'asc'
+    }
+  }
+
+  const table = useVueTable({
+    get data() {
+      return invoiceData.value
+    },
+    columns: [
+      {
+        accessorKey: 'status',
+        header: 'Status',
+        accessorFn: (invoice) => {
+          const status = invoice.invoiceDraft ? 'Draft'
+            : invoice.works?.overallPercentage == 100 ? 'Paid'
+            : invoice.works?.overallPercentage === 0 && !invoice.invoiceDraft ? 'Pending'
+            : invoice.works?.overallPercentage < 100
+              ? (invoice.works?.overDue ? 'Over Due' : 'Partially Paid')
+            : 'Unknown'
+          return status
+        },
+        filterFn: (row, columnId, filterValues) => {
+          if (!filterValues?.length) return true
+          const status = row.getValue(columnId)
+          return filterValues.includes(status)
+        }
+      }
+    ],
+    getCoreRowModel: getCoreRowModel(),
+    getFilteredRowModel: getFilteredRowModel(),
+    getFacetedRowModel: getFacetedRowModel(),
+    getFacetedUniqueValues: getFacetedUniqueValues(),
+  })
+
+  const sortedAndFilteredData = computed(() => {
+    const rows = table.getFilteredRowModel().rows
+    console.log('Filtered rows:', rows.length) // Debug log
+
+    const processedData = rows.map(row => {
+      const invoice = row.original
+      const nameSize = invoice.patientName?.length > 18 ? 15 : 0
+      const baseSize = $q.screen.lt.sm ? nameSize + 75 : 45
+      invoice.size = invoice.workItemList.length <= 1
+        ? baseSize * 1.5
+        : baseSize * 1.5 + invoice.workItemList.length * 15
+      return invoice
+    })
+
+    console.log('Processed data:', processedData.length) // Debug log
+    return processedData
+  })
+
+  // Add a watch to monitor invoiceData changes
+  watch(invoiceData, (newVal) => {
+    console.log('InvoiceData changed:', newVal?.length)
+  }, { immediate: true })
 </script>
 
 <style lang="scss" scoped>
 .home {
 box-sizing: border-box;
   .header {
-    margin-bottom: 65px;
+    margin-bottom: 12px;
 
     .left,
     .right {
@@ -331,46 +351,6 @@ box-sizing: border-box;
       justify-content: flex-end;
       align-items: center;
 
-      .button,
-      .filter {
-        align-items: center;
-
-        span {
-          font-size: 12px;
-        }
-      }
-
-      .filter {
-        position: relative;
-        margin-right: 40px;
-        cursor: pointer;
-
-        img {
-          margin-left: 12px;
-          width: 9px;
-          height: 5px;
-        }
-
-        .filter-menu {
-          width: 120px;
-          position: absolute;
-          top: 25px;
-          list-style: none;
-          background-color: #e1e6df;
-          box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-
-          li {
-            cursor: pointer;
-            font-size: 12px;
-            padding: 10px 20px;
-
-            &:hover {
-              color: #1e2139;
-              background-color: #fff;
-            }
-          }
-        }
-      }
     }
   }
 
@@ -430,6 +410,114 @@ z-index: 1000 !important;
 }
 .list-md {
   background:none !important
+}
+
+:deep(.invoice-table) {
+  // Headers styling
+  .table-header {
+    &:hover {
+      background-color: var(--muted);
+    }
+
+    &[data-sortable="true"] {
+      cursor: pointer;
+    }
+  }
+
+  // Cells styling
+  .table-cell {
+    padding: 0.75rem;
+    vertical-align: top;
+  }
+
+  // Row styling
+  .table-row {
+    &:not(:last-child) {
+      border-bottom: 1px solid var(--border);
+    }
+  }
+
+  // Invoice component cell specific styling
+  .table-cell:last-child {
+    padding: 0;
+  }
+}
+
+// Dark mode adjustments
+:deep(.dark) {
+  .table-header:hover {
+    background-color: var(--muted-dark);
+  }
+}
+
+.invoice-table {
+  width: 100%;
+  border-radius: 0.5rem;
+  background: var(--background);
+
+  .table-header-row {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    padding: 0.75rem 1rem;
+    background: var(--muted);
+    border-top-left-radius: 0.5rem;
+    border-top-right-radius: 0.5rem;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .table-header {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--muted-foreground);
+
+    &.sortable {
+      cursor: pointer;
+
+      &:hover {
+        color: var(--foreground);
+      }
+    }
+  }
+
+  .invoice-row {
+    border-bottom: 1px solid var(--border);
+
+    &:last-child {
+      border-bottom: none;
+    }
+
+    // Remove any internal padding/margins from the Invoice component
+    :deep(.invoice-component) {
+      margin: 0;
+      border-radius: 0;
+    }
+  }
+}
+
+// Dark mode adjustments
+:deep(.dark) {
+  .table-header-row {
+    background: var(--muted-dark);
+  }
+}
+
+.scroller {
+  height: 100%;
+}
+
+.table-header {
+  cursor: pointer;
+  user-select: none;
+
+  &:hover {
+    background-color: var(--muted);
+  }
+}
+
+.no-data {
+  padding: 2rem;
+  text-align: center;
+  color: var(--muted-foreground);
 }
 
 </style>

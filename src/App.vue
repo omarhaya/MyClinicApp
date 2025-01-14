@@ -60,6 +60,7 @@ ion-content {
   background-color: #142225;
   min-height: 100vh;
   box-sizing: border-box;
+
   @media (min-width: 900px) {
     flex-direction: row !important;
   }
@@ -135,14 +136,14 @@ ion-content {
 
 .container {
   width: 95%;
-  // padding-right:10px !important;
-  // padding-left:10px !important;
+  padding-right:10px !important;
+  padding-left:10px !important;
   max-width: 850px;
   margin:auto;
 
-  padding-bottom:10px;
+  padding-bottom:30px;
   @media (min-width: 900px) {
-    padding-top: 72px;
+    padding-top: 20px;
     .button {
 
         background-color:#09665e;
@@ -163,6 +164,8 @@ ion-content {
           img {
             width: 10px;
             height: 10px;
+            margin-left: 1px;
+            margin-top: 1px;
           }
         }
       }
@@ -188,6 +191,8 @@ ion-content {
           img {
             width: 10px;
             height: 10px;
+            margin-left: 1px;
+            margin-top: 1px;
           }
         }
       }
@@ -212,7 +217,7 @@ ion-content {
   }
   font-size: 12px;
   align-items: center;
-  padding: 8px 20px 10px 14px;
+  // padding: 8px 20px 10px 14px;
   border-radius: 10px;
 }
 

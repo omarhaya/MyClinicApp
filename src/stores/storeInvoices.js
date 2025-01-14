@@ -151,89 +151,68 @@ export const useStoreInvoices = defineStore('storeInvoices', {
       }
     },
     SET_CURRENT_INVOICE(invoiceId) {
-      this.loading=true
-      console.log('geting invoice')
-      const q =  query(invoicesCollectionRef,where('invoiceId' ,'==',invoiceId))
-    onSnapshot(q, (querySnapshot)  => {
-    querySnapshot.forEach((doc) => {
-      const invoice = {
-        docId: doc.id,
-        invoiceId: doc.data().invoiceId,
-        workItemList: doc.data().workItemList||[],
-        // patientName: doc.data().patientName||'',
-        patientId: doc.data().patientId||'',
-        // clientId:doc.data().clientId ||[],
-        invoiceDateUnix: doc.data().invoiceDateUnix,
-        invoiceDate: doc.data().invoiceDate,
-        // workItemList: doc.data().workItemList,
-        // paymentTerms: doc.data().paymentTerms,
-        // paymentDueDateUnix: doc.data().paymentDueDateUnix,
-        // paymentDueDate: doc.data().paymentDueDate,
-        // productDescription: doc.data().productDescription,
-        // paymentItemList: doc.data().paymentItemList,
-        // invoiceTotal: doc.data().invoiceTotal,
-        // invoicePending: doc.data().invoicePending,
-        invoiceDraft: doc.data().invoiceDraft||'',
-        // invoicePaid: doc.data().invoicePaid,
-        deleted:doc.data().deleted,
-      }
-      const paymentsCollectionRef = collection(
-        invoicesCollectionRef,
-        invoice.invoiceId,
-        "payments"
-      )
-        console.log(this.storePayments.loading, 'paymentsloading');
+      this.loading = true;
+      console.log('getting invoice');
+      const q = query(invoicesCollectionRef, where('invoiceId', '==', invoiceId));
 
+      getInvoicesSnapshot = onSnapshot(q, (querySnapshot) => {
+        querySnapshot.forEach((doc) => {
+          const invoice = {
+            docId: doc.id,
+            invoiceId: doc.data().invoiceId,
+            workItemList: doc.data().workItemList || [],
+            patientId: doc.data().patientId || '',
+            invoiceDateUnix: doc.data().invoiceDateUnix,
+            invoiceDate: doc.data().invoiceDate,
+            invoiceDraft: doc.data().invoiceDraft || '',
+            deleted: doc.data().deleted,
+          };
 
-        const paymentsQuery = query(paymentsCollectionRef);
+          const paymentsPromise = new Promise((resolve) => {
+            const paymentsCollectionRef = collection(
+              invoicesCollectionRef,
+              invoice.invoiceId,
+              "payments"
+            );
 
-        // Set up a real-time listener for payments
-        this.unsubscribe = onSnapshot(paymentsQuery, (querySnapshot) => {
-          const payments = [];
+            this.unsubscribe = onSnapshot(query(paymentsCollectionRef), (querySnapshot) => {
+              const payments = [];
+              querySnapshot.forEach((doc) => {
+                payments.push({
+                  paymentId: doc.id,
+                  paid: doc.data().paid,
+                  date: doc.data().date,
+                  workId: doc.data().workId || '',
+                  currency: doc.data().currency,
+                  dateUnix: doc.data().dateUnix,
+                  category: doc.data().category,
+                  type: doc.data().type,
+                });
+              });
 
-          querySnapshot.forEach((doc) => {
-            let payment = {
-              paymentId: doc.id,
-              paid: doc.data().paid,
-              date: doc.data().date,
-              workId: doc.data().workId||'',
-              currency: doc.data().currency,
-              dateUnix: doc.data().dateUnix,
-              category:doc.data().category,
-              type:doc.data().type,
-            };
-            payments.push(payment);
-            console.log(payment,'paymentforinvoice')
+              // Set works data before resolving
+              const works = this.GET_CURRENT_INVOICE_WORKS(invoice, payments);
+              invoice.works = works;
+              // this.storeWorks.invoiceWorks[invoice.invoiceId] = works;
+              this.storePayments.invoicePayments[invoice.invoiceId] = payments;
+
+              // Update patient name
+              const patient = this.storePatients.patients.find(patient => patient.patientId === invoice.patientId);
+              invoice.patientName = patient ? patient.namef : "Unknown Client";
+
+              resolve();
+            });
           });
 
-          const patient = this.storePatients.patients.find(patient => patient.patientId === invoice.patientId);
-            invoice.patientName = patient ? patient.namef : "Unknown Client";
-          // if (Array.isArray(invoice.clientId)) {
-          //   // If clientId is an array, map each ID to its corresponding name
-          //   invoice.clientNames = invoice.clientId.map(clientId => {
-          //     const client = this.storePatients.patients.find(patient => patient.patientId === clientId);
-          //     return client ? client.namef : "Unknown Client";
-          //   });
-          // } else if (typeof invoice.clientId === "string") {
-          //   // If clientId is a string, find the corresponding name
-          //   const client = this.storePatients.patients.find(patient => patient.patientId === invoice.clientId);
-          //   invoice.clientName = client ? client.namef : "Unknown Client";
-          // } else {
-          //   console.log("clientId is neither an array nor a string:", invoice.clientId);
-          //   invoice.clientNames = []; // Default to an empty array if clientId is invalid
-          //   invoice.clientName = []
-          // }
-        this.storePayments.invoicePayments[invoice.invoiceId] = payments;
-        this.storePayments.loading=false
-
-        })
-          this.currentInvoice=invoice
-          console.log(this.currentInvoice,'geting invoice')
-          // this.storePayments.getPaymentsForInvoice(invoiceId)
-
-       })
-     })
-     this.loading=false
+          // Wait for payments data to be processed
+          paymentsPromise.then(() => {
+            this.currentInvoice = invoice;
+            console.log(this.currentInvoice, 'getting invoice');
+            this.storePayments.loading = false;
+            this.loading = false;
+          });
+        });
+      });
     },
     TOGGLE_EDIT_INVOICE(){
       this.editInvoice = !this.editInvoice;
@@ -288,65 +267,67 @@ export const useStoreInvoices = defineStore('storeInvoices', {
     //  this.loading=false
 
     // },
-    async GET_INVOICE_FOR_PAYMENT(invoiceId){
-      this.loading=true
-      // if (!this.moreDataAvailable) {
-      //   // If no more data is available, stop fetching
-      //   this.loading=false
-      //   return
-      // }
-      const invoicesCollectionQuery = query(invoicesCollectionRef,where("invoiceId", "==", invoiceId))
-      getInvoicesSnapshot=onSnapshot(invoicesCollectionQuery, (querySnapshot) => {
-    const fbInvoices = []
-    querySnapshot.forEach(async (doc) => {
-      const invoice = {
+    async GET_INVOICE_FOR_PAYMENT(invoiceId) {
+      const invoicesCollectionQuery = query(invoicesCollectionRef, where("invoiceId", "==", invoiceId));
+
+      getInvoicesSnapshot = onSnapshot(invoicesCollectionQuery, (querySnapshot) => {
+        const fbInvoices = [];
+        const paymentPromises = [];
+
+        querySnapshot.forEach((doc) => {
+          const invoice = {
             docId: doc.id,
             invoiceId: doc.data().invoiceId,
-            workItemList: doc.data().workItemList||[],
-            patientName: doc.data().patientName||'',
-            patientId: doc.data().patientId||'',
+            workItemList: doc.data().workItemList || [],
+            patientName: doc.data().patientName || '',
+            patientId: doc.data().patientId || '',
             invoiceDateUnix: doc.data().invoiceDateUnix,
             invoiceDate: doc.data().invoiceDate,
-            invoiceDraft: doc.data().invoiceDraft||'',
-            deleted:doc.data().deleted,
-          }
-          const paymentsCollectionRef = collection(
-            invoicesCollectionRef,
-            invoice.invoiceId,
-            'payments'
-          );
+            invoiceDraft: doc.data().invoiceDraft || '',
+            deleted: doc.data().deleted,
+          };
 
-          const paymentsQuery = query(paymentsCollectionRef);
+          const paymentsPromise = new Promise((resolve) => {
+            const paymentsCollectionRef = collection(
+              invoicesCollectionRef,
+              invoice.invoiceId,
+              'payments'
+            );
 
-          // Real-time listener for payments
-            onSnapshot(paymentsQuery,  (querySnapshot) => {
-            const payments = [];
-            querySnapshot.forEach((doc) => {
-              payments.push({
-                paymentId: doc.id,
-                paid: doc.data().paid,
-                date: doc.data().date,
-                workId: doc.data().workId||'',
-                currency: doc.data().currency,
-                dateUnix: doc.data().dateUnix,
-                type:doc.data().type,
-                category:doc.data().category,
+            onSnapshot(query(paymentsCollectionRef), (querySnapshot) => {
+              const payments = [];
+              querySnapshot.forEach((doc) => {
+                payments.push({
+                  paymentId: doc.id,
+                  paid: doc.data().paid,
+                  date: doc.data().date,
+                  workId: doc.data().workId || '',
+                  currency: doc.data().currency,
+                  dateUnix: doc.data().dateUnix,
+                  type: doc.data().type,
+                  category: doc.data().category,
+                });
               });
+
+              // Set works data before resolving
+              const works = this.GET_CURRENT_INVOICE_WORKS(invoice, payments);
+              invoice.works = works;
+              this.storeWorks.invoiceWorks[invoice.invoiceId] = works;
+              this.paymentsInvoice[invoice.invoiceId] = invoice;
+              resolve();
             });
-            invoice.payments=payments
-            console.log(invoice,payments,'invoicey')
+          });
 
-             invoice.works=this.GET_CURRENT_INVOICE_WORKS(invoice,payments)
-             this.paymentsInvoice[invoice.invoiceId]=invoice
-          })
+          paymentPromises.push(paymentsPromise);
+          fbInvoices.push(invoice);
+        });
 
-          console.log(invoice,'invoicc')
-        //  await this.storePayments.getPaymentsForInvoice(invoice.invoiceId)
-       })
-       console.log(this.invoiceData,'invoiceData')
-     })
-
-     this.loading=false
+        // Wait for all payment listeners to complete
+        Promise.all(paymentPromises).then(() => {
+          console.log('All payments and works processed');
+          this.loading = false;
+        });
+      });
     },
     async SET_PATIENT_INVOICES(patientId, invoiceId) {
       try {
@@ -361,6 +342,8 @@ export const useStoreInvoices = defineStore('storeInvoices', {
 
         const querySnapshot = await getDocs(invoicesCollectionQuery);
         const fbInvoices = [];
+        const paymentPromises = [];
+
         querySnapshot.forEach((doc) => {
           const invoice = {
             docId: doc.id,
@@ -372,48 +355,55 @@ export const useStoreInvoices = defineStore('storeInvoices', {
             invoiceDraft: doc.data().invoiceDraft,
             workItemList: doc.data().workItemList,
           };
-          const paymentsCollectionRef = collection(
-            invoicesCollectionRef,
-            invoice.invoiceId,
-            'payments'
-          );
 
-          const paymentsQuery = query(paymentsCollectionRef);
+          const paymentsPromise = new Promise((resolve) => {
+            const paymentsCollectionRef = collection(
+              invoicesCollectionRef,
+              invoice.invoiceId,
+              'payments'
+            );
 
-          // Real-time listener for payments
-            onSnapshot(paymentsQuery,  (querySnapshot) => {
-            const payments = [];
-            querySnapshot.forEach((doc) => {
-              payments.push({
-                paymentId: doc.id,
-                paid: doc.data().paid,
-                date: doc.data().date,
-                workId: doc.data().workId,
-                currency: doc.data().currency,
-                dateUnix: doc.data().dateUnix,
-                category:doc.data().category,
-                type:doc.data().type,
+            onSnapshot(query(paymentsCollectionRef), (querySnapshot) => {
+              const payments = [];
+              querySnapshot.forEach((doc) => {
+                payments.push({
+                  paymentId: doc.id,
+                  paid: doc.data().paid,
+                  date: doc.data().date,
+                  workId: doc.data().workId,
+                  currency: doc.data().currency,
+                  dateUnix: doc.data().dateUnix,
+                  category: doc.data().category,
+                  type: doc.data().type,
+                });
               });
+
+              // Set works data before resolving
+              const works = this.GET_CURRENT_INVOICE_WORKS(invoice, payments);
+              invoice.works = works;
+
+              if (invoiceId && invoice.invoiceId === invoiceId) {
+                this.storePayments.paymentInvoices = reactive([{
+                  ...invoice,
+                }]);
+              }
+              console.log(this.storePayments.paymentInvoices,'paymentto')
+
+              resolve();
             });
-            invoice.payments=payments
-            console.log(invoice,payments,'invoicey')
+          });
 
-             invoice.works=this.GET_CURRENT_INVOICE_WORKS(invoice,payments)
-             if (invoiceId && invoice.invoiceId === invoiceId) {
-              this.storePayments.paymentInvoices = reactive([{
-                ...invoice,
-              }]);
-            }
-          })
+          paymentPromises.push(paymentsPromise);
           fbInvoices.push(invoice);
-
         });
 
+        // Wait for all payment listeners to complete
+        await Promise.all(paymentPromises);
         this.patientInvoices = fbInvoices;
-        console.log('this.patientInvoices',this.patientInvoices)
         this.loadingInvoices = false;
+
       } catch (error) {
-        console.error('Error fetching invoices:', error);
+        console.error('Error in SET_PATIENT_INVOICES:', error);
         this.loadingInvoices = false;
       }
     },
@@ -556,91 +546,82 @@ export const useStoreInvoices = defineStore('storeInvoices', {
 //       return updatedWorks;
 //     },
 
-    async GET_INVOICES_NEXT()  {
-
+    async GET_INVOICES_NEXT() {
       console.log('LOADINGNEXT')
-      this.loading=true
-      // if (!this.moreDataAvailable) {
-      //   // If no more data is available, stop fetching
-      //   this.loading=false
-      //   return
-      // }
-      const invoicesCollectionQuery = query(invoicesCollectionRef,orderBy("invoiceDateUnix","desc"),where("deletedDateUnix", "==", null),this.limit ? limit(this.limit) : undefined)
-      getInvoicesSnapshot=onSnapshot(invoicesCollectionQuery, (querySnapshot) => {
-    const fbInvoices = []
-    querySnapshot.forEach((doc) => {
-      const invoice = {
+      this.loading = true
+      const invoicesCollectionQuery = query(
+        invoicesCollectionRef,
+        orderBy("invoiceDateUnix", "desc"),
+        where("deletedDateUnix", "==", null),
+        this.limit ? limit(this.limit) : undefined
+      )
+
+      getInvoicesSnapshot = onSnapshot(invoicesCollectionQuery, (querySnapshot) => {
+        const fbInvoices = []
+
+        // Track all payment listeners to ensure data is complete
+        const paymentPromises = []
+
+        querySnapshot.forEach((doc) => {
+          const invoice = {
             docId: doc.id,
             invoiceId: doc.data().invoiceId,
-            workItemList: doc.data().workItemList||[],
-            patientName: doc.data().patientName||'',
-            patientId: doc.data().patientId||'',
+            workItemList: doc.data().workItemList || [],
+            patientName: doc.data().patientName || '',
+            patientId: doc.data().patientId || '',
             invoiceDateUnix: doc.data().invoiceDateUnix,
             invoiceDate: doc.data().invoiceDate,
-            // workItemList: doc.data().workItemList,
-            // paymentTerms: doc.data().paymentTerms,
-            // paymentDueDateUnix: doc.data().paymentDueDateUnix,
-            // paymentDueDate: doc.data().paymentDueDate,
-            // productDescription: doc.data().productDescription,
-            // paymentItemList: doc.data().paymentItemList,
-            // invoiceTotal: doc.data().invoiceTotal,
-            // invoicePending: doc.data().invoicePending,
-            invoiceDraft: doc.data().invoiceDraft||'',
-            // invoicePaid: doc.data().invoicePaid,
-            deleted:doc.data().deleted,
+            invoiceDraft: doc.data().invoiceDraft || '',
+            deleted: doc.data().deleted,
           }
-          fbInvoices.push(invoice)
-          const paymentsCollectionRef = collection(
-            invoicesCollectionRef,
-            invoice.invoiceId,
-            "payments"
-          )
-            this.loading = true; // Set loading state to true when data fetching begins
-            console.log(this.loading, 'paymentsloading');
 
+          const paymentsPromise = new Promise((resolve) => {
+            const paymentsCollectionRef = collection(
+              invoicesCollectionRef,
+              invoice.invoiceId,
+              "payments"
+            )
 
-            const paymentsQuery = query(paymentsCollectionRef);
-
-            // Set up a real-time listener for payments
-            this.unsubscribe = onSnapshot(paymentsQuery, (querySnapshot) => {
-              const payments = [];
-
+            onSnapshot(query(paymentsCollectionRef), (querySnapshot) => {
+              const payments = []
               querySnapshot.forEach((doc) => {
-                let payment = {
+                payments.push({
                   paymentId: doc.id,
                   paid: doc.data().paid,
                   date: doc.data().date,
-                  workId: doc.data().workId||'',
+                  workId: doc.data().workId || '',
                   currency: doc.data().currency,
                   dateUnix: doc.data().dateUnix,
-                  category:doc.data().category,
-                  type:doc.data().type,
-                };
-                payments.push(payment);
-              });
+                  category: doc.data().category,
+                  type: doc.data().type,
+                })
+              })
 
-            this.storePayments.invoicePayments[invoice.invoiceId] = payments;
-            console.log(this.storePayments.invoicePayments[invoice.invoiceId],'paymentforinvoice')
+              // Set works data before resolving
+              invoice.works = this.GET_CURRENT_INVOICE_WORKS(invoice, payments)
+              this.storePayments.invoicePayments[invoice.invoiceId] = payments
+              resolve()
             })
-       })
-       if (querySnapshot.size < this.limit) {
-        // If the number of retrieved documents is less than the requested limit,
-        // it means no more data is available
-        this.moreDataAvailable = false;
-      } else {
-        this.limit += 4; // Increase the limit for the next query
-      }
+          })
 
-        // Fetch payments and works for each invoice
-        // fbInvoices.forEach(invoice=>{
-        //   this.storePayments.getPaymentsForInvoice(invoice.invoiceId)
-        // }
-        // )
-       this.invoiceData = fbInvoices
-       console.log(this.invoiceData,'invoiceData')
-     })
+          paymentPromises.push(paymentsPromise)
+          fbInvoices.push(invoice)
+        })
 
-     this.loading=false
+        // Wait for all payment listeners to complete before updating invoiceData
+        Promise.all(paymentPromises).then(() => {
+          this.invoiceData = fbInvoices
+          console.log(this.invoiceData, 'invoiceData')
+
+          if (querySnapshot.size < this.limit) {
+            this.moreDataAvailable = false
+          } else {
+            this.limit += 4
+          }
+
+          this.loading = false
+        })
+      })
     },
     async DELETE_INVOICE(docId,deletePayments) {
       try {
@@ -879,6 +860,7 @@ export const useStoreInvoices = defineStore('storeInvoices', {
      },
      GET_CURRENT_INVOICE_WORKS: (state)=>{
       return (invoice,payments) =>{
+
         // const payments= state.storePayments.invoicePayments[invoice.invoiceId]||[]
         const works = invoice.workItemList || [];
         const currencies = [...new Set(works.map((item) => item.currency))];
@@ -891,8 +873,10 @@ export const useStoreInvoices = defineStore('storeInvoices', {
         const subTotals = currencies.map((currency) => {
           const paid = payments.reduce((accumulator, item) => {
             if (item.currency === currency) {
+              if (item.currency === currency && (item.type === 'payment' || item.type === 'expense')) {
               return accumulator + Number(item.paid || 0);
             }
+          }
             return accumulator;
           }, 0);
 
@@ -947,12 +931,12 @@ export const useStoreInvoices = defineStore('storeInvoices', {
 
           return {
             currency,
-            subTotal: formatPrice(subTotal, currency),
-            totalDiscount: formatPrice(totalDiscount, currency),
-            tax: formatPrice(0, currency),
-            totalAmount: formatPrice(totalAmount, currency),
-            paid: formatPrice(paid, currency),
-            dueAmount: formatPrice(dueAmount, currency),
+            subTotal: computed(() => formatPrice(subTotal, currency)).value,
+            totalDiscount: computed(() => formatPrice(totalDiscount, currency)).value,
+            tax: computed(() => formatPrice(0, currency)).value,
+            totalAmount: computed(() => formatPrice(totalAmount, currency)).value,
+            paid: computed(() => formatPrice(paid, currency)).value,
+            dueAmount: computed(() => formatPrice(dueAmount, currency)).value,
             paidPercentage,
             highestPaymentDate,
             highestPaymentDueDate,
@@ -1015,7 +999,33 @@ export const useStoreInvoices = defineStore('storeInvoices', {
             formattedPrice: formatPrice(price, work.currency), // Add formatted price
           };
         });
-        const updatedWorks = worksWithDetails.map(work => {
+              // Function to handle doctor label modifications
+        function manipulateRepeatedDoctorLabels(arr) {
+          const copiedArray = JSON.parse(JSON.stringify(arr)); // Deep copy to avoid mutation
+          const doctorLabels = {};
+
+          copiedArray.forEach((obj, index) => {
+            const doctorLabel = obj.doctor.name;
+            if (!doctorLabels[doctorLabel]) {
+              doctorLabels[doctorLabel] = index; // Store index of the last occurrence
+            } else {
+              doctorLabels[doctorLabel] = index; // Update index for repeated doctor.label
+            }
+          });
+
+          copiedArray.forEach((obj, index) => {
+            const doctorLabel = obj.doctor.name;
+            if (index !== doctorLabels[doctorLabel]) {
+              obj.doctor.name = ''; // Clear label for non-last occurrences
+            }
+          });
+
+          return copiedArray;
+        }
+
+        const modifiedWorks = manipulateRepeatedDoctorLabels(worksWithDetails);
+
+        const updatedWorks = modifiedWorks.map(work => {
           if (parseInt(work.paidPercentage) !== 100&&!state.storePayments.editPayment) {
 
             return { ...work, selected: true };
@@ -1025,6 +1035,7 @@ export const useStoreInvoices = defineStore('storeInvoices', {
           }
           return work;
         });
+
 
 
         updatedWorks.subTotals = subTotals;
@@ -1038,10 +1049,6 @@ export const useStoreInvoices = defineStore('storeInvoices', {
      GET_PATIENT_INVOICES: (state)=>{
       return (patientId) =>{
        const patientInvoices=state.patientInvoices.filter(invoice=> invoice.patientId===patientId)
-
-       patientInvoices.forEach(patientInvoice=>{patientInvoice.works=state.storeWorks.invoiceWorks[patientInvoice.invoiceId]
-        console.log(patientInvoice.works,'XXXX')
-      })
        return patientInvoices
       }
      },

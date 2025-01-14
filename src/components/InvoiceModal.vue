@@ -774,6 +774,7 @@ const    handleWorkItemChange=(value)=> {
        let workItemList = []
        console.log()
        currentInvoice.workItemList.forEach(work =>{
+        work.price=(work.price.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ','))
       let  workItem={}
         workItem.label=work.label
         workItem.color=work.color

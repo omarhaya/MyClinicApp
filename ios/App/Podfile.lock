@@ -44,15 +44,15 @@ EXTERNAL SOURCES:
     :path: "../../node_modules/@capacitor/status-bar"
 
 SPEC CHECKSUMS:
-  Capacitor: 187bd7847b6f71467015a20200a1a071be3e5f14
-  CapacitorActionSheet: 653276dc474be8914db13293a987915f16148d00
-  CapacitorApp: 96672537adb2c4b0890024f1cd8e2a3b510adc03
+  Capacitor: 3aff4dee0552f6badcd04f47ab3174387d71f47d
+  CapacitorActionSheet: d1655abbbd3a57b86a7868269e8114848b5dac3e
+  CapacitorApp: 213321c51cdeb1193b8506c44816c0c9d488f357
   CapacitorCordova: be703980ca797f847c3356f78fa175d21c8330c2
-  CapacitorHaptics: a41a9c0c1deadb79550885a0a0786bec2c5f3b24
-  CapacitorKeyboard: 5b92ccdd5177aa0fc1b25d6ae885c96594b4cc98
-  CapacitorPushNotifications: 293fabe42c7229756078e81f2d3a60394ba4e5d8
-  CapacitorStatusBar: 84f75b4b7814bdbaea7464a44b22511c2dba12ef
+  CapacitorHaptics: 19142a9a0544aa6225ea57058607dd7f6aa396b3
+  CapacitorKeyboard: 79f5eb425cbddd3cf5de451f629264ee6c267026
+  CapacitorPushNotifications: 36c5b49e33c5ab2b22e0dca04e37d69e359c0e63
+  CapacitorStatusBar: 789edbe0c715102fabb24b178b9a390729bf9ecf
 
 PODFILE CHECKSUM: 55801c35d7b651d2d17f7c755e6679e79e33d2c0
 
-COCOAPODS: 1.15.2
+COCOAPODS: 1.16.2

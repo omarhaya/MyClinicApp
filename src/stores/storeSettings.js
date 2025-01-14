@@ -48,7 +48,7 @@ export const useStoreSettings = defineStore('storeSettings', {
           if (docSnapshot.exists()) {
             console.log('Live Document data:', docSnapshot.data());
             const userData = docSnapshot.data()
-            this.miniState=userData.miniState
+            this.miniState=userData.miniState||true
             this.userSettings = userData; // Update the store with the data
           } else {
             console.log('Document does not exist!');

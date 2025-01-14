@@ -330,7 +330,7 @@ exports.incomingWhatsAppMessage = https.onRequest(async (req, res) => {
 // adding Rent Function
 // Scheduled function to run daily
 
-exports.addRentPaymentOnSchedule = onSchedule("every 1 minutes", async (event) => {
+exports.addRentPaymentOnSchedule = onSchedule("0 8 * * *", async (event) => {
   try {
     const today = dayjs();
     const todayDayOfMonth = today.date(); // Day of the month (1-31)

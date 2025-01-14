@@ -11,7 +11,7 @@
       <div class="left flex q-pt-xs q-pb-xs ">
     <span class="tracking-number column"><span class="col">#{{ payment.invoiceId }}</span>
     <span class="col row" >
-      <span class="row" v-if="storeInvoices.paymentsInvoice[payment.invoiceId]&& storeInvoices.paymentsInvoice[payment.invoiceId].works" v-for="work in  storeInvoices.paymentsInvoice[payment.invoiceId].works">
+      <span class="row" v-if="storeWorks.invoiceWorks[payment.invoiceId]&& storeWorks.invoiceWorks[payment.invoiceId]" v-for="work in  storeWorks.invoiceWorks[payment.invoiceId]">
         <GrowingLinearProgress class="col" :color="work.color" :value="percentageValue(work).value"/>
       </span>
       <span class="row" v-else >
@@ -28,7 +28,7 @@
       <q-avatar v-if="payment.patientName&&!isArabic(payment.patientName)" class="q-mr-xs avatar-name" size="35px" font-size="16px" color="green-3" text-color="white"> {{getInitials( payment.patientName) }} </q-avatar>
             <q-avatar v-if="payment.patientName&&isArabic(payment.patientName)" class="q-mr-xs avatar-person" font-size="42px" size="35px" color="green-3" text-color="white" icon="person"/>
       <div class="text-bold" > {{ payment.patientName }}</div></div>
-      <div class="col-12 col-md-4" v-if="storeInvoices.paymentsInvoice[payment.invoiceId]"  v-for="work in storeInvoices.paymentsInvoice[payment.invoiceId].works.filter(w => w.workId === payment.workId)">
+      <div class="col-12 col-md-4" v-if="storeWorks.invoiceWorks[payment.invoiceId]"  v-for="work in storeWorks.invoiceWorks[payment.invoiceId].filter(w => w.workId === payment.workId)">
     <div class="text-bold" ><q-badge :color="work.color" class="col q-mt-xs q-pa-xs">{{ work.label }}</q-badge></div></div>
     <div class="col-12 col-md-4" v-else-if="payment.category=='Discount'">
     <div class="text-bold" ><q-badge :color="'grey'" class="col q-mt-xs q-pa-xs">{{ payment.category }}</q-badge></div></div>
@@ -85,12 +85,13 @@ rounded
 </q-circular-progress> -->
 
 
-
+<span class="row">
 <span v-if="storeInvoices.paymentsInvoice[payment.invoiceId]" class="dateFormat">{{ formatDateTime }}</span>
 <span v-else class="dateFormat">  <q-skeleton animation="blink" type="text" class="text-caption" width="100px" /></span>
-<div v-if="!mobile" @click.stop @ionRippleEffect.stop class="q-pt-xs">
-          <DropdownMenu>
-                <DropdownMenuTrigger >
+<div class="icon-wrapper" @click.stop.prevent @mouseenter.stop.prevent>
+  <div v-if="!mobile" @click.stop.prevent @ionRippleEffect.stop class="dropdown-container">
+          <DropdownMenu >
+                <DropdownMenuTrigger class="dropdown-trigger">
                   <SidebarMenuAction show-on-hover>
                     <MoreHorizontal class="text-grey hover:bg-secondary rounded-lg p-0.5 transition-colors duration-200" />
                     <span class="sr-only">More</span>
@@ -108,8 +109,10 @@ rounded
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
+            </div>
           </div>
-  </div>
+        </span>
+      </div>
     </ion-item>
     <ion-item-options v-if="mobile" side="end">
       <ion-item-option  @click="handleClick()" ><q-icon size="25px" name="edit"/> Edit</ion-item-option>
@@ -321,7 +324,7 @@ const Works = computed(() => {
  */
  function getWorkColor(workId) {
   if (storeInvoices.paymentsInvoice[props.payment.invoiceId]) {
-    const works=storeInvoices.paymentsInvoice[props.payment.invoiceId].works
+    const works=storeWorks.invoiceWorks[props.payment.invoiceId]
     console.log(works,'worksss')
     const work = works.find((item) => item.workId === workId);
     return work?.color || 'grey'; // Default to 'grey' if no matching work or color found
@@ -482,13 +485,15 @@ cursor: pointer;
 // gap: 16px;
 margin-bottom: 16px;
 color: #000000;
-border-radius: 20px;
+  border-radius: 20px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1), 0 0px 3px rgba(0, 0, 0, 0.08);
+  border: 1px 1px 1px 1px solid rgba(0, 0, 0, 0.1);
 
-// min-height: 100px;
-background-color: #e1e6df;
+  // min-height: 100px;
+  background-color: #fff;
 align-items: center;
 ion-item {
-  --background: #e1e6df;
+  --background: #fff;
   --padding-top:0px !important;
   --padding-bottom:0px !important;
 
@@ -553,11 +558,77 @@ span {
     min-width: 108px;
 }
 .ion-dark .payment {
-background-color: #1e3639;
-color: #ffffff;
-ion-item {
-  --background: #1e3639;
+  background-color: #1c1917;
+  color: #ffffff;
+  ion-item {
+    --background: #1c1917;
+  }
 }
+
+:deep(.dropdown-trigger) {
+  position: relative;
+  z-index: 11;
+  display: flex;
+  align-items: center;
+  height: 100%;
+}
+
+.icon-wrapper {
+  position: relative;
+  z-index: 100;
+  pointer-events: auto;
+  display: flex;
+  align-items: center;
+  height: 100%;
+  padding: 0px 0px 0px 8px;
+
+  .dropdown-container {
+    position: relative;
+    z-index: 101;
+    display: flex;
+    align-items: center;
+    height: 100%;
+  }
+}
+
+:deep(.sliding-item) {
+  &:has(+ .icon-wrapper:hover),
+  &:has(~ .icon-wrapper:hover) {
+    --ion-item-background: transparent !important;
+    --background-hover: transparent !important;
+    --background-activated: transparent !important;
+    --background-focused: transparent !important;
+    --ripple-color: transparent !important;
+    background: transparent !important;
+
+    &::part(native) {
+      background: transparent !important;
+    }
+  }
+}
+
+// Prevent button hover state
+ion-item {
+  &:has(.icon-wrapper:hover) {
+    --background-hover: transparent !important;
+    --background-activated: transparent !important;
+    --background-focused: transparent !important;
+    --ripple-color: transparent !important;
+    pointer-events: none;
+  }
+}
+
+// Remove hover effects globally when dropdown is open
+:deep([data-state="open"]) {
+  & ~ ion-item,
+  & ~ .sliding-item,
+  & ~ * ion-item {
+    --background-hover: transparent !important;
+    --background-activated: transparent !important;
+    --background-focused: transparent !important;
+    --ripple-color: transparent !important;
+    pointer-events: none !important;
+  }
 }
 </style>
 
@@ -574,5 +645,19 @@ transition: opacity 0.3s ease-in-out;
 }
 .line-through {
   text-decoration: line-through;
+}
+// Prevent ion-item ripple effect when dropdown is open
+:deep(.ion-activated) {
+  --ion-color-primary: transparent !important;
+  --ion-color-primary-contrast: transparent !important;
+  --ion-color-primary-shade: transparent !important;
+  --ion-color-primary-tint: transparent !important;
+  --ion-ripple-color: transparent !important;
+}
+
+// Override ion-item button styles when dropdown is active
+:deep(.ion-item-button-active) {
+  background: transparent !important;
+  opacity: 1 !important;
 }
 </style>

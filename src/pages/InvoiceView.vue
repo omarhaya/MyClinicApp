@@ -5,7 +5,7 @@
       <ion-buttons slot="start">
         <ion-back-button :text="lastRouteText" :default-href="lastRoute"></ion-back-button>
       </ion-buttons>
-      <ion-title>Back Button</ion-title>
+      <ion-title>Invoice</ion-title>
     </ion-toolbar>
   </ion-header>
     <ion-content :fullscreen="true">
@@ -19,15 +19,18 @@
       <img src="../assets/icon-arrow-left.svg" alt="" /> {{ lastRouteText }}
     </router-link> -->
     <!-- Header -->
-    <div class="header flex">
-      <router-link v-if="!mobile" class="nav-link flex" :to="lastRoute">
-      <img src="../assets/icon-arrow-left.svg" alt="" />
+    <Card class="header flex rounded-2xl">
+      <router-link v-if="!mobile" class="nav-link flex mr-2" :to="lastRoute">
+        <Button variant="outline" size="icon" class="h-7 w-7">
+              <ChevronLeft class="h-4 w-4" />
+              <span class="sr-only">Back</span>
+            </Button>
     </router-link>
       <div class="left flex">
 
         <span>Status</span>
         <div v-if="Works&&!loading&&!storePayments.loading"
-          class="status-button flex"
+          class="status-button p-[7px] flex"
           :class="{
             paid: Works.overallPercentage==100,
             draft: currentInvoice.invoiceDraft,
@@ -56,11 +59,11 @@
           Payment OverDue!
         </q-tooltip></q-icon></span>
         </div>
-        <div v-else ><q-skeleton width="100px" height="35px" class="status-button flex"/></div>
+        <div v-else ><q-skeleton width="100px" height="35px" class=" p-[7px] flex"/></div>
       </div>
 
       <div class="right flex">
-        <button v-if="$q.screen.gt.xs" @click="handleClick()" class="grey">Edit</button>
+        <Button v-if="$q.screen.gt.xs" @click="handleClick()" class="bg-grey h-12 w-[70px]">Edit</Button>
         <q-btn v-else color="grey-7" round flat icon="more_vert">
           <v-menu activator="parent">
         <v-list>
@@ -70,7 +73,7 @@
             <v-list-item-title >New Payment</v-list-item-title>
           </v-list-item>
             <v-list-item
-            @click="deleteInvoice(currentInvoice.invoiceId)"
+            @click="isOpen=true"
           >
             <v-list-item-title  >Delete</v-list-item-title>
           </v-list-item>
@@ -82,28 +85,28 @@
         </v-list>
       </v-menu>
         </q-btn>
-        <button v-if="$q.screen.gt.xs" @click="deleteInvoice(currentInvoice.invoiceId)" class="red">Delete</button>
-        <div v-if="$q.screen.gt.xs" @click="newPayment" class="button flex">
+        <Button v-if="$q.screen.gt.xs" @click="isOpen=true" class="bg-red h-12 rounded-2xl">Delete</Button>
+        <Button v-if="$q.screen.gt.xs" @click="newPayment" class="button h-12 rounded-2xl" >
           <div class="inner-button ">
-            <img src="../assets/icon-plus.svg" alt="" />
-          </div>
-          <div class="payment-text">New Payment</div>
-        </div>
-        <button  @click="updateStatusToPaid(currentInvoice.docId)" v-if="currentInvoice.invoicePending" class="green">
+             <img src="../assets/icon-plus.svg" alt="" />
+           </div>
+           <span v-if="$q.screen.gt.xs">New Payment</span>
+      </Button>
+        <Button  @click="updateStatusToPaid(currentInvoice.docId)" v-if="currentInvoice.invoicePending" class="green">
           Mark as Paid
-        </button>
-        <button
+        </Button>
+        <Button
           v-if="currentInvoice.invoiceDraft || currentInvoice.invoicePaid"
           @click="updateStatusToPending(currentInvoice.docId)"
           class="orange"
         >
           Mark as Pending
-        </button>
+        </Button>
       </div>
-    </div>
+    </Card>
 
     <!-- Invoice Details -->
-    <div v-if="currentInvoice" class="invoice-details flex flex-column">
+    <Card v-if="currentInvoice" class="invoice-details flex flex-column rounded-2xl">
       <div  class="top row">
         <div class="left col">
           <p><span>#</span>{{ currentInvoice.invoiceId }}</p>
@@ -116,7 +119,7 @@
           <p>{{ currentInvoice.billerCountry }}</p>
 
         </div>
-        <div  v-if="Works.subTotals[0]"  class="middle flex col">
+        <div  v-if="Works"  class="middle flex col">
         <div class="payment flex flex-column">
           <h4>Invoice Date</h4>
           <p>
@@ -139,7 +142,7 @@
         </div>
       </div>
 
-      <div  class="bottom flex flex-column">
+      <Card  class="bottom flex rounded-2xl flex-column">
         <div  class="bottom flex flex-column">
         <div class="billing-items ">
           <div class="heading flex">
@@ -276,14 +279,19 @@
           <td>    <span class="currency">{{(subtotal.subTotal.sign +' ' +subtotal.subTotal.currency)}} </span>{{formatMoney(((subtotal.subTotal.absoluteValue)-(subtotal.totalDiscount.absoluteValue))+(((subtotal.subTotal.absoluteValue)-(subtotal.totalDiscount.absoluteValue))*subtotal.tax.absoluteValue))}}</td>
         </tr>
         <tr v-if="subtotal.paid"  >
-          <td :class="{
-            'text-green-6': subtotal.paid.sign!=='-',
-            'text-red': subtotal.paid.sign=='-',
-          }"> <span class="text-bold">Paid</span> </td>
-          <td :class="{
-            'text-green-6 ': subtotal.paid.sign!=='-',
-            'text-red': subtotal.paid.sign=='-',
-          }">  <span class="currency">{{subtotal.paid.sign +' ' +subtotal.paid.currency}} </span >{{formatMoney((subtotal.paid.absoluteValue))}}</td>
+          <td  :class="{
+    'text-green-600 dark:text-green-400': subtotal.paid.sign !== '-', // Greener in dark mode
+    'text-red-600 dark:text-red-400': subtotal.paid.sign === '-', // Softer red in dark mode
+  }"
+>
+  <span class="font-bold">Paid</span>
+</td>
+<td
+  :class="{
+    'text-green-600 dark:text-green-400': subtotal.paid.sign !== '-', // Greener in dark mode
+    'text-red-600 dark:text-red-400': subtotal.paid.sign === '-', // Softer red in dark mode
+  }"
+> <span class="currency">{{subtotal.paid.sign +' ' +subtotal.paid.currency}} </span >{{formatMoney((subtotal.paid.absoluteValue))}}</td>
         </tr>
       </tbody>
     </table>
@@ -293,16 +301,17 @@
       <div class="due row ">
           <p>Amount Due</p>
           <p :class="{
-            'text-green-9': subtotal.dueAmount.absoluteValue==0&&subtotal.subTotal.sign!=='-',
-            'text-red': subtotal.dueAmount.absoluteValue==0&&subtotal.subTotal.sign=='-',
+            'text-green-600 dark:text-green-400': subtotal.dueAmount.absoluteValue === 0 && subtotal.subTotal.sign !== '-', // Greener in dark mode
+            'text-red-600 dark:text-red-400': subtotal.dueAmount.absoluteValue === 0 && subtotal.subTotal.sign === '-', // Softer red in dark mode
           }"
            class="text-right col-12 col-md" v-if="Works" v-for="subtotal in Works.subTotals">
             <span class="currency">{{(subtotal.dueAmount.sign +' ' +subtotal.dueAmount.currency)}} </span>{{ formatMoney(subtotal.dueAmount.absoluteValue) }}
           </p>
         </div>
-      </div>
-    </div>
+      </Card>
+    </Card>
   </div>
+  <ion-action-sheet   @didDismiss="isOpen=false" :is-open="isOpen"  header="Delete The Following Invoice?" :buttons="actionSheetButtons"/>
 </ion-content>
   </ion-page>
 </template>
@@ -316,12 +325,21 @@ import { useStorePayments } from 'src/stores/storePayments'
 import { useStoreWorks } from 'src/stores/storeWorks';
 import {computed,ref,onMounted,onBeforeMount} from 'vue'
 import { useRoute,useRouter } from "vue-router";
-import { IonAccordion, IonAccordionGroup, IonItem, IonLabel, IonPage, IonHeader, IonToolbar, IonTitle, IonContent , IonBackButton, IonButtons,modalController} from '@ionic/vue';
+import { IonAccordion, IonAccordionGroup,IonActionSheet, actionSheetController,IonItem, IonLabel, IonPage, IonHeader, IonToolbar, IonTitle, IonContent , IonBackButton, IonButtons,modalController} from '@ionic/vue';
 import { Platform } from 'quasar'
 import MobileInvoiceModal from 'src/components/MobileInvoiceModal.vue'
 import MobilePaymentModal from 'src/components/MobilePaymentModal.vue'
 import GrowingCircularProgress from '../components/GrowingCircularProgress.vue';
-
+import { ChevronLeft } from 'lucide-vue-next';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from 'src/components/ui/card'
+import Button from "src/components/ui/button/Button.vue"
 const $=useQuasar()
 const page=ref()
 /*
@@ -374,145 +392,146 @@ onBeforeMount(() => {
       storeInvoices.UPDATE_STATUS_TO_PENDING(docId)
     }
     const Works = computed(() => {
-  loading.value = true; // Start loading when recalculating works
-  const invoice = currentInvoice.value || {};
-  const works = invoice.workItemList || [];
-  const payments = storePayments.invoicePayments?.[invoice.invoiceId] || [];
-  const filteredPayments = payments.filter((item) =>
-    item.type === "payment" || item.type === "expense"
-  );
+  // loading.value = true; // Start loading when recalculating works
+  // const invoice = currentInvoice.value || {};
+  // const works = invoice.workItemList || [];
+  // const payments = storePayments.invoicePayments?.[invoice.invoiceId] || [];
+  // const filteredPayments = payments.filter((item) =>
+  //   item.type === "payment" || item.type === "expense"
+  // );
 
-  const currencies = [...new Set(works.map((item) => item.currency))];
+  // const currencies = [...new Set(works.map((item) => item.currency))];
 
-  // Calculate subtotals for each currency
-  const subTotals = currencies.map((currency) => {
-    const paid = filteredPayments.reduce((accumulator, item) => {
-      if (item.currency === currency) {
-        return accumulator + Number(item.paid || 0);
-      }
-      return accumulator;
-    }, 0);
+  // // Calculate subtotals for each currency
+  // const subTotals = currencies.map((currency) => {
+  //   const paid = filteredPayments.reduce((accumulator, item) => {
+  //     if (item.currency === currency) {
+  //       return accumulator + Number(item.paid || 0);
+  //     }
+  //     return accumulator;
+  //   }, 0);
 
-    const paymentDates = filteredPayments.map((payment) => Number(payment.dateUnix || 0));
-    const highestPaymentDate = Math.max(...paymentDates, 0);
+  //   const paymentDates = filteredPayments.map((payment) => Number(payment.dateUnix || 0));
+  //   const highestPaymentDate = Math.max(...paymentDates, 0);
 
-    const paymentDueDates = works.map((work) => Number(work.paymentDueDateUnix || 0));
-    const highestPaymentDueDate = Math.max(...paymentDueDates, 0);
+  //   const paymentDueDates = works.map((work) => Number(work.paymentDueDateUnix || 0));
+  //   const highestPaymentDueDate = Math.max(...paymentDueDates, 0);
 
-    const subTotal = works.reduce((accumulator, item) => {
-      if (item.currency === currency) {
-        const priceValue = Number(item.price.replace(/,/g, '') || 0);
-        return accumulator + priceValue;
-      }
-      return accumulator;
-    }, 0);
+  //   const subTotal = works.reduce((accumulator, item) => {
+  //     if (item.currency === currency) {
+  //       const priceValue = Number(item.price.replace(/,/g, '') || 0);
+  //       return accumulator + priceValue;
+  //     }
+  //     return accumulator;
+  //   }, 0);
 
-    const totalDiscount = works.reduce((accumulator, item) => {
-      if (item.currency === currency) {
-        const discountValue = Number(item.discount || 0);
-        return accumulator + discountValue;
-      }
-      return accumulator;
-    }, 0);
+  //   const totalDiscount = works.reduce((accumulator, item) => {
+  //     if (item.currency === currency) {
+  //       const discountValue = Number(item.discount || 0);
+  //       return accumulator + discountValue;
+  //     }
+  //     return accumulator;
+  //   }, 0);
 
-    const totalAmount = subTotal - totalDiscount;
-    const dueAmount = totalAmount - paid;
-    const paidPercentage = totalAmount !== 0 ? (paid / totalAmount) * 100 : 0;
-    const tax = 0;
+  //   const totalAmount = subTotal - totalDiscount;
+  //   const dueAmount = totalAmount - paid;
+  //   const paidPercentage = totalAmount !== 0 ? (paid / totalAmount) * 100 : 0;
+  //   const tax = 0;
 
-    return {
-      currency,
-      subTotal: formatPrice(subTotal, currency),
-      totalDiscount: formatPrice(totalDiscount, currency),
-      tax: formatPrice(tax, currency),
-      totalAmount: formatPrice(totalAmount, currency),
-      paid: formatPrice(paid, currency),
-      dueAmount: formatPrice(dueAmount, currency),
-      paidPercentage,
-      highestPaymentDate,
-      highestPaymentDueDate,
-    };
-  });
+  //   return {
+  //     currency,
+  //     subTotal: formatPrice(subTotal, currency),
+  //     totalDiscount: formatPrice(totalDiscount, currency),
+  //     tax: formatPrice(tax, currency),
+  //     totalAmount: formatPrice(totalAmount, currency),
+  //     paid: formatPrice(paid, currency),
+  //     dueAmount: formatPrice(dueAmount, currency),
+  //     paidPercentage,
+  //     highestPaymentDate,
+  //     highestPaymentDueDate,
+  //   };
+  // });
 
-  // Calculate overall percentage and overdue status
-  const overallPercentage = subTotals.length > 0
-    ? (
-        subTotals.reduce(
-          (acc, subtotal) => acc + subtotal.paidPercentage,
-          0
-        ) / subTotals.length
-      ).toFixed(1)
-    : 0;
+  // // Calculate overall percentage and overdue status
+  // const overallPercentage = subTotals.length > 0
+  //   ? (
+  //       subTotals.reduce(
+  //         (acc, subtotal) => acc + subtotal.paidPercentage,
+  //         0
+  //       ) / subTotals.length
+  //     ).toFixed(1)
+  //   : 0;
 
-  const overDue = subTotals.some((subtotal) => {
-    const currentDate = new Date().getTime();
-    return subtotal.highestPaymentDueDate && currentDate > subtotal.highestPaymentDueDate;
-  });
+  // const overDue = subTotals.some((subtotal) => {
+  //   const currentDate = new Date().getTime();
+  //   return subtotal.highestPaymentDueDate && currentDate > subtotal.highestPaymentDueDate;
+  // });
 
-  // Add payment details to works
-  const worksWithDetails = works.map((work) => {
-    const allPaid = filteredPayments.reduce((accumulator, item) => {
-      if (item.workId === work.workId) {
-        return accumulator + Number(item.paid || 0);
-      }
-      return accumulator;
-    }, 0);
+  // // Add payment details to works
+  // const worksWithDetails = works.map((work) => {
+  //   const allPaid = filteredPayments.reduce((accumulator, item) => {
+  //     if (item.workId === work.workId) {
+  //       return accumulator + Number(item.paid || 0);
+  //     }
+  //     return accumulator;
+  //   }, 0);
 
-    const price = Number(work.price.replace(/,/g, '') || 0);
-    const discount = payments.reduce((accumulator, item) => {
-      if (item.workId === work.workId && item.category === 'Discount') {
-        return accumulator + Number(item.paid || 0);
-      }
-      return accumulator;
-    }, 0);
+  //   const price = Number(work.price.replace(/,/g, '') || 0);
+  //   const discount = payments.reduce((accumulator, item) => {
+  //     if (item.workId === work.workId && item.category === 'Discount') {
+  //       return accumulator + Number(item.paid || 0);
+  //     }
+  //     return accumulator;
+  //   }, 0);
 
-    work.discount = discount;
-    const total = price - discount;
+  //   work.discount = discount;
+  //   const total = price - discount;
 
-    return {
-      ...work,
-      allPaid,
-      paidPercentage: total !== 0 ? ((allPaid / total) * 100).toFixed(2) : 0,
-      formattedPrice: formatPrice(price, work.currency), // Add formatted price
-      formattedTotal: formatPrice(total, work.currency), // Add formatted total
-    };
-  });
+  //   return {
+  //     ...work,
+  //     allPaid,
+  //     paidPercentage: total !== 0 ? ((allPaid / total) * 100).toFixed(2) : 0,
+  //     formattedPrice: formatPrice(price, work.currency), // Add formatted price
+  //     formattedTotal: formatPrice(total, work.currency), // Add formatted total
+  //   };
+  // });
 
-  // Function to handle doctor label modifications
-  function manipulateRepeatedDoctorLabels(arr) {
-    const copiedArray = JSON.parse(JSON.stringify(arr)); // Deep copy to avoid mutation
-    const doctorLabels = {};
+  // // Function to handle doctor label modifications
+  // function manipulateRepeatedDoctorLabels(arr) {
+  //   const copiedArray = JSON.parse(JSON.stringify(arr)); // Deep copy to avoid mutation
+  //   const doctorLabels = {};
 
-    copiedArray.forEach((obj, index) => {
-      const doctorLabel = obj.doctor.name;
-      if (!doctorLabels[doctorLabel]) {
-        doctorLabels[doctorLabel] = index; // Store index of the last occurrence
-      } else {
-        doctorLabels[doctorLabel] = index; // Update index for repeated doctor.label
-      }
-    });
-    loading.value = false; // End loading after computation
-    copiedArray.forEach((obj, index) => {
-      const doctorLabel = obj.doctor.name;
-      if (index !== doctorLabels[doctorLabel]) {
-        obj.doctor.name = ''; // Clear label for non-last occurrences
-      }
-    });
+  //   copiedArray.forEach((obj, index) => {
+  //     const doctorLabel = obj.doctor.name;
+  //     if (!doctorLabels[doctorLabel]) {
+  //       doctorLabels[doctorLabel] = index; // Store index of the last occurrence
+  //     } else {
+  //       doctorLabels[doctorLabel] = index; // Update index for repeated doctor.label
+  //     }
+  //   });
+  //   loading.value = false; // End loading after computation
+  //   copiedArray.forEach((obj, index) => {
+  //     const doctorLabel = obj.doctor.name;
+  //     if (index !== doctorLabels[doctorLabel]) {
+  //       obj.doctor.name = ''; // Clear label for non-last occurrences
+  //     }
+  //   });
 
-    return copiedArray;
-  }
+  //   return copiedArray;
+  // }
 
-  const modifiedWorks = manipulateRepeatedDoctorLabels(worksWithDetails);
+  // const modifiedWorks = manipulateRepeatedDoctorLabels(worksWithDetails);
 
-  // Add subtotals, overall percentage, and overdue status
-  modifiedWorks.subTotals = subTotals;
-  modifiedWorks.overallPercentage = overallPercentage;
-  modifiedWorks.overDue = overDue;
+  // // Add subtotals, overall percentage, and overdue status
+  // modifiedWorks.subTotals = subTotals;
+  // modifiedWorks.overallPercentage = overallPercentage;
+  // modifiedWorks.overDue = overDue;
 
-  console.log('SubTotals:', subTotals);
-  console.log('Updated works with overallPercentage and overDue:', modifiedWorks);
+  // console.log('SubTotals:', subTotals);
+  // console.log('Updated works with overallPercentage and overDue:', modifiedWorks);
 
-  return modifiedWorks;
+  // return modifiedWorks;
+  return currentInvoice.value.works
 });
 /*
     Styling
@@ -593,6 +612,67 @@ onBeforeMount(() => {
         return 'home';
       }
     });
+    const isOpen=ref(false)
+    const actionSheetButtons =ref([
+        {
+          text: 'Delete',
+          role: 'destructive',
+          data: {
+            action: 'delete',
+          },
+          handler: async () => {
+            const hasPaymentsToDelete = storePayments.invoicePayments[currentInvoice.value.invoiceId] || []
+            if (hasPaymentsToDelete.length) {
+              const paymentsActionSheet = await actionSheetController.create({
+                header: 'Delete associated payments as well?',
+                buttons: [
+                  {
+                    text: 'Delete Payments Too',
+                    role: 'destructive',
+                    handler: async () => {
+                      hasPaymentsToDelete.forEach(async item => {
+                        item.invoiceId = currentInvoice.value.invoiceId
+                        await storePayments.deletePayment(item)
+                      })
+                        await storeInvoices.DELETE_INVOICE(currentInvoice.value.invoiceId)
+                        router.go(-1)
+                    },
+                  },
+                  {
+                    text: 'No just Delete Invoice',
+                    role: 'destructive',
+                    handler: async () => {
+                        await storeInvoices.DELETE_INVOICE(currentInvoice.value.invoiceId)
+                        router.go(-1)
+                    },
+                  },
+                  {
+                    text: 'Cancel',
+                    role: 'cancel',
+
+                  },
+                ],
+                // presentingElement: pageRef.value.$el,
+              });
+              await paymentsActionSheet.present();
+            } else {
+                await storeInvoices.DELETE_INVOICE(currentInvoice.value.invoiceId)
+                router.go(-1)
+            }
+          }
+        },
+        {
+          text: 'Cancel',
+          role:'cancel',
+          data: {
+            action: 'cancel',
+          },
+          handler: () => {
+
+        }
+        },
+      ])
+
 
 function handleClick () {
     if (!mobile.value) {
@@ -660,7 +740,7 @@ const   mobile=computed(()=>{
 <style lang="scss" scoped>
 .ion-dark .invoice-view {
   .header, .invoice-details {
-    background-color: #1e3739;
+    // background-color: #1e3739;
     border-radius: 20px;
 
 }
@@ -723,7 +803,7 @@ const   mobile=computed(()=>{
     padding: 48px;
     margin-top: 24px;
     * {
-    margin: 0 !important;
+    // margin: 0 !important;
     padding: 0;
     box-sizing: border-box;
 }
@@ -766,14 +846,14 @@ const   mobile=computed(()=>{
     }
 
     .middle {
-      margin-top: 50px;
+      // margin-top: 50px;
       color: #181818;
       gap: 16px;
 
       h4 {
         font-size: 12px;
         font-weight: 400;
-        margin-bottom: 12px;
+        // margin-bottom: 12px;
       }
 
       p {
@@ -789,9 +869,6 @@ const   mobile=computed(()=>{
         bottom:1px;
       }
       .payment {
-        h4:nth-child(3) {
-          margin-top: 32px;
-        }
 
         p {
           font-weight: 600;
@@ -817,7 +894,7 @@ const   mobile=computed(()=>{
     }
 
     .bottom {
-      padding-top: 20px;
+      // padding-top: 20px;
 
 
       .billing-items {
@@ -946,7 +1023,7 @@ const   mobile=computed(()=>{
     }
   }
     .flex {
-        flex-wrap: nowrap;
+      flex-wrap: nowrap !important;
     }
  }
 }
@@ -957,7 +1034,7 @@ const   mobile=computed(()=>{
   padding: 15px;
   margin-top: 15px;
   * {
-  margin: 0 !important;
+  // margin: 0 !important;
   padding: 0;
   box-sizing: border-box;
 }
@@ -977,7 +1054,7 @@ const   mobile=computed(()=>{
       h4 {
       font-size: 12px;
       font-weight: 400;
-      margin-bottom: 12px;
+      margin-top: 0px;
     }
     p {
       font-size: 16px;
@@ -999,14 +1076,14 @@ const   mobile=computed(()=>{
   }
 
   .middle {
-    margin-top: 50px;
+    // margin-top: 50px;
     color: #181818;
     gap: 16px;
 
     h4 {
       font-size: 12px;
       font-weight: 400;
-      margin-bottom: 12px;
+      margin-top: 0px;
     }
 
     p {
@@ -1022,9 +1099,7 @@ const   mobile=computed(()=>{
       bottom:1px;
     }
     .payment {
-      h4:nth-child(3) {
-        margin-top: 32px;
-      }
+
 
       p {
         font-weight: 600;
@@ -1050,7 +1125,7 @@ const   mobile=computed(()=>{
   }
 
   .bottom {
-    padding-top: 20px;
+    // padding-top: 20px;
 
 
     .billing-items {
@@ -1152,21 +1227,19 @@ const   mobile=computed(()=>{
     }
   }
 }
-  .flex {
-      flex-wrap: nowrap;
-  }
-}
-.button {
-  .payment-text{
-    padding-top: 7px;
-
-  }.inner-button img {
-    width: 10px;
-    height: 10px;
-    margin: -2px 4px -2px 5px;
 
 }
-}
+// .button {
+//   .payment-text{
+//     padding-top: 7px;
+
+//   }.inner-button img {
+//     width: 10px;
+//     height: 10px;
+//     margin: -2px 4px -2px 5px;
+
+// }
+// }
 
 
 
@@ -1187,7 +1260,7 @@ const   mobile=computed(()=>{
 
   .header,
   .invoice-details {
-    background-color: #e1e6df;
+    // background-color: #e1e6df;
     border-radius: 20px;
   }
 
@@ -1250,7 +1323,7 @@ const   mobile=computed(()=>{
     padding: 48px;
     margin-top: 24px;
     * {
-    margin: 0 !important;
+    // margin: 0 !important;
     padding: 0;
     box-sizing: border-box;
 }
@@ -1270,7 +1343,7 @@ const   mobile=computed(()=>{
         h4 {
         font-size: 12px;
         font-weight: 400;
-        margin-bottom: 12px;
+        margin-top: 0px !important;
       }
       p {
         font-size: 16px;
@@ -1293,14 +1366,14 @@ const   mobile=computed(()=>{
     }
 
     .middle {
-      margin-top: 50px;
+      // margin-top: 50px;
       color: #181818;
       gap: 16px;
 
       h4 {
         font-size: 12px;
         font-weight: 400;
-        margin-bottom: 12px;
+        margin-top: 0px;
       }
 
       p {
@@ -1317,7 +1390,7 @@ const   mobile=computed(()=>{
       }
       .payment {
         h4:nth-child(3) {
-          margin-top: 32px;
+          margin-top: 0px;
         }
 
         p {
@@ -1344,7 +1417,7 @@ const   mobile=computed(()=>{
     }
 
     .bottom {
-      padding-top: 20px;
+      // padding-top: 20px;
 
 
       .billing-items {
@@ -1473,7 +1546,7 @@ const   mobile=computed(()=>{
     }
   }
     .flex {
-        flex-wrap: nowrap;
+      flex-wrap: nowrap !important;
     }
  }
 }
@@ -1484,7 +1557,7 @@ const   mobile=computed(()=>{
   padding: 15px;
   margin-top: 15px;
   * {
-  margin: 0 !important;
+  // margin: 0 !important;
   padding: 0;
   box-sizing: border-box;
 }
@@ -1504,7 +1577,7 @@ const   mobile=computed(()=>{
       h4 {
       font-size: 12px;
       font-weight: 400;
-      margin-bottom: 12px;
+      margin-top: 0px;
     }
     p {
       font-size: 16px;
@@ -1526,14 +1599,14 @@ const   mobile=computed(()=>{
   }
 
   .middle {
-    margin-top: 50px;
+    // margin-top: 50px;
     color: #181818;
     gap: 16px;
 
     h4 {
       font-size: 12px;
       font-weight: 400;
-      margin-bottom: 12px;
+      margin-top: 0px;
     }
 
     p {
@@ -1550,7 +1623,7 @@ const   mobile=computed(()=>{
     }
     .payment {
       h4:nth-child(3) {
-        margin-top: 32px;
+        margin-top: 0px;
       }
 
       p {
@@ -1577,7 +1650,7 @@ const   mobile=computed(()=>{
   }
 
   .bottom {
-    padding-top: 20px;
+    // padding-top: 20px;
 
 
     .billing-items {
@@ -1679,9 +1752,7 @@ const   mobile=computed(()=>{
     }
   }
 }
-  .flex {
-      flex-wrap: nowrap;
-  }
+
 }
 .button {
   .payment-text{
@@ -1690,7 +1761,7 @@ const   mobile=computed(()=>{
   }.inner-button img {
     width: 10px;
     height: 10px;
-    margin: -2px 4px -2px 5px;
+
 
 }
 

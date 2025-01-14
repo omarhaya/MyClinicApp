@@ -15,6 +15,7 @@
              <label for="patient">Patient's Name</label>
              <!-- <q-btn @click="console1">hi</q-btn> -->
              <v-autocomplete
+              ref="patientField"
               :disabled="storeInvoices.loadingInvoices||storePayments.loading||storeWorks.loading"
               v-model="storePayments.patient"
               @update:model-value="getPatientInvoices"
@@ -197,7 +198,7 @@
             </v-select>
             <div v-if="storePayments.paymentInvoices">
               <v-text-field
-              v-if="!mobile"
+                v-if="!mobile"
                 ref="currencyFields"
                 :disabled="storeInvoices.loadingInvoices || storePayments.loading || storeWorks.loading"
                 required
@@ -217,10 +218,10 @@
                 :disabled="storeInvoices.loadingInvoices || storePayments.loading || storeWorks.loading"
                 required
                 type="tel"
-                @ion-input="calculatePercentage2(paymentItemList[currency])"
-                v-model="paymentItemList[currency].paid"
+                @ion-input="calculatePercentage2(paymentItemList)"
+                v-model="paymentItemList.paid"
               >
-              <div slot='start'>{{ currency }}</div>
+              <div slot='start'>{{ paymentItemList.currency }}</div>
             </ion-input>
           </div>
             </div>
@@ -353,10 +354,13 @@ watch(selectedWorks, (newVal, oldVal) => {
       setTimeout(() => {
     // Focus on the first currency field if it exists
     if (currencyFields.value&&mobile.value) {
-      currencyFields.value.$el.setFocus();
+      if(storePayments.patient)  currencyFields.value.$el.setFocus();
+      else patientField.value.$el.setFocus();
     }
     if (currencyFields.value&&!mobile.value) {
-      currencyFields.value.focus();
+    if(storePayments.patient)   currencyFields.value.focus();
+    else patientField.value.focus()
+
     }
   }, 20); // Delay of 5 seconds
 
@@ -466,6 +470,7 @@ const selectWork=(work,works)=>{
   work.selected=!work.selected
 }
  const currencyFields=ref([])
+ const patientField= ref(null)
 /*
  Edit Modal Data
  */
