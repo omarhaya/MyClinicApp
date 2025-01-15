@@ -1,37 +1,40 @@
 <script setup lang="ts">
 import { Button } from 'src/lib/registry/new-york/ui/button'
 import { cn } from 'src/lib/utils'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 
 interface Item {
   title: string
   href: string
+  component?: string
 }
 
-const $route = useRoute()
+const route = useRoute()
+const router = useRouter()
 
 const sidebarNavItems: Item[] = [
   {
     title: 'Profile',
-    href: '/Pages',
+    href: '/settings',
   },
   {
     title: 'Account',
-    href: '/Pages/account',
+    href: '/settings/account',
   },
   {
     title: 'Appearance',
-    href: '/Pages/appearance',
+    href: '/settings/appearance',
   },
   {
     title: 'Notifications',
-    href: '/Pages/notifications',
+    href: '/settings/notifications',
   },
   {
     title: 'Display',
-    href: '/Pages/display',
+    href: '/settings/display',
   },
 ]
+
 </script>
 
 <template>
@@ -39,15 +42,15 @@ const sidebarNavItems: Item[] = [
     <Button
       v-for="item in sidebarNavItems"
       :key="item.title"
-      as="a"
-      :href="item.href"
       variant="ghost"
+      @click="router.push(item.href)"
       :class="cn(
-        'w-full text-left justify-start',
-        $route.path === `${item.href}.html` && 'bg-muted hover:bg-muted',
+        'w-full text-left justify-start cursor-pointer',
+        route.path === item.href && 'dark:!bg-muted bg-grey-3  hover:bg-muted',
       )"
     >
       {{ item.title }}
     </Button>
   </nav>
+
 </template>

@@ -49,7 +49,6 @@ ion-content {
 @import url("https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap");
 
 * {
-
   margin: 0;
   padding: 0;
   box-sizing: border-box;
@@ -220,7 +219,16 @@ ion-content {
   // padding: 8px 20px 10px 14px;
   border-radius: 10px;
 }
-
+.button-custom {
+  &:hover {
+    background-color: #f4f4f5 !important;
+  }
+}
+.dark .button-custom {
+  &:hover {
+    background-color: #27272a !important;
+  }
+}
 .paid-text {
   color: #078359;
 }

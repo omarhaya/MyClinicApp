@@ -2,32 +2,22 @@
 import ProfileForm from '../components/Settings/ProfileForm.vue'
 import FormsLayout from '../layouts/FormsLayout.vue'
 import {
-  IonCard,
-  IonCardContent,
-  IonTitle,
   IonContent,
   IonPage,
-  IonHeader,
-  IonToolbar,
-  IonButton, IonItem, IonList, IonPopover
 } from '@ionic/vue';
 </script>
 
 <template>
-   <ion-page ref="page">
-    <!-- <ion-header v-if="mobile" :translucent="true">
-      <ion-toolbar>
-        <ion-title>Dashboard</ion-title>
-      </ion-toolbar>
-    </ion-header> -->
+  <ion-page ref="page">
     <ion-content>
       <div class="settings-page">
-  <FormsLayout>
-    <ProfileForm />
-  </FormsLayout>
-  </div>
-</ion-content>
-</ion-page>
+        <FormsLayout>
+          <ProfileForm />
+        </FormsLayout>
+      </div>
+    </ion-content>
+  </ion-page>
+
 </template>
 
 <style module>

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { cn } from '@/lib/utils'
+import { cn } from 'src/lib/utils'
 import { CheckIcon } from '@radix-icons/vue'
 import {
   RadioGroupIndicator,

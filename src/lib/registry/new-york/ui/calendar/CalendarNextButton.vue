@@ -1,6 +1,6 @@
 <script lang="ts" setup>
-import { buttonVariants } from '@/lib/registry/new-york/ui/button'
-import { cn } from '@/lib/utils'
+import { buttonVariants } from 'src/lib/registry/new-york/ui/button'
+import { cn } from 'src/lib/utils'
 import { ChevronRightIcon } from '@radix-icons/vue'
 import { CalendarNext, type CalendarNextProps, useForwardProps } from 'radix-vue'
 import { computed, type HTMLAttributes } from 'vue'

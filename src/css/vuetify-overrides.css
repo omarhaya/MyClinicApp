@@ -1,0 +1,22 @@
+/* Override Vuetify's rounded classes */
+.rounded-sm,
+.v-btn.rounded-sm,
+[class*='rounded-sm'],
+.v-btn--rounded,
+.v-card.rounded-sm,
+.v-text-field.rounded-sm {
+	border-radius: 4px !important;
+}
+
+/* Command component specific overrides */
+.command-item,
+[cmdk-item],
+.command-menu-item,
+[role="option"] {
+	border-radius: 4px !important;
+}
+
+/* Ensure these styles take precedence */
+.v-application .rounded-sm {
+	border-radius: 4px !important;
+}

@@ -8,53 +8,92 @@ import Invoices from'src/pages/Invoices.vue'
 import invoice from 'src/pages/InvoiceView.vue'
 import PatientDetails from 'src/pages/PatientDetails.vue'
 import Transactions from 'src/pages/Transactions.vue'
-import Settings from 'src/pages/Settings.vue'
+import FormsLayout from 'src/layouts/FormsLayout.vue'
+import ProfileForm from 'src/components/Settings/ProfileForm.vue'
+import AccountForm from 'src/components/Settings/AccountForm.vue'
+import AppearanceForm from 'src/components/Settings/AppearanceForm.vue'
 
 const routes = [
   {
     path: '/',
-    component:MainLayout,
+    component: MainLayout,
     children: [
-      { path: '/',
-      component: Dashboard,
-      name:'dashboard'
+      {
+        path: '/',
+        component: Dashboard,
+        name: 'dashboard'
       },
-      { path: '/Patients',
-      component: Patients,
-      name:'Patients'
+      {
+        path: '/Patients',
+        component: Patients,
+        name: 'Patients'
       },
-      { path: '/Patients/:patientId',
-      component: PatientDetails,
-      name:'PatientDetails'
+      {
+        path: '/Patients/:patientId',
+        component: PatientDetails,
+        name: 'PatientDetails'
       },
-      { path: '/editPatient/:patientId',
-      component: EditPatient,
-      name:'editpatient'
+      {
+        path: '/editPatient/:patientId',
+        component: EditPatient,
+        name: 'editpatient'
       },
-      { path: '/auth',
-      component: Auth,
-      name:'auth'
+      {
+        path: '/auth',
+        component: Auth,
+        name: 'auth'
       },
-      { path: '/Calendar',
-      component: Calendar,
-      name:'calendar'
+      {
+        path: '/Calendar',
+        component: Calendar,
+        name: 'calendar'
       },
-      { path: '/Invoices',
-      component: Invoices,
-      name:'invoices'
+      {
+        path: '/Invoices',
+        component: Invoices,
+        name: 'invoices'
       },
-      { path: '/Settings',
-        component: Settings,
-        name:'settings'
-        },
-      { path: '/Invoices/:invoiceId',
-      component: invoice,
-      name: 'Invoice',
+      {
+        path: '/settings',
+        component: FormsLayout,
+        children: [
+          {
+            path: '',
+            component: ProfileForm,
+            name: 'profile'
+          },
+          {
+            path: 'account',
+            component: AccountForm,
+            name: 'account'
+          },
+          {
+            path: 'appearance',
+            component: AppearanceForm,
+            name: 'appearance'
+          },
+          {
+            path: 'notifications',
+            component: () => import('src/components/Settings/NotificationsForm.vue'),
+            name: 'notifications'
+          },
+          {
+            path: 'display',
+            component: () => import('src/components/Settings/DisplayForm.vue'),
+            name: 'display'
+          }
+        ]
       },
-      { path: '/Transactions',
-      component: Transactions,
-      name:'transactions'
+      {
+        path: '/Invoices/:invoiceId',
+        component: invoice,
+        name: 'Invoice'
       },
+      {
+        path: '/Transactions',
+        component: Transactions,
+        name: 'transactions'
+      }
     ]
   },
 

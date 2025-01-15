@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { Button } from '@/lib/registry/new-york/ui/button'
-import { Calendar } from '@/lib/registry/new-york/ui/calendar'
+import { Button } from 'src/lib/registry/new-york/ui/button'
+import { Calendar } from 'src/lib/registry/new-york/ui/calendar'
 import {
   Command,
   CommandEmpty,
@@ -8,25 +8,26 @@ import {
   CommandInput,
   CommandItem,
   CommandList,
-} from '@/lib/registry/new-york/ui/command'
-import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/lib/registry/new-york/ui/form'
-import { Input } from '@/lib/registry/new-york/ui/input'
+} from 'src/lib/registry/new-york/ui/command'
+import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from 'src/lib/registry/new-york/ui/form'
+import { Input } from 'src/lib/registry/new-york/ui/input'
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-} from '@/lib/registry/new-york/ui/popover'
-import { Separator } from '@/lib/registry/new-york/ui/separator'
+} from 'src/lib/registry/new-york/ui/popover'
+import { Separator } from 'src/lib/registry/new-york/ui/separator'
 
-import { toast } from '@/lib/registry/new-york/ui/toast'
+import { toast } from 'src/lib/registry/new-york/ui/toast'
 
-import { cn } from '@/lib/utils'
+import { cn } from 'src/lib/utils'
 import { CalendarDate, DateFormatter, getLocalTimeZone, today } from '@internationalized/date'
 import { toTypedSchema } from '@vee-validate/zod'
-import RadixIconsCalendar from '~icons/radix-icons/calendar'
+import { CalendarIcon } from '@radix-icons/vue'
 import { Check, ChevronsUpDown } from 'lucide-vue-next'
 import { toDate } from 'radix-vue/date'
-import { h, ref } from 'vue'
+import { ref } from 'vue'
+import { h } from '@vue/runtime-core'
 import * as z from 'zod'
 
 const open = ref(false)
@@ -106,11 +107,11 @@ async function onSubmit(values: any) {
             <FormControl>
               <Button
                 variant="outline" :class="cn(
-                  'w-[240px] justify-start text-left font-normal',
+                  'w-[240px] justify-start text-left font-normal button-custom',
                   !value && 'text-muted-foreground',
                 )"
               >
-                <RadixIconsCalendar class="mr-2 h-4 w-4 opacity-50" />
+                <CalendarIcon class="mr-2 h-4 w-4 opacity-50" />
                 <span>{{ value ? df.format(toDate(dateValue, getLocalTimeZone())) : "Pick a date" }}</span>
               </Button>
             </FormControl>
@@ -153,7 +154,7 @@ async function onSubmit(values: any) {
             <FormControl>
               <Button
                 variant="outline" role="combobox" :aria-expanded="open" :class="cn(
-                  'w-[200px] justify-between',
+                  'w-[200px] justify-between button-custom',
                   !value && 'text-muted-foreground',
                 )"
               >
@@ -171,8 +172,10 @@ async function onSubmit(values: any) {
               <CommandEmpty>No language found.</CommandEmpty>
               <CommandList>
                 <CommandGroup>
-                  <CommandItem
-                    v-for="language in languages" :key="language.value" :value="language.label"
+                    <CommandItem
+                    v-for="language in languages"
+                    :key="language.value"
+                    :value="language.label"
                     @select="() => {
                       setFieldValue('language', language.value)
                       open = false
@@ -200,7 +203,7 @@ async function onSubmit(values: any) {
     </FormField>
 
     <div class="flex justify-start">
-      <Button type="submit">
+      <Button  type="submit">
         Update account
       </Button>
     </div>

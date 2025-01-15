@@ -91,12 +91,12 @@ const onSubmit = handleSubmit((values) => {
     </FormField>
 
     <FormField v-slot="{ componentField }" name="email">
-      <FormItem>
+      <FormItem >
         <FormLabel>Email</FormLabel>
 
         <Select v-bind="componentField">
           <FormControl>
-            <SelectTrigger>
+            <SelectTrigger class="button-custom">
               <SelectValue placeholder="Select an email" />
             </SelectTrigger>
           </FormControl>
@@ -143,7 +143,7 @@ const onSubmit = handleSubmit((values) => {
                 <FormControl>
                   <Input type="url" v-bind="componentField" />
                 </FormControl>
-                <button type="button" class="absolute py-2 pe-3 end-0 text-muted-foreground" @click="remove(index)">
+                <button type="button" class="absolute  py-2 pe-3 end-0 text-muted-foreground" @click="remove(index)">
                   <Cross1Icon class="w-3" />
                 </button>
               </div>
@@ -156,7 +156,7 @@ const onSubmit = handleSubmit((values) => {
           type="button"
           variant="outline"
           size="sm"
-          class="text-xs w-20 mt-2"
+          class="text-xs w-20 mt-2 button-custom"
           @click="push({ value: '' })"
         >
           Add URL

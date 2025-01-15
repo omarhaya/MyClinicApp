@@ -21,7 +21,7 @@
     <!-- Header -->
     <Card class="header flex rounded-2xl">
       <router-link v-if="!mobile" class="nav-link flex mr-2" :to="lastRoute">
-        <Button variant="outline" size="icon" class="h-7 w-7">
+        <Button variant="outline" size="icon" class="h-7 w-7 button-custom">
               <ChevronLeft class="h-4 w-4" />
               <span class="sr-only">Back</span>
             </Button>

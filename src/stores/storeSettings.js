@@ -1,33 +1,48 @@
 import { defineStore } from 'pinia';
 import {
-  collection, onSnapshot, doc, getDoc,
+  collection, onSnapshot, doc, getDoc, updateDoc,
 } from 'firebase/firestore';
 import { db } from '/src/js/firebase';
 import { useStoreAuth } from './storeAuth';
-import { Platform } from 'quasar';
+import { Platform, useQuasar } from 'quasar';
 import { today } from '@quasar/quasar-ui-qcalendar/src/index.js';
 import { computed } from 'vue';
+import { useTheme } from 'vuetify'
 
 let settingsCollectionRef;
 
 export const useStoreSettings = defineStore('storeSettings', {
   state: () => {
     const mobile = computed(() => {
-      if (Platform.is.desktop) {
-        return false;
-      }
-      if (Platform.is.mobile) {
-        return true;
-      }
-      // Default to false if neither
+      if (Platform.is.desktop) return false;
+      if (Platform.is.mobile) return true;
       return false;
-    });
+    })
+     const $q = useQuasar()
+     const theme = useTheme()
     return {
       selectedDate: today(),
+      $q,
+      theme,
       storeAuth: useStoreAuth(),
-      loading: null,
-      userSettings: null, // To store the document data
-      miniState:true,
+      loading: false,
+      appearance: {
+        theme: 'system', // Default theme
+        fontContext: 'system',
+        miniState: true,
+      },
+      // darkMode: computed({
+      //   get() {
+      //     return $q.dark.isActive
+      //   },
+      //   set(value) {
+      //     $q.dark.set(value)
+      //     document.body.classList.toggle('dark', value)
+      //     document.body.classList.toggle('ion-dark', value)
+      //     theme.global.name.value = value ? 'dark' : 'light'
+      //   }
+      // }),
+      userSettings: [], // To store the document data
     };
   },
 
@@ -40,23 +55,32 @@ export const useStoreSettings = defineStore('storeSettings', {
       this.loading = true;
 
       try {
-        // Reference the document with the specific ID
         const userDocRef = doc(settingsCollectionRef, this.storeAuth.user.uid);
 
-        // Listen for real-time updates
-        const unsubscribe = onSnapshot(userDocRef, (docSnapshot) => {
-          if (docSnapshot.exists()) {
-            console.log('Live Document data:', docSnapshot.data());
-            const userData = docSnapshot.data()
-            this.miniState=userData.miniState||true
-            this.userSettings = userData; // Update the store with the data
+        // Fetch the initial data
+        const docSnapshot = await getDoc(userDocRef);
+        if (docSnapshot.exists()) {
+          const userData = docSnapshot.data();
+          this.userSettings = userData || [];
+          this.appearance = userData.appearance || this.appearance;
+        } else {
+          console.log('Document does not exist!');
+          this.userSettings = null;
+        }
+
+        // Start listening for live updates
+        const unsubscribe = onSnapshot(userDocRef, (snapshot) => {
+          if (snapshot.exists()) {
+            const userData = snapshot.data();
+            this.userSettings = userData || [];
+            this.appearance = userData.appearance || this.appearance;
           } else {
-            console.log('Document does not exist!');
+            console.log('Document does not exist (real-time)!');
             this.userSettings = null;
           }
         });
 
-        // Save the unsubscribe function if needed
+        // Save the unsubscribe function
         this.unsubscribe = unsubscribe;
       } catch (error) {
         console.error('Error fetching settings:', error);
@@ -64,6 +88,7 @@ export const useStoreSettings = defineStore('storeSettings', {
         this.loading = false;
       }
     },
+
     // Cleanup function to stop listening to changes
     stopListening() {
       if (this.unsubscribe) {
@@ -71,16 +96,36 @@ export const useStoreSettings = defineStore('storeSettings', {
         this.unsubscribe = null;
       }
     },
-    async updateConversionRate() {
-      const userDocRef = doc(settingsCollectionRef, this.storeAuth.user.uid);
-      await updateDoc(userDocRef, {
-        [`currencies.${newCurrency}`]: {
-          rateToMain: conversionRate,
-          lastUpdated: new Date().toISOString().split('T')[0]
-        }
-      });
-     }
-  },
 
-  getters: {},
+    async setTheme(theme) {
+      try {
+        this.loading=true
+        this.appearance.theme = theme; // Update the local state
+        const userDocRef = doc(settingsCollectionRef, this.storeAuth.user.uid);
+
+        // Update Firestore with the new theme
+        await updateDoc(userDocRef, {
+          'appearance.theme': theme,
+        });
+      } catch (error) {
+        console.error('Error setting theme:', error);
+      }
+      this.loading=false
+    },
+    async setFontContext(fontContext) {
+      try {
+        this.loading=true
+        this.appearance.fontContext = fontContext; // Update the local state
+        const userDocRef = doc(settingsCollectionRef, this.storeAuth.user.uid);
+
+        // Update Firestore with the new font context
+        await updateDoc(userDocRef, {
+          'appearance.fontContext': fontContext,
+        });
+      } catch (error) {
+        console.error('Error setting font context:', error);
+      }
+      this.loading=false
+    },
+  },
 });

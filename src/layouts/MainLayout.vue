@@ -123,9 +123,9 @@
       v-if="!mobile"
       v-model="leftDrawerOpen"
       show-if-above
-      :mini="storeSettings.miniState"
+      :mini="storeSettings.appearance.miniState"
       @mouseover="checkPopup"
-      @mouseout="storeSettings.miniState = true"
+      @mouseout="storeSettings.appearance.miniState = true"
       :width="200"
       :breakpoint="500"
       class="drawer "
@@ -211,7 +211,7 @@
 </template>
 
 <script setup>
-import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue'
+import { ref, computed, watch, onUnmounted } from 'vue'
 import { useStoreAuth } from 'stores/storeAuth'
 import UserMenu from 'src/components/UserMenu.vue'
 import { Platform } from 'quasar'
@@ -274,25 +274,17 @@ $q.iconMapFn = (iconName) => {
     return { icon }
   }
 }
-const drawer= ref(true)
 const leftDrawerOpen = ref(false)
-const miniState = ref(true)
-const link = ref('')
-
 const toggleLeftDrawer = () => {
   leftDrawerOpen.value = !leftDrawerOpen.value
 }
 
 const checkPopup = () => {
   if (storeInvoices.invoiceModal || storePayments.paymentModal) {
-    storeSettings.miniState = true
+    storeSettings.appearance.miniState = true
   } else {
-    storeSettings.miniState = false
+    storeSettings.appearance.miniState = false
   }
-}
-
-function handleToothSelected(selectedTeeth) {
-  console.log('selectedTeeth', selectedTeeth)
 }
 
 watch(() => storeInvoices.invoiceModal, (currentValue) => {
@@ -314,40 +306,71 @@ function closeWithcontent() {
     storeInvoices.modalActive = true
   }
 }
-
 const mobile = computed(() => Platform.is.mobile)
 const pagePadding = computed(() => ({ '--padding-bottom': mobile.value ? '0px' : '42px' }))
 
-const prefersDark = window.matchMedia('(prefers-color-scheme: dark)')
+// DARK MODE
 
-const darkMode = computed({
-  get() {
-    return $q.dark.isActive
+let systemPreferenceListener = null;
+
+// Function to apply dark mode
+function setDarkMode(isDark) {
+  $q.dark.set(isDark);
+  document.body.classList.toggle('dark', isDark);
+  document.body.classList.toggle('ion-dark', isDark);
+  theme.global.name.value = isDark ? 'dark' : 'light';
+}
+
+// Watch for changes in appearance.theme
+watch(
+  () => storeSettings.appearance.theme,
+  (newTheme) => {
+    // Remove system preference listener if it exists
+    if (systemPreferenceListener) {
+      systemPreferenceListener();
+      systemPreferenceListener = null;
+    }
+
+    if (newTheme === 'light') {
+      setDarkMode(false);
+    } else if (newTheme === 'dark') {
+      setDarkMode(true);
+    } else if (newTheme === 'system') {
+      // Follow the system's color scheme preference
+      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      setDarkMode(prefersDark);
+
+      // Listen for system preference changes
+      const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+      const systemChangeHandler = (event) => {
+        setDarkMode(event.matches);
+      };
+      mediaQuery.addEventListener('change', systemChangeHandler);
+
+      // Store the listener cleanup function
+      systemPreferenceListener = () => {
+        mediaQuery.removeEventListener('change', systemChangeHandler);
+      };
+    }
   },
-  set(value) {
-    $q.dark.set(value)
-    document.body.classList.toggle('dark', value)
-    document.body.classList.toggle('ion-dark', value)
-    theme.global.name.value = value ? 'dark' : 'light'
+  { immediate: true } // Trigger the watcher immediately on initialization
+);
+function toggleDarkMode() {
+  if (storeSettings.appearance.theme!=='dark')
+{
+  storeSettings.setTheme('dark')
+}
+else{
+  storeSettings.setTheme('light')
+}
+}
+
+// Cleanup on unmount
+onUnmounted(() => {
+  if (systemPreferenceListener) {
+    systemPreferenceListener();
   }
-})
-
-const toggleDarkMode = () => {
-  darkMode.value = !darkMode.value
-}
-
-const updateDarkMode = (event) => {
-  darkMode.value = event.matches
-}
-
-onMounted(() => {
-  darkMode.value = prefersDark.matches
-  prefersDark.addEventListener('change', updateDarkMode)
-})
-
-onBeforeUnmount(() => {
-  prefersDark.removeEventListener('change', updateDarkMode)
-})
+});
 
 </script>
 

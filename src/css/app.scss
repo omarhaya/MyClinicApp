@@ -25,7 +25,6 @@
     --destructive-foreground: 0 0% 98%;
     --ring: 142.1 76.2% 36.3%;
     --radius: 0.5rem;
-
   }
 
   .dark {
@@ -57,5 +56,34 @@
   }
   body {
     @apply font-sans antialiased bg-background text-foreground;
+  }
+}
+
+@layer components {
+  .hover\:bg-accent:hover {
+    background-color: hsl(var(--accent)) !important;
+  }
+
+  .hover\:bg-muted:hover {
+    background-color: hsl(var(--muted)) !important;
+  }
+
+  .hover\:text-accent-foreground:hover {
+    color: hsl(var(--accent-foreground)) !important;
+  }
+
+  [cmdk-item]:hover,
+  .command-item:hover {
+    background-color: hsl(var(--accent)) !important;
+    color: hsl(var(--accent-foreground)) !important;
+  }
+
+  .v-btn.shadcn-button:hover {
+    background-color: hsl(var(--accent)) !important;
+    color: hsl(var(--accent-foreground)) !important;
+  }
+
+  .v-btn:not(.v-btn--flat):not(.v-btn--text):hover::before {
+    opacity: 0 !important;
   }
 }
