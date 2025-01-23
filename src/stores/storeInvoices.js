@@ -166,6 +166,7 @@ export const useStoreInvoices = defineStore('storeInvoices', {
             invoiceDate: doc.data().invoiceDate,
             invoiceDraft: doc.data().invoiceDraft || '',
             deleted: doc.data().deleted,
+            type:doc.data().type,
           };
 
           const paymentsPromise = new Promise((resolve) => {
@@ -285,6 +286,7 @@ export const useStoreInvoices = defineStore('storeInvoices', {
             invoiceDate: doc.data().invoiceDate,
             invoiceDraft: doc.data().invoiceDraft || '',
             deleted: doc.data().deleted,
+            type:doc.data().type,
           };
 
           const paymentsPromise = new Promise((resolve) => {
@@ -573,6 +575,7 @@ export const useStoreInvoices = defineStore('storeInvoices', {
             invoiceDate: doc.data().invoiceDate,
             invoiceDraft: doc.data().invoiceDraft || '',
             deleted: doc.data().deleted,
+            type:doc.data().type,
           }
 
           const paymentsPromise = new Promise((resolve) => {

@@ -14,26 +14,18 @@
     </q-dialog>
   <div ref="modalRef" class="invoice-wrap flex flex-column">
      <Loading v-if="!mobile" v-show="loadingModal" />
+    <Tabs v-model="activeTab" class=" pt-3 ">
+    <TabsList class="grid w-[95%] grid-cols-2  mx-auto items-center justify-center ">
+      <TabsTrigger value="payment">
+        Payment
+      </TabsTrigger>
+      <TabsTrigger value="expense">
+        Expense
+      </TabsTrigger>
+    </TabsList>
+
+
      <form ref="formRef" id="form" name="name" @submit.prevent="submitForm" >
-      <!-- <v-banner
-      v-if="mobile"
-      :sticky="true"
-      lines="one"
-    >
-    <div class="row justify-between">
-     <div >
-     <q-btn flat @click="closeInvoice">Cancel</q-btn>
-       </div>
-       <div >
-        <h5 v-if="!storeInvoices.editInvoice">New Invoice</h5>
-       <span v-else>Edit Invoice</span>
-      </div>
-      <div class="justify-end">
-   <q-btn flat v-if="!storeInvoices.editInvoice" type="submit">Create</q-btn>
-   <q-btn flat v-if="storeInvoices.editInvoice" type="sumbit">Update</q-btn>
-  </div>
-    </div>
-    </v-banner> -->
     <div class="invoice-content" :style="{ width: mobile ? '' : '700px' }">
        <div class="m1" v-if="!storeInvoices.editInvoice&&!mobile">New Invoice</div>
        <div class="m1" v-if="storeInvoices.editInvoice&&!mobile">Edit Invoice</div>
@@ -82,6 +74,7 @@
            </div>
          </div>
         </div>
+
             <!-- Invoice Work Details -->
             <div class="column">
          <h4>Work Details</h4>
@@ -145,6 +138,10 @@
            </div>
         </div>
        </div>
+       <!-- <TabsContent value="payment">
+      </TabsContent>
+      <TabsContent value="expense">
+      </TabsContent> -->
        </div>
 
          <q-card v-for="(workItem,index) in storeInvoices.workItemList" :key="index" :class="workCardClass(workItem)" class="work-card no-warp">
@@ -163,15 +160,7 @@
         >
         <TeethSelectionModal :workItem="workItem" @toothSelected="handleToothSelected(workItem, $event)" />
         </v-overlay>
-              <!-- <q-dialog
-                      :key="'dialog_' + index"
-                      full-width
-                      full-height
-                      allow-focus-outside
-                      v-model="storeInvoices.teethModals[index]"
-                      >
-                        <TeethSelectionModal :workItem="workItem" @toothSelected="handleToothSelected(workItem, $event)" />
-                      </q-dialog> -->
+
             </q-chip>
             <span v-for="tooth in workItem.teeth" key="tooth" > {{ tooth }}</span>
                 <div class="row">
@@ -352,16 +341,18 @@
        <!-- Save/Exit -->
        <div class="save flex">
          <div class="left">
-           <button v-if="!mobile" type="button" @click="closeInvoice" class="red">Cancel</button>
+          <Button v-if="!mobile" type="button" @click="closeInvoice"  class="bg-red h-12 rounded-3xl mr-2" >Cancel</Button>
          </div>
          <div class="right flex">
-           <button v-if="!storeInvoices.editInvoice&&!mobile" type="submit" @click="saveDraft" class="grey">Save Draft</button>
-           <button v-if="!storeInvoices.editInvoice&&!mobile" type="submit" class="green">Create Invoice</button>
-           <button v-if="storeInvoices.editInvoice&&!mobile" type="sumbit" class="green">Update Invoice</button>
+          <Button v-if="!storeInvoices.editInvoice&&!mobile" type="submit" class="bg-grey h-12 rounded-3xl mr-2" @click="saveDraft" >Save Draft</Button>
+          <Button v-if="!storeInvoices.editInvoice&&!mobile" type="submit" class="bg-green h-12 rounded-3xl">Create Invoice</Button>
+          <Button v-if="storeInvoices.editInvoice&&!mobile" type="submit" class="bg-green h-12 rounded-3xl">Update Invoice</Button>
          </div>
        </div>
       </div>
      </form>
+
+    </Tabs>
    </div>
 
  </template>
@@ -381,6 +372,14 @@
  import { actionSheetController } from '@ionic/vue';
  import { Platform } from 'quasar'
  import { Haptics, ImpactStyle } from '@capacitor/haptics';
+ import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from 'src/components/ui/tabs'
+import Button from "src/components/ui/button/Button.vue"
+import 'vuetify/styles'
  const $q=useQuasar()
 
 // Check if dark mode is enabled
@@ -410,6 +409,7 @@
   const     modalRef = ref()
   const     deleteAll=ref([])
   const     dataToDelete=ref()
+  const     activeTab = ref('payment')
   const     customFilter= (itemTitle, queryText, item)=> {
         const textOne = item.raw.label.toLowerCase()
         // const textTwo = item.raw.abbr.toLowerCase()
@@ -513,6 +513,7 @@ const    handleWorkItemChange=(value)=> {
    doctor: '',
    teeth:[],
    workId:uid(),
+   type:'payment',
    },
    {
    label:'Filling ',
@@ -524,6 +525,7 @@ const    handleWorkItemChange=(value)=> {
    doctor: '',
    teeth:[],
    workId:uid(),
+   type:'payment',
    },
    {
    label:'Implant',
@@ -535,6 +537,7 @@ const    handleWorkItemChange=(value)=> {
    doctor: '',
    teeth:[],
    workId:uid(),
+   type:'payment',
    },
    {
    label:'Endodontic treatment',
@@ -546,6 +549,7 @@ const    handleWorkItemChange=(value)=> {
    doctor: '',
    teeth:[],
    workId:uid(),
+   type:'payment',
    },
      {
    label:'Removable Orthodontic Appliance',
@@ -557,11 +561,39 @@ const    handleWorkItemChange=(value)=> {
    doctor: '',
    teeth:[],
    workId:uid(),
+   type:'payment',
+   },
+   {
+   label:'Rent',
+   color:'gray',
+   price: '500000',
+   discount:'0',
+   currency:'IQD',
+   description:[],
+   doctor: '',
+   teeth:[],
+   workId:uid(),
+   type:'expense',
    },
 
   ])
 
-  const workOptions=ref(workOptions1)
+  const workOptions=computed (()=>{
+   let workOptionsItems=workOptions1
+   console.log(workOptionsItems,'workOptionsItems')
+     // Ensure workOptions is an array
+  if (!Array.isArray(workOptionsItems)) {
+    console.warn("workOptions is not an array or is undefined", workOptionsItems);
+    return [];
+  }
+    if (activeTab.value === "expense") {
+    return workOptionsItems.filter((item) => item.type === "expense");
+  } else if (activeTab.value === "payment") {
+    return workOptionsItems.filter((item) => item.type === "payment");
+  }
+  return workOptionsItems; // Default to showing all items
+  })
+
   const workOptions2 = reactive([ { work: 'Implant', data: ['ClassI44','classII','Class V','Composite','A2','A1']},{ work: 'Endodontic treatment', data: ['ClassI44','classII','Class V','Composite','A2','A1']},
   { work: 'Removable Orthodontic Appliance', data: ['ClassI','classII2']},
   { work: 'Filling', data: ['ClassI','ClassII','ClassIII','ClassIV','ClassV','Composite','Amalgam']},
@@ -571,8 +603,8 @@ const    handleWorkItemChange=(value)=> {
   function showOptions(){console.log(storeInvoices.workItemList,'iteemlist')}
   const mapWorkOptions=computed(()=>{
   const map =[]
-   workOptions1.forEach((option=>{
-     const index = workOptions1.indexOf(option)
+   workOptions.value.forEach((option=>{
+     const index = workOptions.value.indexOf(option)
      if(index<4)
      map.push(option)
    })
@@ -791,47 +823,12 @@ const    handleWorkItemChange=(value)=> {
         workItem.paymentDueDate=new Date(work.paymentDueDateUnix).toLocaleDateString("en-us", dateOptions)
         workItem.paymentDueDateUnix=work.paymentDueDateUnix
         workItem.docId=work.docId
-        // workItem.patientDetails=patient.value
 
         workItemList.push(workItem)
       })
       console.log(workItemList,'workke')
       storeInvoices.workItemList=workItemList
-      // storeInvoices.workItemList=workItemList
-//       storeInvoices.workItemList= [{   label:'Fixed Applaince',
-//    color:'green',
-//    price:"1000000",
-//    discount:'0',
-//    currency:'IQD',
-//    description:[],
-//    doctor: '',
-//    teeth:[],
-//    workId:uid(),
-//    paymentTerms:"Immediate Payment",
-//    invoiceId:"fae171",
-// doctor:{class:"split1",
-// color:"#5a4d4dd4",
-// doctorId:"e1Q5Eg5McWZjGjmuZpDeJCC3bkB3",
-// name:"Omar Jasim"}
-//    }]
-      //  billerCity.value = currentInvoice.billerCity;
-      //  billerZipCode.value = currentInvoice.billerZipCode;
-      //  billerCountry.value = currentInvoice.billerCountry;
-      //  patient.value = storePatients.patients.filter(v => v.patientId==(currentInvoice.patientId) )[0]
-      //  patientEmail.value = currentInvoice.patientEmail;
-      //  workDescription.value = currentInvoice.workDescription;
-      //  patientCity.value = currentInvoice.patientCity;
-      //  doctorTreated.value = currentInvoice.doctorTreated;
-      //  patientCountry.value = currentInvoice.patientCountry;
-      //  invoiceDateUnix.value = currentInvoice.invoiceDateUnix;
-      //  invoiceDate.value = currentInvoice.invoiceDate;
-      //  paymentTerms.value = currentInvoice.paymentTerms;
-      //  paymentDueDateUnix.value = currentInvoice.paymentDueDateUnix;
-      //  paymentDueDate.value = currentInvoice.paymentDueDate;
-      //  invoicePending.value = currentInvoice.invoicePending;
-      //  invoiceDraft.value = currentInvoice.invoiceDraft;
-      //  paymentItemList.value = currentInvoice.paymentItemList;
-      //  paymentTotal.value = currentInvoice.paymentTotal;
+
      }
  /*
   invoice functions
@@ -1163,7 +1160,6 @@ async function handleDeleteItems (data,itemsToDelete) {
             storeInvoices.updateInvoice(data);
 
             // Proceed with updating/adding works and payments
-            // await handleWorkUpdates(data);
 }
 
 async function handleDeleteItemsAndPayments (data,itemsToDelete) {
@@ -1385,13 +1381,6 @@ async function handleWorkUpdates(data) {
             action: 'delete',
           },
           handler: () => {
-          // console.log(props.invoice.invoiceId,isOpen.value)
-          // const index = storeInvoices.invoiceData.findIndex(item => item.invoiceId === props.invoice.invoiceId);
-
-          // if (index !== -1) {
-          //   // If the item is found, update the property
-          //   storeInvoices.invoiceData[index].deleted = true;
-          // }
           isDeleted.value = true
           setTimeout(() => {
             storeInvoices.DELETE_()
@@ -1692,7 +1681,15 @@ async function handleWorkUpdates(data) {
   margin-top: 0px;
   margin-bottom: 6px;
 }
-
+.button {
+     cursor: pointer;
+     padding: 16px 24px;
+     border-radius: 30px;
+     border: none;
+     font-size: 12px;
+     margin-right: 8px;
+     color: #fff;
+}
  </style>
  <style lang="scss">
 .dark .v-input input {

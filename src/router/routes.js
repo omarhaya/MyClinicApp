@@ -21,7 +21,8 @@ const routes = [
       {
         path: '/',
         component: Dashboard,
-        name: 'dashboard'
+        name: 'dashboard',
+        props: route => ({ toggleSidebar: route.meta.toggleSidebar }),
       },
       {
         path: '/Patients',

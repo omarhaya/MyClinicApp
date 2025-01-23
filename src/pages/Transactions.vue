@@ -513,10 +513,6 @@ const groupedTotals = computed(() => {
   margin: 5px auto;
   height: 100% !important;
 }
-ion-card {
-    // --background: #000;
-    // --color: #9efff0;
-  }
 
   ion-card-title {
     // --color: #52ffe4;
@@ -591,9 +587,7 @@ min-height: auto !important;
     height: calc(var(--v-btn-height) ) !important;
     padding:0px !important;
 }
-.v-btn--density-compact {
 
-}
 .v-input__details {
     display:contents !important;
 }
@@ -628,4 +622,196 @@ ion-input.search-input  {
   }
 
 
+</style>
+
+<style lang="scss" scoped>
+
+.payment {
+
+.dateFormat {
+  color: grey;
+  font-size: clamp(10px, 2vw + 6px, 14px)!important; /* Dynamically scale with container size */
+
+}
+text-decoration: none;
+cursor: pointer;
+// gap: 16px;
+margin-bottom: 16px;
+color: #000000;
+border-radius: 20px;
+box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1), 0 0px 3px rgba(0, 0, 0, 0.08);
+border: 1px 1px 1px 1px solid rgba(0, 0, 0, 0.1);
+
+// min-height: 100px;
+background-color: #e1e6df;
+align-items: center !important;
+ion-item {
+--background: #ebf0e9;
+--padding-top:0px !important;
+--padding-bottom:0px !important;
+
+}
+.q-checkbox {
+box-sizing: border-box !important;
+}
+// .sliding-item{
+//   background: #e1e6df;
+// }
+.person {
+  align-items: center;
+
+}
+span {
+font-size: 13px;
+}
+
+.left {
+align-items: center;
+flex-basis: 60%;
+gap: 16px;
+
+span {
+  flex: 1;
+}
+
+.tracking-number {
+  text-transform: uppercase;
+  max-width:65px;
+}
+}
+
+.right {
+gap: 16px;
+flex-basis: 40%;
+align-items: center !important;
+
+.price {
+  flex: 1;
+  flex-basis: 10% !important;
+  font-size: clamp(18px, 2vw + 18px, 20px)!important; /* Dynamically scale with container size */
+  font-weight: 600px;
+  align-items: center;
+  min-width: 130px;
+  span {
+    font-size: 10px;
+  }
+}
+.status-button{
+  flex-basis: 37% !important;
+  max-width: 140px;
+  min-width: 108px;
+}
+}
+}
+.progress-buttom{
+border-radius: 10px !important;
+flex-basis: 37% !important;
+width:100%;
+  max-width: 140px;
+  min-width: 108px;
+}
+.ion-dark .payment {
+background-color: #1c1917;
+color: #ffffff;
+ion-item {
+  --background: #1c1917;
+}
+}
+
+:deep(.dropdown-trigger) {
+  position: relative;
+  z-index: 11;
+  display: flex;
+  align-items: center;
+  height: 100%;
+}
+
+.icon-wrapper {
+  position: relative;
+  z-index: 100;
+  pointer-events: auto;
+  display: flex;
+  align-items: center;
+  height: 100%;
+  padding: 0px 0px 0px 8px;
+
+  .dropdown-container {
+    position: relative;
+    z-index: 101;
+    display: flex;
+    align-items: center;
+    height: 100%;
+  }
+}
+
+:deep(.sliding-item) {
+  &:has(+ .icon-wrapper:hover),
+  &:has(~ .icon-wrapper:hover) {
+    --ion-item-background: transparent !important;
+    --background-hover: transparent !important;
+    --background-activated: transparent !important;
+    --background-focused: transparent !important;
+    --ripple-color: transparent !important;
+    background: transparent !important;
+
+    &::part(native) {
+      background: transparent !important;
+    }
+  }
+}
+
+// Prevent button hover state
+ion-item {
+  &:has(.icon-wrapper:hover) {
+    --background-hover: transparent !important;
+    --background-activated: transparent !important;
+    --background-focused: transparent !important;
+    --ripple-color: transparent !important;
+    pointer-events: none;
+
+  }
+}
+
+// Remove hover effects globally when dropdown is open
+:deep([data-state="open"]) {
+  & ~ ion-item,
+  & ~ .sliding-item,
+  & ~ * ion-item {
+    --background-hover: transparent !important;
+    --background-activated: transparent !important;
+    --background-focused: transparent !important;
+    --ripple-color: transparent !important;
+    pointer-events: none !important;
+  }
+}
+</style>
+
+<style lang="scss">
+.v-progress-linear__background {
+border-radius: 10px !important;
+}
+.v-progress-linear__determinate {
+position: initial !important;
+}
+.fade-out {
+opacity: 0;
+transition: opacity 0.3s ease-in-out;
+}
+.line-through {
+  text-decoration: line-through;
+}
+// Prevent ion-item ripple effect when dropdown is open
+:deep(.ion-activated) {
+  --ion-color-primary: transparent !important;
+  --ion-color-primary-contrast: transparent !important;
+  --ion-color-primary-shade: transparent !important;
+  --ion-color-primary-tint: transparent !important;
+  --ion-ripple-color: transparent !important;
+}
+
+// Override ion-item button styles when dropdown is active
+:deep(.ion-item-button-active) {
+  background: transparent !important;
+  opacity: 1 !important;
+}
 </style>

@@ -14,16 +14,19 @@
 
         </ion-toolbar>
       </ion-header>
-      <div >
-      <router-link v-if="!mobile" class="nav-link flex" :to="lastRoute">
-      <img src="../assets/icon-arrow-left.svg" alt="" />
-      Back
-    </router-link>
-      <div :class="{'row reverse q-mt-lg q-mr-md ' :$q.screen.gt.sm , 'row q-mt-lg ' :!$q.screen.gt.sm} " >
-
+      <div class="q-pa-xs">
+      <div class="flex items-center space-x-2">
+        <router-link v-if="!mobile" class="nav-link" :to="lastRoute">
+          <Button variant="outline" size="icon" class="h-7 w-7 button-custom">
+            <ChevronLeft class="h-4 w-4" />
+            <span class="sr-only">Back</span>
+          </Button>
+        </router-link>
+        <PatientTitle :patientId="patientId" />
+      </div>
+      <div :class="{'row reverse q-mr-md ' :$q.screen.gt.sm , 'row ' :!$q.screen.gt.sm} " >
 <div :class="{'q-pl-md q-mb-lg q-mr-xs col-12 col-sm-4 q-gutter-md' :$q.screen.gt.sm , 'q-mb-lg col-12 col-md-auto q-pa-xs' :!$q.screen.gt.sm} " >
-<!-- Patient details -->
-<Patient  :patientId="patientId" :patient="patient"/>
+
         </div>
        <div :class="{'col-12 col-sm-8' :$q.screen.gt.sm , ' col-12 ' :!$q.screen.gt.sm} ">
         <div class="q-gutter-y-md">
@@ -78,7 +81,9 @@ import InvoicesPatientView from 'src/components/PaymentsAndAppointments/Invoices
 import Patient from 'src/components/Patients/Patient.vue'
 import { IonAccordion, IonAccordionGroup, IonItem, IonLabel, IonPage, IonHeader, IonToolbar, IonTitle, IonContent , IonBackButton, IonButtons, } from '@ionic/vue';
 import { Platform } from 'quasar'
-
+import Button from 'src/components/ui/button/Button.vue'
+import {  ChevronLeft } from 'lucide-vue-next'
+import PatientTitle from 'src/components/Patients/PatientTitle.vue'
  const page=ref()
  const tab=ref('payments')
 /*

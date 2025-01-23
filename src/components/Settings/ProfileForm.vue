@@ -2,54 +2,39 @@
 import { FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from 'src/lib/registry/default/ui/form'
 import { Button } from 'src/lib/registry/new-york/ui/button'
 import { Input } from 'src/lib/registry/new-york/ui/input'
-import {
-  Select,
-  SelectContent,
-  SelectGroup,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from 'src/lib/registry/new-york/ui/select'
+import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from 'src/lib/registry/new-york/ui/select'
 import { Separator } from 'src/lib/registry/new-york/ui/separator'
 import { Textarea } from 'src/lib/registry/new-york/ui/textarea'
-
 import { toast } from 'src/lib/registry/new-york/ui/toast'
 import { cn } from 'src/lib/utils'
 import { Cross1Icon } from '@radix-icons/vue'
 import { toTypedSchema } from '@vee-validate/zod'
 import { FieldArray, useForm } from 'vee-validate'
-import { h, ref } from 'vue'
+import { ref, watch } from 'vue'
 import * as z from 'zod'
 
+// Import Pinia store
+import { useStoreSettings } from 'src/stores/storeSettings'
+
+// Initialize the settings store
+const storeSettings = useStoreSettings()
+
+// Verified emails
 const verifiedEmails = ref(['m@example.com', 'm@google.com', 'm@support.com'])
 
+// Validation schema
 const profileFormSchema = toTypedSchema(z.object({
-  username: z
-    .string()
-    .min(2, {
-      message: 'Username must be at least 2 characters.',
-    })
-    .max(30, {
-      message: 'Username must not be longer than 30 characters.',
-    }),
-  email: z
-    .string({
-      required_error: 'Please select an email to display.',
-    })
-    .email(),
+  username: z.string().min(2, { message: 'Username must be at least 2 characters.' }).max(30, { message: 'Username must not be longer than 30 characters.' }),
+  email: z.string({ required_error: 'Please select an email to display.' }).email(),
   bio: z.string().max(160, { message: 'Bio must not be longer than 160 characters.' }).min(4, { message: 'Bio must be at least 2 characters.' }),
-  urls: z
-    .array(
-      z.object({
-        value: z.string().url({ message: 'Please enter a valid URL.' }),
-      }),
-    )
-    .optional(),
+  urls: z.array(z.object({ value: z.string().url({ message: 'Please enter a valid URL.' }) })).optional(),
 }))
 
-const { handleSubmit, resetForm } = useForm({
+// Form setup
+const { handleSubmit, resetForm, setFieldValue } = useForm({
   validationSchema: profileFormSchema,
   initialValues: {
+    username: '', // Placeholder
     bio: 'I own a computer.',
     urls: [
       { value: 'https://shadcn.com' },
@@ -58,6 +43,23 @@ const { handleSubmit, resetForm } = useForm({
   },
 })
 
+// Populate username from the store
+watch(
+  () => storeSettings.userSettings.practicename,
+  (newValue) => {
+    if (newValue) {
+      setFieldValue('username', newValue)
+    }
+  },
+  { immediate: true }
+)
+
+// Fetch store settings on mount
+// onMounted(async () => {
+//   await storeSettings.getSettings() // Load settings
+// })
+
+// Submit handler
 const onSubmit = handleSubmit((values) => {
   toast({
     title: 'You submitted the following values:',
@@ -68,20 +70,19 @@ const onSubmit = handleSubmit((values) => {
 
 <template>
   <div>
-    <h3 class="text-lg font-medium">
-      Profile
-    </h3>
+    <h3 class="text-lg font-medium">Profile</h3>
     <p class="text-sm text-muted-foreground">
       This is how others will see you on the site.
     </p>
   </div>
   <Separator />
   <form class="space-y-8" @submit="onSubmit">
+    <!-- Username Field -->
     <FormField v-slot="{ componentField }" name="username">
       <FormItem>
         <FormLabel>Username</FormLabel>
         <FormControl>
-          <Input type="text" placeholder="shadcn" v-bind="componentField" />
+          <Input type="text" placeholder="Enter your username" v-bind="componentField" />
         </FormControl>
         <FormDescription>
           This is your public display name. It can be your real name or a pseudonym. You can only change this once every 30 days.
@@ -90,10 +91,10 @@ const onSubmit = handleSubmit((values) => {
       </FormItem>
     </FormField>
 
+    <!-- Email Field -->
     <FormField v-slot="{ componentField }" name="email">
-      <FormItem >
+      <FormItem>
         <FormLabel>Email</FormLabel>
-
         <Select v-bind="componentField">
           <FormControl>
             <SelectTrigger class="button-custom">
@@ -115,6 +116,7 @@ const onSubmit = handleSubmit((values) => {
       </FormItem>
     </FormField>
 
+    <!-- Bio Field -->
     <FormField v-slot="{ componentField }" name="bio">
       <FormItem>
         <FormLabel>Bio</FormLabel>
@@ -128,6 +130,7 @@ const onSubmit = handleSubmit((values) => {
       </FormItem>
     </FormField>
 
+    <!-- URLs Field -->
     <div>
       <FieldArray v-slot="{ fields, push, remove }" name="urls">
         <div v-for="(field, index) in fields" :key="`urls-${field.key}`">
@@ -143,7 +146,7 @@ const onSubmit = handleSubmit((values) => {
                 <FormControl>
                   <Input type="url" v-bind="componentField" />
                 </FormControl>
-                <button type="button" class="absolute  py-2 pe-3 end-0 text-muted-foreground" @click="remove(index)">
+                <button type="button" class="absolute py-2 pe-3 end-0 text-muted-foreground" @click="remove(index)">
                   <Cross1Icon class="w-3" />
                 </button>
               </div>
@@ -151,31 +154,16 @@ const onSubmit = handleSubmit((values) => {
             </FormItem>
           </FormField>
         </div>
-
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          class="text-xs w-20 mt-2 button-custom"
-          @click="push({ value: '' })"
-        >
+        <Button type="button" variant="outline" size="sm" class="text-xs w-20 mt-2 button-custom" @click="push({ value: '' })">
           Add URL
         </Button>
       </FieldArray>
     </div>
 
-    <div class="flex gap-2 justify-start">
-      <Button type="submit">
-        Update profile
-      </Button>
-
-      <Button
-        type="button"
-        variant="outline"
-        @click="resetForm"
-      >
-        Reset form
-      </Button>
+    <!-- Actions -->
+    <div class="flex border-t m-[-25px] px-6 pt-6 gap-2 justify-start">
+      <Button type="submit">Update profile</Button>
+      <Button type="button" variant="outline" @click="resetForm">Reset form</Button>
     </div>
   </form>
 </template>

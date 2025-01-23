@@ -1,9 +1,17 @@
 <template>
 
-    <ion-item-sliding  class="invoice" :class="{ 'fade-out': isDeleted }" >
+      <ion-item-sliding
+      :class="{
+        invoice: invoice.type !== 'expense',
+        'invoice invoice-expense': invoice.type === 'expense',
+        'fade-out': isDeleted
+      }"
+      >
+
+
 
       <ion-item-options v-if="mobile" side="start">
-        <ion-item-option expandable @click="newPayment" color="success"><q-icon size="25px" name="payment"/>Pay</ion-item-option>
+        <ion-item-option :disabled="Works.overallPercentage==100" expandable @click="newPayment" :color="invoice.type==='expense' ? 'red':'success' "><q-icon size="25px" name="payment"/>Pay</ion-item-option>
       </ion-item-options>
 
       <ion-item button="true" lines="none" :disabled="!Works" :button="true" @click="$router.push(`/Invoices/${invoice.invoiceId}`)" detail="false" class="sliding-item" >
@@ -11,11 +19,10 @@
       <span class="tracking-number">#{{ invoice.invoiceId }}</span>
 
       <span>
-
-        <q-avatar v-if="!isArabic(invoice.patientName)" class="q-mr-xs avatar-name" size="35px" font-size="16px" color="green-3" text-color="white"> {{getInitials( invoice.patientName) }} </q-avatar>
-              <q-avatar v-if="isArabic(invoice.patientName)" class="q-mr-xs avatar-person" font-size="42px" size="35px" color="green-3" text-color="white" icon="person"/>
-        <span class="text-bold" > {{ invoice.patientName }}</span></span>
-      <span> <div class="column" v-if="Works" v-for="item in Works">  <q-badge :color="item.color" class="col q-mt-xs">{{ item.label}}
+        <q-avatar v-if="!isArabic(getPatientName(invoice.patientId))" class="q-mr-xs avatar-name" size="35px" font-size="16px" color="green-3" text-color="white"> {{getInitials(getPatientName(invoice.patientId)) }} </q-avatar>
+              <q-avatar v-if="isArabic(getPatientName(invoice.patientId))" class="q-mr-xs avatar-person" font-size="42px" size="35px" color="green-3" text-color="white" icon="person"/>
+        <span class="text-bold" > {{ getPatientName(invoice.patientId) }}</span></span>
+      <span> <div class="column" v-if="Works" v-for="item in Works">  <q-badge :color="item.color" class="col q-mt-xs min-w-[120px]">{{ item.label}}
 
         <q-badge  v-if="item.teeth&&item.teeth.length" color="white" class="q-ml-xs text-black">      <!-- Render the first two items -->
       <span v-for="(tooth, index) in getDisplayedItems(item.teeth)" :key="index" >
@@ -34,7 +41,7 @@
       <div  class="col flex" :class="{
     'text-green-600 dark:text-green-400': subtotal.subTotal.sign !== '-', // Greener in dark mode
     'text-red-600 dark:text-red-400': subtotal.subTotal.sign === '-', // Softer red in dark mode
-  }"><span class="currency">{{(subtotal.totalAmount.sign+' ' +subtotal.totalAmount.currency)}} </span>{{formatMoney(subtotal.totalAmount.absoluteValue) }}</div>
+  }"><span class="currency">{{(subtotal.totalAmount.currency)}} </span>{{formatMoney(subtotal.totalAmount.absoluteValue) }}</div>
      </div>
         <!-- <div class="center column price">
           <q-circular-progress
@@ -82,9 +89,9 @@
               </SidebarMenuAction>
             </DropdownMenuTrigger>
             <DropdownMenuContent class="w-48 rounded-lg" side="bottom" align="start">
-              <DropdownMenuItem @click="newPayment()">
-                <HandCoins class="text-muted-foreground text-green" />
-                <span class="text-green">Pay Invoice</span>
+              <DropdownMenuItem :disabled="invoice.works.overallPercentage==100" @click="newPayment()">
+                <HandCoins :class="invoice.type==='expense' ? 'text-red-500':'text-green' " />
+                <span :class="invoice.type==='expense' ? 'text-red-500':'text-green' ">Pay Invoice</span>
               </DropdownMenuItem>
               <DropdownMenuItem @click="handleClick()">
                 <Pencil class="text-muted-foreground" />
@@ -328,6 +335,13 @@ const Works = computed(() => {
        const isArabic=(value) =>{
          return /[\u0600-\u06FF]/.test(value)
        }
+       const getPatientName = (patientId)=> {
+       const patient = storePatients.patients.find(
+        (patient) => patient.patientId === patientId
+        );
+        console.log(patient.namef)
+        return patient.namef
+       }
        function getInitials(name) {
           const nameParts = name.split(' ');
           const firstName = nameParts[0].charAt(0).toUpperCase();
@@ -502,6 +516,24 @@ const openInvoiceModal = async () => {
 </script>
 
 <style lang="scss" scoped>
+.invoice-expense {
+// min-height: 100px;
+background-color: #fff3f3 !important;
+align-items: center !important;
+ion-item {
+--background: #fff3f3 !important;
+--padding-top:0px !important;
+--padding-bottom:0px !important;
+
+}
+}
+.ion-dark .invoice-expense {
+background-color: #2b2020 !important;
+color: #ffffff;
+ion-item {
+  --background: #2b2020 !important;
+}
+}
 .invoice {
   max-width:850px;
   margin:auto;
@@ -512,13 +544,13 @@ const openInvoiceModal = async () => {
   color: #000000;
   border-radius: 20px;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1), 0 0px 3px rgba(0, 0, 0, 0.08);
-  border: 0.001px solid rgba(0, 0, 0, 0.1);
+
 
   // min-height: 100px;
-  background-color: #fff;
+  --background: #f9fff6;
   align-items: center;
   ion-item {
-    --background: #fff;
+    --background: #f9fff6;
     --padding-top:0px !important;
     --padding-bottom:0px !important;
 
@@ -581,10 +613,10 @@ const openInvoiceModal = async () => {
 }
 /* Dark Mode Styles */
 .ion-dark .invoice {
-  background-color: #1c1917;
+  background-color: #242c25;
   color: #ffffff;
   ion-item {
-    --background: #1c1917;
+    --background: #242c25;
   }
 }
 

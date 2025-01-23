@@ -11,7 +11,7 @@ const props = defineProps<{
   <ul
     data-sidebar="menu-badge"
     :class="cn(
-      'mx-3.5 flex min-w-0 translate-x-px flex-col gap-1 border-l border-sidebar-border px-2.5 py-0.5',
+      'mx-3.5 flex min-w-0 translate-x-px flex-col gap-1 sidebar px-2.5 py-0.5',
       'group-data-[collapsible=icon]:hidden',
       props.class,
     )"
@@ -19,3 +19,13 @@ const props = defineProps<{
     <slot />
   </ul>
 </template>
+<style lang="scss" scoped>
+.sidebar {
+  border-left: solid;
+  border-color: rgba(var(--v-border-color), var(--v-border-opacity)) !important;
+}
+.dark .sidebar {
+  border-left: solid;
+  border-color: rgba(var(--v-border-color), var(--v-border-opacity)) !important;
+}
+</style>

@@ -3,7 +3,7 @@ import { FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessa
 import { RadioGroup, RadioGroupItem } from 'src/lib/registry/default/ui/radio-group'
 import { Button, buttonVariants } from 'src/lib/registry/new-york/ui/button'
 import { Separator } from 'src/lib/registry/new-york/ui/separator'
-
+import { Switch } from 'src/lib/registry/new-york/ui/switch'
 import { toast } from 'src/lib/registry/new-york/ui/toast'
 import { cn } from 'src/lib/utils'
 import { ChevronDownIcon } from '@radix-icons/vue'
@@ -23,6 +23,8 @@ const appearanceFormSchema = toTypedSchema(z.object({
     invalid_type_error: 'Select a font',
     required_error: 'Please select a font.',
   }),
+  ministate: z.boolean(),
+  enlarge_hover: z.boolean(),
 }))
 
 const loading = ref(true);
@@ -33,15 +35,20 @@ const { handleSubmit, setValues, resetForm } = useForm({
 });
 
 const onSubmit = handleSubmit((values) => {
+  console.log('values,',values)
   storeSettings.setTheme(values.theme);
   storeSettings.setFontContext(values.font);
+  storeSettings.setMiniState(values.ministate);
+  storeSettings.setEnlargeHover(values.enlarge_hover)
 
   toast({
     title: 'Preferences updated:',
     description: JSON.stringify(values, null, 2),
   });
 });
-
+const handleChange = () => {
+  console.log('hiii')
+}
 onMounted(async () => {
   loading.value = true;
   try {
@@ -49,8 +56,10 @@ onMounted(async () => {
 
     // Set form values manually after fetching data
     setValues({
-      theme: storeSettings.appearance.theme ,
-      font: storeSettings.appearance.fontContext ,
+      theme: storeSettings.appearance.theme || 'system',
+      font: storeSettings.appearance.fontContext || 'system',
+      ministate: storeSettings.appearance.miniState ?? true, // Use nullish coalescing to handle undefined or null
+      enlarge_hover: storeSettings.appearance.enlargeHover ?? true, // Only set true if undefined or null
     });
   } finally {
     loading.value = false;
@@ -69,7 +78,8 @@ onMounted(async () => {
   </div>
   <Separator />
   <form class="space-y-8" @submit="onSubmit">
-    <FormField v-slot="{ field }" name="font">
+    <!-- font FORM -->
+    <!-- <FormField v-slot="{ field }" name="font">
       <FormItem>
         <FormLabel>Font</FormLabel>
         <div class="relative w-[200px]">
@@ -99,7 +109,7 @@ onMounted(async () => {
         </FormDescription>
         <FormMessage />
       </FormItem>
-    </FormField>
+    </FormField> -->
 
     <FormField v-slot="{ componentField }" type="radio" name="theme">
       <FormItem class="space-y-1">
@@ -212,7 +222,38 @@ onMounted(async () => {
         </RadioGroup>
       </FormItem>
     </FormField>
-
+    <FormField name="ministate" type="boolean" v-slot="{ value,handleChange }">
+      <FormItem class="flex flex-row items-center justify-between rounded-lg border p-4">
+        <div class="space-y-0.5">
+          <FormLabel class="text-base">Side Bar MiniState</FormLabel>
+          <FormDescription>View Side Bar In MiniState.</FormDescription>
+        </div>
+        <FormControl>
+          <Switch
+          :checked="value"
+           @update:checked="handleChange"
+        />
+        </FormControl>
+      </FormItem>
+    </FormField>
+    <FormField v-slot="{ handleChange, value }" type="checkbox" name="enlarge_hover">
+          <FormItem class="flex flex-row items-center justify-between rounded-lg border p-4">
+            <div class="space-y-0.5">
+              <FormLabel class="text-base">
+                Side Bar Auto Resize
+              </FormLabel>
+              <FormDescription>
+                Enlarge the side bar on Mouse Hover.
+              </FormDescription>
+            </div>
+            <FormControl>
+              <Switch
+                :checked="value"
+                @update:checked="handleChange"
+              />
+            </FormControl>
+          </FormItem>
+        </FormField>
     <div class="flex justify-start">
       <Button :disabled="storeSettings.loading" type="submit">
         <span v-if="storeSettings.loading" class="flex items-center space-x-2">

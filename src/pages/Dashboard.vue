@@ -11,6 +11,7 @@
           <ion-title size="large">Dashboard</ion-title>
         </ion-toolbar>
       </ion-header>
+
       <div class="row">
         <CardWidgetIcons class="col-12 col-md card-widget" :prefix="'IQD'" :value="currentMonthPaymentsData" icon="card" label="Payments" />
         <CardWidgetIcons class="col-12 col-md card-widget" :value="currentMonthAppointmentsCount" icon="calendar" label="Appointments" />
@@ -112,6 +113,10 @@ import { useStorePatients } from 'src/stores/storePatients';
 import { useStoreAppointments } from 'src/stores/storeAppointments';
 import { useStoreWorks } from 'src/stores/storeWorks';
 import { useStoreAuth } from 'src/stores/storeAuth';
+import { defineEmits } from "vue";
+
+// Define the event this component will emit
+const emit = defineEmits(["toggle-sidebar"]);
 dayjs.extend(isToday);
 dayjs.extend(isSameOrBefore);
 

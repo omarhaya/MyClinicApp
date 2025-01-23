@@ -234,12 +234,11 @@
        <!-- Save/Exit -->
        <div class="save flex">
          <div class="left">
-           <button v-if="!mobile" type="button" @click="closePayment" class="red">Cancel</button>
+          <Button v-if="!mobile" type="button" @click="closePayment"  class="bg-red h-12 rounded-3xl mr-2" >Cancel</Button>
          </div>
          <div class="right flex">
-           <!-- <button v-if="!storePayments.editPayment" type="submit"  class="grey">Draft</button> -->
-           <button v-if="!storePayments.editPayment&&!mobile" type="submit" class="green">Add Payment</button>
-           <button v-if="storePayments.editPayment&&!mobile" type="sumbit" class="green">Update Payment</button>
+          <Button  v-if="!storePayments.editPayment&&!mobile"  type="submit" @click="closeInvoice"  class="bg-green h-12 rounded-3xl mr-2" >Add Payment</Button>
+          <Button  v-if="storePayments.editPayment&&!mobile"  type="submit" @click="closeInvoice"  class="bg-green h-12 rounded-3xl mr-2" >Update Payment</Button>
          </div>
        </div>
      </form>
@@ -260,6 +259,7 @@ import { Platform } from 'quasar';
 import { IonInput, IonItem, IonList } from '@ionic/vue';
 import { Keyboard } from '@capacitor/keyboard';
 import { useStoreSettings } from 'src/stores/storeSettings'
+import { Button } from './ui/button'
 /*
  Mobile
 */

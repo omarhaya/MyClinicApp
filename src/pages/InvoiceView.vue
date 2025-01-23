@@ -14,7 +14,7 @@
 
         </ion-toolbar>
       </ion-header>
-  <div v-if="currentInvoice" class="invoice-view container">
+  <div v-if="currentInvoice" :class="currentInvoice.type==='expense'?'invoice-view container':'invoice-view container invoice-view-expense'" >
     <!-- <router-link v-if="!mobile" class="nav-link flex" :to="lastRoute">
       <img src="../assets/icon-arrow-left.svg" alt="" /> {{ lastRouteText }}
     </router-link> -->
@@ -106,14 +106,15 @@
     </Card>
 
     <!-- Invoice Details -->
-    <Card v-if="currentInvoice" class="invoice-details flex flex-column rounded-2xl">
+    <Card v-if="currentInvoice"  :class="currentInvoice.type==='expense'?'invoice-details flex flex-column rounded-2xl invoice-details-expense':'invoice-details flex flex-column rounded-2xl'" >
       <div  class="top row">
         <div class="left col">
           <p><span>#</span>{{ currentInvoice.invoiceId }}</p>
 
-    <h4>Bill To</h4>
-          <p v-if="currentInvoice.patientName"> <q-avatar v-if="!isArabic(currentInvoice.patientName)" class="q-mr-xs avatar-name" size="35px" font-size="16px" color="green-3" text-color="white"> {{getInitials( currentInvoice.patientName) }} </q-avatar>
-              <q-avatar v-if="isArabic(currentInvoice.patientName)" class="q-mr-xs avatar-person" font-size="42px" size="35px" color="green-3" text-color="white" icon="person"/> {{ currentInvoice.patientName }}</p>
+    <h4 v-if="currentInvoice.type!=='expense'">Bill To</h4>
+    <h4 v-if="currentInvoice.type==='expense'">Bill From</h4>
+          <p v-if="currentInvoice.patientId"> <q-avatar v-if="!isArabic(getPatientName(currentInvoice.patientId))" class="q-mr-xs avatar-name" size="35px" font-size="16px" color="green-3" text-color="white"> {{getInitials( getPatientName(currentInvoice.patientId) ) }} </q-avatar>
+              <q-avatar v-if="isArabic(getPatientName(currentInvoice.patientId))" class="q-mr-xs avatar-person" font-size="42px" size="35px" color="green-3" text-color="white" icon="person"/> {{ getPatientName(currentInvoice.patientId) }}</p>
           <p>{{ currentInvoice.billerCity }}</p>
           <p>{{ currentInvoice.billerZipCode }}</p>
           <p>{{ currentInvoice.billerCountry }}</p>
@@ -155,7 +156,7 @@
     <ion-accordion v-for="(work, index) in Works" :key="index" :value="index" >
       <ion-item slot="header" :color="work.color">
         <ion-label>{{ work.label }}</ion-label>
-        <ion-label class="total" slot="end"><p><span class="currency">{{work.formattedPrice.sign +' '+work.formattedPrice.currency}} </span>{{formatMoney(work.formattedPrice.absoluteValue) }}</p></ion-label>
+        <ion-label class="total" slot="end"><p><span class="currency">{{work.formattedPrice.currency}} </span>{{formatMoney(work.formattedPrice.absoluteValue) }}</p></ion-label>
       </ion-item>
 
   <v-timeline class="time-line"  align="start" side="end" slot="content">
@@ -264,19 +265,19 @@
       <tbody  v-if="Works" v-for="subtotal in Works.subTotals">
         <tr>
           <td><span class="text-bold">Subtotal</span>   <span v-if="subtotal.length>1">IN ({{ subtotal.currency }})</span></td>
-          <td><span class="currency">{{(subtotal.subTotal.sign +' ' +subtotal.subTotal.currency)}} </span>{{formatMoney(subtotal.subTotal.absoluteValue)}}</td>
+          <td><span class="currency">{{(subtotal.subTotal.currency)}} </span>{{formatMoney(subtotal.subTotal.absoluteValue)}}</td>
         </tr>
         <tr  v-if="subtotal.totalDiscount.absoluteValue!==0" class="text-red ">
           <td >Discount ({{((subtotal.totalDiscount.absoluteValue/subtotal.subTotal.absoluteValue)*100).toFixed(2)}}%)</td>
-          <td>  -<span class="currency">{{(subtotal.subTotal.sign +' ' +subtotal.subTotal.currency)}} </span>{{formatMoney(subtotal.totalDiscount.absoluteValue)}}</td>
+          <td>  -<span class="currency">{{(subtotal.subTotal.currency)}} </span>{{formatMoney(subtotal.totalDiscount.absoluteValue)}}</td>
         </tr>
         <tr  >
           <td ><span class="text-bold">Tax</span> ({{subtotal.tax.absoluteValue}}%)</td>
-          <td>   <span class="currency">{{(subtotal.subTotal.sign +' ' +subtotal.subTotal.currency)}} </span>{{formatMoney((((subtotal.subTotal.absoluteValue)-(subtotal.totalDiscount.absoluteValue))*subtotal.tax.absoluteValue))}}</td>
+          <td>   <span class="currency">{{(subtotal.subTotal.currency)}} </span>{{formatMoney((((subtotal.subTotal.absoluteValue)-(subtotal.totalDiscount.absoluteValue))*subtotal.tax.absoluteValue))}}</td>
         </tr>
         <tr  >
-          <td > <span class="text-bold">Total</span>  <span v-if="subtotal.length>1">IN ({{ subtotal.subTotal.sign +' ' +subtotal.subTotal.currency }})</span></td>
-          <td>    <span class="currency">{{(subtotal.subTotal.sign +' ' +subtotal.subTotal.currency)}} </span>{{formatMoney(((subtotal.subTotal.absoluteValue)-(subtotal.totalDiscount.absoluteValue))+(((subtotal.subTotal.absoluteValue)-(subtotal.totalDiscount.absoluteValue))*subtotal.tax.absoluteValue))}}</td>
+          <td > <span class="text-bold">Total</span>  <span v-if="subtotal.length>1">IN ({{ subtotal.subTotal.currency }})</span></td>
+          <td>    <span class="currency">{{(subtotal.subTotal.currency)}} </span>{{formatMoney(((subtotal.subTotal.absoluteValue)-(subtotal.totalDiscount.absoluteValue))+(((subtotal.subTotal.absoluteValue)-(subtotal.totalDiscount.absoluteValue))*subtotal.tax.absoluteValue))}}</td>
         </tr>
         <tr v-if="subtotal.paid"  >
           <td  :class="{
@@ -544,6 +545,14 @@ onBeforeMount(() => {
         const sign = value < 0 ? '-' : ''; // Determine the sign
         return {sign,absoluteValue,currency}; // Format: [sign] [price] [currency]
        }
+      const   getPatientName = (patientId)=> {
+      const patient = storePatients.patients.find(
+        (patient) => patient.patientId === patientId
+      );
+
+      // Return patient name or a fallback
+      return patient ? patient.namef : "Unknown";
+      }
        function getInitials(name) {
         console.log(name,'name')
           const nameParts = name.split(' ');
@@ -739,11 +748,6 @@ const   mobile=computed(()=>{
 
 <style lang="scss" scoped>
 .ion-dark .invoice-view {
-  .header, .invoice-details {
-    // background-color: #1e3739;
-    border-radius: 20px;
-
-}
 .header {
     align-items: center;
     padding: 24px 32px;
@@ -802,9 +806,10 @@ const   mobile=computed(()=>{
   .invoice-details {
     padding: 48px;
     margin-top: 24px;
+
     * {
     // margin: 0 !important;
-    padding: 0;
+
     box-sizing: border-box;
 }
     .top {
@@ -900,7 +905,7 @@ const   mobile=computed(()=>{
       .billing-items {
         // padding: 20px 22px 32px 22px;
         border-radius: 20px 20px 0 0;
-        background-color: #254544;
+        background-color: #000000;
 
         .table-total {
           border-collapse: collapse;
@@ -1035,7 +1040,6 @@ const   mobile=computed(()=>{
   margin-top: 15px;
   * {
   // margin: 0 !important;
-  padding: 0;
   box-sizing: border-box;
 }
   .top {
@@ -1131,7 +1135,7 @@ const   mobile=computed(()=>{
     .billing-items {
         // padding: 20px 22px 32px 22px;
         border-radius: 20px 20px 0 0;
-        background-color: #254544;
+        background-color: #000000;
         .table-total {
           border-collapse: collapse;
           text-align: right;
@@ -1229,19 +1233,6 @@ const   mobile=computed(()=>{
 }
 
 }
-// .button {
-//   .payment-text{
-//     padding-top: 7px;
-
-//   }.inner-button img {
-//     width: 10px;
-//     height: 10px;
-//     margin: -2px 4px -2px 5px;
-
-// }
-// }
-
-
 
 //light mode
 .invoice-view {
@@ -1258,11 +1249,7 @@ const   mobile=computed(()=>{
     }
   }
 
-  .header,
-  .invoice-details {
-    // background-color: #e1e6df;
-    border-radius: 20px;
-  }
+
 
   .header {
     align-items: center;
@@ -1324,7 +1311,7 @@ const   mobile=computed(()=>{
     margin-top: 24px;
     * {
     // margin: 0 !important;
-    padding: 0;
+
     box-sizing: border-box;
 }
     .top {
@@ -1366,6 +1353,7 @@ const   mobile=computed(()=>{
     }
 
     .middle {
+
       // margin-top: 50px;
       color: #181818;
       gap: 16px;
@@ -1414,11 +1402,12 @@ const   mobile=computed(()=>{
       .send-to {
         flex: 2;
       }
+
     }
 
     .bottom {
       // padding-top: 20px;
-
+       border-radius: 20px;
 
       .billing-items {
         // padding: 20px 22px 32px 22px;
@@ -1521,13 +1510,14 @@ const   mobile=computed(()=>{
           padding: 10px;
         }
         }
+
       }
 
 
       .due {
         color: #000000;
         padding: 20px 32px 20px 32px;
-        background-color: #b4c2af;
+        background-color: #f5fbf3;
         align-items: center;
         border-radius: 0 0 20px 20px;
         p {
@@ -1558,7 +1548,6 @@ const   mobile=computed(()=>{
   margin-top: 15px;
   * {
   // margin: 0 !important;
-  padding: 0;
   box-sizing: border-box;
 }
   .top {
@@ -1650,10 +1639,11 @@ const   mobile=computed(()=>{
   }
 
   .bottom {
-    // padding-top: 20px;
+    border-radius: 20px;
 
 
     .billing-items {
+
         // padding: 20px 22px 32px 22px;
         border-radius: 20px 20px 0 0;
         background-color: #efefef;
@@ -1732,9 +1722,10 @@ const   mobile=computed(()=>{
 
 
     .due {
+
       color: #000000;
       padding: 20px 32px 20px 32px;
-      background-color: #b4c2af;
+      background-color: #f5fbf3;
       align-items: center;
       border-radius: 0 0 20px 20px;
       p {
@@ -1751,6 +1742,10 @@ const   mobile=computed(()=>{
       }
     }
   }
+  flex-wrap: nowrap !important;
+  .flex {
+      flex-wrap: nowrap !important;
+    }
 }
 
 }
@@ -1770,6 +1765,32 @@ const   mobile=computed(()=>{
   font-size: 10px;
   vertical-align: text-top !important;
   padding-right: 3px !important;
+}
+
+.ion-dark .invoice-details-expense {
+  .middle {
+    color: #181818;
+  }
+  .bottom {
+    .billing-items {
+        background-color: #000000 !important;
+      }
+    .due {
+      background-color: rgba(22, 12, 12, 0.7) !important;
+    }
+  }
+}
+.invoice-details-expense {
+
+  .bottom {
+
+    .billing-items {
+        background-color: #efefef !important;
+      }
+    .due {
+      background-color: #fff0f0 !important;
+    }
+  }
 }
 
 </style>

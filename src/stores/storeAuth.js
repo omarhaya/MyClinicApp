@@ -53,36 +53,37 @@ export const useStoreAuth = defineStore('storeAuth', {
               this.user.email = user.email;
 
               const docRef = doc(db, 'users', user.uid);
-              const docSnapshot = await onSnapshot(docRef, (doc) => {
+              onSnapshot(docRef, async (doc) => {
                 if (doc.exists()) {
                   this.role = doc.data().role;
-                  this.loading = false; // Set loading to false after getting the role
+                  this.loading = false;
 
-                  // Wait for the loading to be finished before calling getDoctors
-                  this.waitForLoading().then(() => {
-                    if (this.role.clinicId !== '') {
-                      this.getDoctors(this.role.clinicId);
-                    } else {
-                      this.getDoctors(user.uid);
-                    }
-                    // Initialize other stores that depend on authentication
-                    this.storePatients.init(user.uid);
-                    this.storeAppointments.init();
-                    this.storePayments.init();
-                    this.storeInvoices.init();
-                    this.storeWorks.init();
-                    this.storeSettings.init();
-                    this.storeSettings.getSettings()
+                  await this.waitForLoading();
+                  const clinicId = this.role.clinicId || user.uid;
+                  this.getDoctors(clinicId);
+
+                  // Initialize dependent stores
+                  try {
+                    await Promise.all([
+                      this.storePatients.init(user.uid),
+                      this.storeAppointments.init(),
+                      this.storePayments.init(),
+                      this.storeInvoices.init(),
+                      this.storeWorks.init(),
+                      this.storeSettings.init(),
+                    ]);
+                    await this.storeSettings.getSettings();
                     this.initialized = true;
                     resolve();
-                  });
-
+                  } catch (error) {
+                    console.error('Error initializing stores:', error);
+                    reject(error);
+                  }
                 } else {
                   this.loading = false;
                   reject('User data not found');
                 }
               });
-
             } catch (error) {
               this.loading = false;
               reject(error.message);
@@ -191,7 +192,7 @@ export const useStoreAuth = defineStore('storeAuth', {
         this.storePayments.clearPayments();
         this.storeInvoices.clearInvoices();
         this.storeWorks.clearWorks();
-        this.router.push('/');
+        this.router.push('/auth');
         console.log('user signed out');
       }).catch((error) => {
         console.log(error.message);

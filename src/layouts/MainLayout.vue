@@ -89,43 +89,17 @@
 
 
 
-  <q-layout v-if="!mobile" view="lHh Lpr lFf">
 
-    <q-header>
-      <q-toolbar>
-        <q-btn flat @click="toggleLeftDrawer()" round dense icon="menu" />
-        <q-toolbar-title>
-          <div class="row1"></div>
-        </q-toolbar-title>
 
-        <q-btn round icon="dark_mode" @click="toggleDarkMode"></q-btn>
 
-        <q-btn v-if="storeAuth.user.uid" round>
-          <q-avatar size="40px">
-            <img src="https://cdn.quasar.dev/img/boy-avatar.png" />
-            <q-menu>
-              <UserMenu />
-            </q-menu>
-          </q-avatar>
-        </q-btn>
-        <ion-label>
-          <!-- <h6>appLogo</h6> -->
-        </ion-label>
-      </q-toolbar>
-
-    </q-header>
-
-    <ion-page :style="pagePadding">
-
-      <q-page-container>
-
+<!--
         <q-drawer
       v-if="!mobile"
       v-model="leftDrawerOpen"
       show-if-above
       :mini="storeSettings.appearance.miniState"
       @mouseover="checkPopup"
-      @mouseout="storeSettings.appearance.miniState = true"
+      @mouseout="storeSettings.appearance.enlargeHover?storeSettings.appearance.miniState = true:''"
       :width="200"
       :breakpoint="500"
       class="drawer "
@@ -170,12 +144,249 @@
           </q-item>
         </q-list>
       </q-scroll-area>
-    </q-drawer>
-        <router-view />
-      </q-page-container>
-    </ion-page>
-  </q-layout>
-  <ion-page v-else ref="page">
+    </q-drawer> -->
+
+  <SidebarProvider :open="!storeSettings.appearance.miniState" v-if="!mobile">
+
+    <Sidebar v-if="storeAuth.user.uid"   collapsible="icon">
+      <SidebarHeader>
+        <SidebarMenu>
+          <SidebarMenuItem>
+            <DropdownMenu>
+              <DropdownMenuTrigger as-child>
+                <SidebarMenuButton
+                  size="lg"
+                  class="data-[state=open]:bg-accent  hover:bg-accent hover:text-accent-foreground  data-[state=open]:text-accent-foreground"
+                >
+                  <div class="flex aspect-square size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+                    <component :is="activeTeam.logo" class="size-4" />
+                  </div>
+                  <div class="grid flex-1 text-left text-sm leading-tight">
+                    <span class="truncate font-semibold">{{ activeTeam.name }}</span>
+                    <span class="truncate text-xs">{{ activeTeam.plan }}</span>
+                  </div>
+                  <ChevronsUpDown class="ml-auto mb-1" />
+                </SidebarMenuButton>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent
+                class="w-[--radix-dropdown-menu-trigger-width] min-w-56 rounded-lg"
+                align="start"
+                side="bottom"
+                :side-offset="4"
+              >
+                <DropdownMenuLabel class="text-xs text-muted-foreground">
+                  Teams
+                </DropdownMenuLabel>
+                <DropdownMenuItem
+                  v-for="(team, index) in data.teams"
+                  :key="team.name"
+                  class="gap-2 p-2"
+                  @click="setActiveTeam(team)"
+                >
+                  <div class="flex size-6 items-center justify-center rounded-sm border">
+                    <component :is="team.logo" class="size-4 shrink-0" />
+                  </div>
+                  {{ team.name }}
+                  <DropdownMenuShortcut>⌘{{ index + 1 }}</DropdownMenuShortcut>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem class="gap-2 p-2">
+                  <div class="flex size-6 items-center justify-center rounded-md border bg-background">
+                    <Plus class="size-4" />
+                  </div>
+                  <div class="font-medium text-muted-foreground">
+                    Add team
+                  </div>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </SidebarMenuItem>
+        </SidebarMenu>
+      </SidebarHeader>
+      <SidebarContent>
+        <SidebarGroup>
+          <SidebarGroupLabel>Platform</SidebarGroupLabel>
+          <SidebarMenu>
+            <Collapsible
+              v-for="item in data.navMain"
+              :key="item.title"
+              as-child
+              :default-open="item.isActive"
+              class="group/collapsible"
+            >
+              <SidebarMenuItem >
+                <CollapsibleTrigger  as-child>
+                  <SidebarMenuButton @click="$router.push(item.url)" :class="active(item.url) ? 'bg-primary' : ''" class="group-data-[state=open]/collapsible:bg-sidebar-accent group-data-[state=open]/collapsible:text-accent-foreground hover:bg-accent hover:text-accent-foreground " :tooltip="item.title">
+                    <component :class="!storeSettings.appearance.miniState?'mt-[-2px]':''" :is="item.icon"  />
+                    <span :class="!storeSettings.appearance.miniState?'mt-[-2px]':''" >{{ item.title }}</span>
+                    <ChevronRight v-if="item.collapsible"  class="ml-auto mt-[-2px] transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
+                  </SidebarMenuButton>
+                </CollapsibleTrigger>
+                <CollapsibleContent v-if="item.collapsible">
+                  <SidebarMenuSub>
+                    <SidebarMenuSubItem
+                      v-for="subItem in item.items"
+                      :key="subItem.title"
+                    >
+                      <SidebarMenuSubButton as-child>
+                        <a :href="subItem.url">
+                          <span>{{ subItem.title }}</span>
+                        </a>
+                      </SidebarMenuSubButton>
+                    </SidebarMenuSubItem>
+                  </SidebarMenuSub>
+                </CollapsibleContent>
+              </SidebarMenuItem>
+            </Collapsible>
+          </SidebarMenu>
+        </SidebarGroup>
+        <SidebarGroup class="group-data-[collapsible=icon]:hidden">
+          <SidebarGroupLabel>Projects</SidebarGroupLabel>
+          <SidebarMenu>
+            <SidebarMenuItem
+              v-for="item in data.projects"
+              :key="item.name"
+            >
+              <SidebarMenuButton as-child class="group-data-[state=open]/collapsible:bg-accent text-accent-foreground group-data-[state=open]/collapsible:text-accent-foreground hover:bg-accent  ">
+                <a :href="item.url">
+                  <component :is="item.icon" />
+                  <span>{{ item.name }}</span>
+                </a>
+              </SidebarMenuButton>
+              <DropdownMenu>
+                <DropdownMenuTrigger as-child>
+                  <SidebarMenuAction show-on-hover>
+                    <MoreHorizontal />
+                    <span class="sr-only">More</span>
+                  </SidebarMenuAction>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent class="w-48 rounded-lg" side="bottom" align="end">
+                  <DropdownMenuItem>
+                    <Folder class="text-muted-foreground" />
+                    <span>View Project</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem>
+                    <Forward class="text-muted-foreground" />
+                    <span>Share Project</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem>
+                    <Trash2 class="text-muted-foreground" />
+                    <span>Delete Project</span>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+              <SidebarMenuButton class="text-foreground/70">
+                <MoreHorizontal class="text-foreground/70" />
+                <span>More</span>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          </SidebarMenu>
+        </SidebarGroup>
+      </SidebarContent>
+      <SidebarFooter>
+        <SidebarMenu>
+          <SidebarMenuItem>
+            <DropdownMenu>
+              <DropdownMenuTrigger as-child>
+                <SidebarMenuButton
+                  size="lg"
+                  class="data-[state=open]:bg-accent data-[state=open]:text-accent-foreground  hover:bg-accent hover:text-accent-foreground "
+                >
+                  <Avatar class="h-8 w-8 rounded-lg">
+                    <AvatarImage :src="data.user.avatar" :alt="data.user.name" />
+                    <AvatarFallback v-if="storeAuth.doctors[0]" class="rounded-lg">
+                      {{getInitials(storeAuth.doctors[0].name)}}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div class="grid flex-1 text-left text-sm leading-tight">
+                    <span class="truncate font-semibold">{{ data.user.name }}</span>
+                    <span class="truncate text-xs">{{ data.user.email }}</span>
+                  </div>
+                  <ChevronsUpDown class="ml-auto size-4" />
+                </SidebarMenuButton>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent class="w-[--radix-dropdown-menu-trigger-width] min-w-56 rounded-lg" side="bottom" align="end" :side-offset="4">
+                <DropdownMenuLabel class="p-0 font-normal">
+                  <div class="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
+                    <Avatar class="h-8 w-8 rounded-lg">
+                      <AvatarImage :src="data.user.avatar" :alt="data.user.name" />
+                      <AvatarFallback class="rounded-lg">
+                        {{getInitials(storeAuth.doctors[0].name)}}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div class="grid flex-1 text-left text-sm leading-tight">
+                      <span class="truncate font-semibold">{{ storeAuth.doctors[0].name }}</span>
+                      <span class="truncate text-xs">{{ storeAuth.user.email }}</span>
+                    </div>
+                  </div>
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuGroup>
+                  <DropdownMenuItem>
+                    <Sparkles />
+                    Upgrade to Pro
+                  </DropdownMenuItem>
+                </DropdownMenuGroup>
+                <DropdownMenuSeparator />
+                <DropdownMenuGroup>
+                  <DropdownMenuItem>
+                    <BadgeCheck />
+                    Account
+                  </DropdownMenuItem>
+                  <DropdownMenuItem>
+                    <CreditCard />
+                    Billing
+                  </DropdownMenuItem>
+                  <DropdownMenuItem>
+                    <Bell />
+                    Notifications
+                  </DropdownMenuItem>
+                </DropdownMenuGroup>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem @click="storeAuth.logoutUser()">
+                  <LogOut/>
+                    Log out
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </SidebarMenuItem>
+        </SidebarMenu>
+      </SidebarFooter>
+      <SidebarRail />
+    </Sidebar>
+    <SidebarInset>
+      <!-- Static Header -->
+      <header class="app-header">
+        <div class="flex h-16 items-center gap-2 px-4">
+          <SidebarTrigger @click="storeSettings.appearance.miniState = !storeSettings.appearance.miniState" class="-ml-1" />
+          <Separator orientation="vertical" class="mr-2 h-4" />
+          <Breadcrumb>
+            <BreadcrumbList>
+              <BreadcrumbItem class="hidden md:block">
+                <BreadcrumbLink href="#">
+                  Building Your Application
+                </BreadcrumbLink>
+              </BreadcrumbItem>
+              <BreadcrumbSeparator class="hidden md:block" />
+              <BreadcrumbItem>
+                <BreadcrumbPage>Data Fetching</BreadcrumbPage>
+              </BreadcrumbItem>
+            </BreadcrumbList>
+          </Breadcrumb>
+        </div>
+      </header>
+      <!-- Routed Content -->
+      <ion-page class="router-content">
+        <IonRouterOutlet />
+      </ion-page>
+    </SidebarInset>
+  </SidebarProvider>
+
+
+  <ion-page v-if="mobile" ref="page">
 
     <ion-tabs>
       <ion-router-outlet></ion-router-outlet>
@@ -211,6 +422,7 @@
 </template>
 
 <script setup>
+
 import { ref, computed, watch, onUnmounted } from 'vue'
 import { useStoreAuth } from 'stores/storeAuth'
 import UserMenu from 'src/components/UserMenu.vue'
@@ -226,64 +438,243 @@ import { IonPage, IonContent, IonHeader, IonToolbar, IonTabBar, IonTabButton, Io
 import { useStoreSettings } from 'src/stores/storeSettings'
 import { newspaper, people, calendar,swapHorizontalOutline,grid} from 'ionicons/icons'
 import { useTheme } from 'vuetify'
+import {
+  Avatar,
+  AvatarFallback,
+  AvatarImage,
+} from 'src/components/ui/avatar'
 
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from 'src/components/ui/breadcrumb'
+
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from 'src/components/ui/collapsible'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuShortcut,
+  DropdownMenuTrigger,
+} from 'src/components/ui/dropdown-menu'
+import { Separator } from 'src/components/ui/separator'
+import {
+  Sidebar,
+  SidebarContent,
+  SidebarFooter,
+  SidebarGroup,
+  SidebarGroupLabel,
+  SidebarHeader,
+  SidebarInset,
+  SidebarMenu,
+  SidebarMenuAction,
+  SidebarMenuButton,
+  SidebarMenuItem,
+  SidebarMenuSub,
+  SidebarMenuSubButton,
+  SidebarMenuSubItem,
+  SidebarProvider,
+  SidebarRail,
+  SidebarTrigger,
+} from 'src/components/ui/sidebar'
+import {
+  AudioWaveform,
+  BadgeCheck,
+  Bell,
+  BookOpen,
+  Bot,
+  ChevronRight,
+  ChevronsUpDown,
+  Command,
+  CreditCard,
+  Folder,
+  Forward,
+  Frame,
+  GalleryVerticalEnd,
+  LogOut,
+  Map,
+  MoreHorizontal,
+  PieChart,
+  Plus,
+  Settings2,
+  Sparkles,
+  SquareTerminal,
+  Trash2,
+  ScrollText,
+  ArrowLeftRight,
+  CalendarCheck,
+  Users,
+} from 'lucide-vue-next'
+import {useRoute}  from 'vue-router'
 
 const theme = useTheme()
 const $q = useQuasar()
-const treasuryIcon = 'src/assets/vault-solid.svg'
 const storeAuth = useStoreAuth()
 const storeInvoices = useStoreInvoices()
 const storePayments = useStorePayments()
 const storeSettings = useStoreSettings()
-const essentialLinks = [
-{
-    title: 'DashBoard',
-    icon: 'inbox',
-    link: '/'
+// This is sample data.
+const data = {
+  user: {
+    name: storeAuth.doctors[0].name,
+    email: storeAuth.user.email,
+    avatar: '/avatars/shadcn.jpg',
   },
-  {
-    title: 'Patients',
-    icon: 'people',
-    link: '/Patients'
-  },
-  {
-    title: 'Calendar',
-    icon: 'calendar_today',
-    link: '/Calendar'
-  },
-  {
-    title: 'Invoices',
-    icon: 'request_page',
-    link: '/Invoices'
-  },
-  {
-    title: 'Transactions',
-    icon: 'swap_horiz',
-    link: '/Transactions'
-  }
-]
-
-const myIcons = {
-  'appLogo': 'img:/src/assets/appLogo.svg',
+  teams: [
+    {
+      name: 'Acme Inc',
+      logo: GalleryVerticalEnd,
+      plan: 'Enterprise',
+    },
+    {
+      name: 'Acme Corp.',
+      logo: AudioWaveform,
+      plan: 'Startup',
+    },
+    {
+      name: 'Evil Corp.',
+      logo: Command,
+      plan: 'Free',
+    },
+  ],
+  navMain: [
+    {
+      title: 'Dashboard',
+      url: '/',
+      icon: SquareTerminal,
+      isActive: true,
+      items: [
+        {
+          title: 'History',
+          url: '#/settings',
+        },
+        {
+          title: 'Starred',
+          url: '#',
+        },
+        {
+          title: 'Settings',
+          url: '#',
+        },
+      ],
+    },
+    {
+      title: 'Invoices',
+      url: '/invoices',
+      icon: ScrollText,
+    },
+    {
+      title: 'Patients',
+      url: '/patients',
+      icon: Users,
+    },
+    {
+      title: 'Transactions',
+      url: '/transactions',
+      icon: ArrowLeftRight ,
+      items: [
+        {
+          title: 'Introduction',
+          url: '#',
+        },
+        {
+          title: 'Get Started',
+          url: '#',
+        },
+        {
+          title: 'Tutorials',
+          url: '#',
+        },
+        {
+          title: 'Changelog',
+          url: '#',
+        },
+      ],
+    },
+    {
+      title: 'Schedule',
+      url: '/calendar',
+      collapsible:true,
+      icon:CalendarCheck,
+      // items: [
+      //   {
+      //     title: 'General',
+      //     url: '#',
+      //   },
+      //   {
+      //     title: 'Team',
+      //     url: '#',
+      //   },
+      //   {
+      //     title: 'Billing',
+      //     url: '#',
+      //   },
+      //   {
+      //     title: 'Limits',
+      //     url: '#',
+      //   },
+      // ],
+    },
+    {
+      title: 'Settings',
+      url: '/settings',
+      icon:Settings2,
+      collapsible:true,
+      items: [
+        {
+          title: 'General',
+          url: '#',
+        },
+        {
+          title: 'Team',
+          url: '#',
+        },
+        {
+          title: 'Billing',
+          url: '#',
+        },
+        {
+          title: 'Limits',
+          url: '#',
+        },
+      ],
+    },
+  ],
+  projects: [
+    {
+      name: 'Design Engineering',
+      url: '#',
+      icon: Frame,
+    },
+    {
+      name: 'Sales & Marketing',
+      url: '#',
+      icon: PieChart,
+    },
+    {
+      name: 'Travel',
+      url: '#',
+      icon: Map,
+    },
+  ],
 }
 
+const checkContent = computed(() => false)
 
-$q.iconMapFn = (iconName) => {
-  const icon = myIcons[iconName]
-  if (icon !== undefined) {
-    return { icon }
-  }
-}
-const leftDrawerOpen = ref(false)
-const toggleLeftDrawer = () => {
-  leftDrawerOpen.value = !leftDrawerOpen.value
-}
-
-const checkPopup = () => {
-  if (storeInvoices.invoiceModal || storePayments.paymentModal) {
-    storeSettings.appearance.miniState = true
-  } else {
-    storeSettings.appearance.miniState = false
+function closeWithcontent() {
+  if (checkContent) {
+    storeInvoices.modalActive = true
   }
 }
 
@@ -299,16 +690,7 @@ watch(() => storePayments.paymentModal, (currentValue) => {
   }
 })
 
-const checkContent = computed(() => false)
-
-function closeWithcontent() {
-  if (checkContent) {
-    storeInvoices.modalActive = true
-  }
-}
 const mobile = computed(() => Platform.is.mobile)
-const pagePadding = computed(() => ({ '--padding-bottom': mobile.value ? '0px' : '42px' }))
-
 // DARK MODE
 
 let systemPreferenceListener = null;
@@ -355,14 +737,35 @@ watch(
   },
   { immediate: true } // Trigger the watcher immediately on initialization
 );
-function toggleDarkMode() {
-  if (storeSettings.appearance.theme!=='dark')
-{
-  storeSettings.setTheme('dark')
+
+const myIcons = {
+  'appLogo': 'img:/src/assets/appLogo.svg',
 }
-else{
-  storeSettings.setTheme('light')
+$q.iconMapFn = (iconName) => {
+  const icon = myIcons[iconName]
+  if (icon !== undefined) {
+    return { icon }
+  }
 }
+const activeTeam = ref(data.teams[0])
+const route = useRoute();
+const active = (link) => {
+  let result = null;
+  if (link === '/') {
+    result = route.fullPath.toLowerCase() === link.toLowerCase();
+  } else {
+    result = route.fullPath.toLowerCase().startsWith(link.toLowerCase());
+  }
+  return result;
+};
+function getInitials(name) {
+          const nameParts = name.split(' ');
+          const firstName = nameParts[0].charAt(0).toUpperCase();
+          const lastName = nameParts[nameParts.length - 1].charAt(0).toUpperCase();
+          return `${firstName}${lastName}`;
+       }
+function setActiveTeam(team) {
+  activeTeam.value = team;
 }
 
 // Cleanup on unmount
@@ -371,11 +774,9 @@ onUnmounted(() => {
     systemPreferenceListener();
   }
 });
-
 </script>
 
 <style lang="sass">
-
 .q-dialog__inner--minimized
    padding: 0px
    padding-left: 57px !important
@@ -384,20 +785,6 @@ onUnmounted(() => {
    z-index: 1
    box-shadow: 10px 4px 6px -1px rgba(0, 0, 0, 0.2), 0 2px 4px -1px rgba(0, 0, 0, 0.06) !important
    button,
-    .button
-     cursor: pointer
-     padding: 16px 24px
-     border-radius: 30px
-     border: none
-     font-size: 12px
-     margin-right: 8px
-     color: #fff
-   .q-dialog__backdrop
-    background: rgb(0 0 0 / 17%)
-   .q-dialog__inner > div
-    border-radius: 0px
-    box-shadow: 10px 4px 6px -1px rgba(0, 0, 0, 0.2), 0 2px 4px -1px rgba(0, 0, 0, 0.06)
-
 .drawer
    box-sizing: border-box
 .header
@@ -417,7 +804,6 @@ onUnmounted(() => {
     position: absolute
     top: 0
     bottom: 0
-    // background: #fff
     z-index: 0
 
 </style>
@@ -429,5 +815,30 @@ onUnmounted(() => {
 
 ion-action-sheet {
   z-index: 9999 !important; /* Ensure the action sheet appears above the modal */
+}
+.app-header {
+  /* background-color: var(--ion-color-primary);
+  color: var(--ion-color-primary-contrast); */
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  height: 3rem; /* Adjust based on header size */
+  display: flex;
+  align-items: center;
+  /* box-shadow: 0px 1px 3px rgba(0, 0, 0, 0.1); */
+}
+
+.router-content {
+  margin-top: 4rem; /* Matches the height of the header */
+  display: flex;
+  flex-grow: 1;
+  flex-direction: column;
+}
+.row {
+  flex-wrap: nowrap !important;
+}
+.sidebar-menu-button:hover {
+  background-color: #fafafa !important;
+
 }
 </style>

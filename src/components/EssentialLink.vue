@@ -7,18 +7,14 @@
     @click="$router.push(link)"
     :active="active(link)"
      active-class="my-menu-link"
-
   >
     <q-item-section
       v-if="icon"
       avatar
-
     >
-
       <q-icon v-if="icon=='fa-solid fa-vault'" :class="mobile ? 'treasury-icon-mobile' : 'treasury-icon-desktop'" size="20px" :name="icon"/>
       <q-icon v-else :name="icon"/>
     </q-item-section>
-
     <q-item-section>
       <q-item-label  >{{ title }}</q-item-label>
       <q-item-label caption>{{ caption }}</q-item-label>
@@ -42,25 +38,23 @@ let result=null
   else result = route.fullPath.startsWith(link);
   return result
 }
+
 /*
    props
 */
-   const props = defineProps({
+const props = defineProps({
  title: {
       type: String,
       required: true
     },
-
     caption: {
       type: String,
       default: ''
     },
-
     link: {
       type: String,
       default: '/'
     },
-
     icon: {
       type: String,
       default: ''

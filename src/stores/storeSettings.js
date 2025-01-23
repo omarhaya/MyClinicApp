@@ -30,6 +30,7 @@ export const useStoreSettings = defineStore('storeSettings', {
         theme: 'system', // Default theme
         fontContext: 'system',
         miniState: true,
+        enlargeHover:true,
       },
       // darkMode: computed({
       //   get() {
@@ -79,7 +80,7 @@ export const useStoreSettings = defineStore('storeSettings', {
             this.userSettings = null;
           }
         });
-
+          console.log(this.userSettings,'this.userSettings')
         // Save the unsubscribe function
         this.unsubscribe = unsubscribe;
       } catch (error) {
@@ -127,5 +128,41 @@ export const useStoreSettings = defineStore('storeSettings', {
       }
       this.loading=false
     },
+
+
+
+    async setMiniState(miniState) {
+      try {
+        console.log(miniState,'miniState')
+        this.loading=true
+        this.appearance.miniState = miniState; // Update the local state
+        const userDocRef = doc(settingsCollectionRef, this.storeAuth.user.uid);
+
+        // Update Firestore with the new font context
+        await updateDoc(userDocRef, {
+          'appearance.miniState': miniState,
+        });
+      } catch (error) {
+        console.error('Error setting font context:', error);
+      }
+      this.loading=false
+    },
+    async setEnlargeHover(enlargeHover) {
+      try {
+        console.log(enlargeHover,'enlargeHover')
+        this.loading=true
+        this.appearance.enlargeHover = enlargeHover; // Update the local state
+        const userDocRef = doc(settingsCollectionRef, this.storeAuth.user.uid);
+
+        // Update Firestore with the new font context
+        await updateDoc(userDocRef, {
+          'appearance.enlargeHover': enlargeHover,
+        });
+      } catch (error) {
+        console.error('Error setting font context:', error);
+      }
+      this.loading=false
+    },
+
   },
 });

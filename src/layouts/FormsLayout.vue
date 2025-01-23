@@ -4,12 +4,13 @@ import SidebarNav from 'src/components/Settings/SidebarNav.vue'
 import {
   IonContent,
   IonPage,
+IonRouterOutlet,
 } from '@ionic/vue';
+import Card from 'src/components/ui/card/Card.vue';
 </script>
 
 <template>
-  <ion-page ref="page">
-    <ion-content>
+
   <div class="md:hidden">
     <VPImage
       alt="Forms"
@@ -23,18 +24,22 @@ import {
   <div >
     <Separator class="my-6" />
     <div class="flex flex-col space-y-8 lg:flex-row lg:space-x-12 lg:space-y-0">
-      <aside class="-mx-4 lg:w-1/5 pl-[30px]">
+      <!-- <aside class="sticky-sidebar -mx-4 lg:w-1/5 pl-[30px]">
         <SidebarNav />
-      </aside>
-      <div class="flex-1 lg:max-w-2xl">
-        <div class="space-y-6 settings-page mb-10">
-            <router-view></router-view>
+      </aside> -->
+
+      <div class="flex-1 lg:max-w-5xl">
+
+        <div >
+
+        <IonRouterOutlet/>
+
         </div>
+
       </div>
     </div>
   </div>
-</ion-content>
-</ion-page>
+
 </template>
 
 <style module>
@@ -161,5 +166,10 @@ import {
   box-sizing: border-box;
 }
 
-
+/* Sidebar Sticky Styles */
+.sticky-sidebar {
+  position: sticky;
+  top: 1rem; /* Adjust the offset from the top as needed */
+  align-self: flex-start; /* Ensures proper alignment */
+}
 </style>

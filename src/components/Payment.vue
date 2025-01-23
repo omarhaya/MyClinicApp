@@ -1,6 +1,13 @@
 <template>
 
-  <ion-item-sliding class="payment" :class="{ 'fade-out': isDeleted }"  :style="{ borderLeft: `4px solid ${getWorkColor(payment.workId)}` }" >
+    <ion-item-sliding
+      :class="{
+        payment: payment.type === 'payment',
+        'payment payment-expense': payment.type !== 'payment',
+        'fade-out': isDeleted
+      }"
+      :style="{ borderLeft: `4px solid ${getWorkColor(payment.workId)}` }">
+
 
     <!-- <ion-item-options side="start">
       <ion-item-option expandable @click="newPayment" color="success"><q-icon size="25px" name="payment"/>Pay</ion-item-option>
@@ -25,10 +32,10 @@
     <span class="row">
     <div class="col-12 col-md-8 row" v-if="payment.patientName">
 
-      <q-avatar v-if="payment.patientName&&!isArabic(payment.patientName)" class="q-mr-xs avatar-name" size="35px" font-size="16px" color="green-3" text-color="white"> {{getInitials( payment.patientName) }} </q-avatar>
-            <q-avatar v-if="payment.patientName&&isArabic(payment.patientName)" class="q-mr-xs avatar-person" font-size="42px" size="35px" color="green-3" text-color="white" icon="person"/>
-      <div class="text-bold" > {{ payment.patientName }}</div></div>
-      <div class="col-12 col-md-4" v-if="storeWorks.invoiceWorks[payment.invoiceId]"  v-for="work in storeWorks.invoiceWorks[payment.invoiceId].filter(w => w.workId === payment.workId)">
+      <q-avatar v-if="payment.patientName&&!isArabic(payment.patientName)" class="q-mr-xs avatar-name " size="35px" font-size="16px" color="green-3" text-color="white"> {{getInitials( payment.patientName) }} </q-avatar>
+            <q-avatar v-if="payment.patientName&&isArabic(payment.patientName)" class="q-mr-xs  avatar-person" font-size="42px" size="35px" color="green-3" text-color="white" icon="person"/>
+      <div class="text-bold  pt-2" > {{ payment.patientName }}</div></div>
+      <div class="col-12 col-md-4  pt-1" v-if="storeWorks.invoiceWorks[payment.invoiceId]"  v-for="work in storeWorks.invoiceWorks[payment.invoiceId].filter(w => w.workId === payment.workId)">
     <div class="text-bold" ><q-badge :color="work.color" class="col q-mt-xs q-pa-xs">{{ work.label }}</q-badge></div></div>
     <div class="col-12 col-md-4" v-else-if="payment.category=='Discount'">
     <div class="text-bold" ><q-badge :color="'grey'" class="col q-mt-xs q-pa-xs">{{ payment.category }}</q-badge></div></div>
@@ -86,7 +93,7 @@ rounded
 
 
 <span class="row">
-<span v-if="storeInvoices.paymentsInvoice[payment.invoiceId]" class="dateFormat">{{ formatDateTime }}</span>
+<span v-if="storeInvoices.paymentsInvoice[payment.invoiceId]" class="dateFormat pt-1">{{ formatDateTime }}</span>
 <span v-else class="dateFormat">  <q-skeleton animation="blink" type="text" class="text-caption" width="100px" /></span>
 <div class="icon-wrapper" @click.stop.prevent @mouseenter.stop.prevent>
   <div v-if="!mobile" @click.stop.prevent @ionRippleEffect.stop class="dropdown-container">
@@ -474,26 +481,47 @@ const progressColor = computed (()=>{
 </script>
 
 <style lang="scss" scoped>
+.payment-expense {
+
+
+// min-height: 100px;
+background-color: #fff3f3 !important;
+align-items: center !important;
+ion-item {
+--background: #fff3f3 !important;
+--padding-top:0px !important;
+--padding-bottom:0px !important;
+
+}
+}
+.ion-dark .payment-expense {
+background-color: #2b2020 !important;
+color: #ffffff;
+ion-item {
+  --background: #2b2020 !important;
+}
+}
 .payment {
 
-.dateFormat {
-  color: grey;
-  font-size: clamp(10px, 2vw + 6px, 14px)!important; /* Dynamically scale with container size */
-}
-text-decoration: none;
-cursor: pointer;
-// gap: 16px;
-margin-bottom: 16px;
-color: #000000;
+  .dateFormat {
+    color: grey;
+    font-size: clamp(10px, 2vw + 6px, 14px)!important; /* Dynamically scale with container size */
+
+  }
+  text-decoration: none;
+  cursor: pointer;
+  // gap: 16px;
+  margin-bottom: 16px;
+  color: #000000;
   border-radius: 20px;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1), 0 0px 3px rgba(0, 0, 0, 0.08);
   border: 1px 1px 1px 1px solid rgba(0, 0, 0, 0.1);
 
   // min-height: 100px;
-  background-color: #fff;
-align-items: center;
+  background-color: #f9fff6;
+align-items: center !important;
 ion-item {
-  --background: #fff;
+  --background: #f9fff6;
   --padding-top:0px !important;
   --padding-bottom:0px !important;
 
@@ -530,7 +558,7 @@ span {
 .right {
   gap: 16px;
   flex-basis: 40%;
-  align-items: center;
+  align-items: center !important;
 
   .price {
     flex: 1;
@@ -558,10 +586,10 @@ span {
     min-width: 108px;
 }
 .ion-dark .payment {
-  background-color: #1c1917;
+  background-color: #242c25;
   color: #ffffff;
   ion-item {
-    --background: #1c1917;
+    --background: #242c25;
   }
 }
 
@@ -615,6 +643,7 @@ ion-item {
     --background-focused: transparent !important;
     --ripple-color: transparent !important;
     pointer-events: none;
+
   }
 }
 
