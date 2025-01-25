@@ -29,7 +29,11 @@ import { toDate } from 'radix-vue/date'
 import { ref } from 'vue'
 import { h } from '@vue/runtime-core'
 import * as z from 'zod'
-
+import {
+  IonContent,
+  IonPage,
+} from '@ionic/vue';
+import Card from 'src/components/ui/card/Card.vue'
 const open = ref(false)
 const dateValue = ref()
 const placeholder = ref()
@@ -76,6 +80,9 @@ async function onSubmit(values: any) {
 </script>
 
 <template>
+  <IonPage>
+    <IonContent :fullscreen="true">
+      <Card class="p-6 m-2">
   <div>
     <h3 class="text-lg font-medium">
       Account
@@ -208,4 +215,7 @@ async function onSubmit(values: any) {
       </Button>
     </div>
   </Form>
+</Card>
+  </IonContent>
+  </IonPage>
 </template>

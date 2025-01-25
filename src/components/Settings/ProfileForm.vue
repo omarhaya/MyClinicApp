@@ -12,7 +12,11 @@ import { toTypedSchema } from '@vee-validate/zod'
 import { FieldArray, useForm } from 'vee-validate'
 import { ref, watch } from 'vue'
 import * as z from 'zod'
-
+import {
+  IonContent,
+  IonPage,
+} from '@ionic/vue';
+import Card from 'src/components/ui/card/Card.vue'
 // Import Pinia store
 import { useStoreSettings } from 'src/stores/storeSettings'
 
@@ -69,6 +73,9 @@ const onSubmit = handleSubmit((values) => {
 </script>
 
 <template>
+  <ion-page>
+    <ion-content>
+      <Card class="p-6 m-2">
   <div>
     <h3 class="text-lg font-medium">Profile</h3>
     <p class="text-sm text-muted-foreground">
@@ -166,4 +173,7 @@ const onSubmit = handleSubmit((values) => {
       <Button type="button" variant="outline" @click="resetForm">Reset form</Button>
     </div>
   </form>
+  </Card>
+</ion-content>
+</ion-page>
 </template>

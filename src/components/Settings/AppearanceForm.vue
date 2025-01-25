@@ -12,7 +12,11 @@ import { useForm } from 'vee-validate'
 import { h,onMounted,ref,computed} from 'vue'
 import * as z from 'zod'
 import { useStoreSettings } from 'src/stores/storeSettings'
-
+import {
+  IonContent,
+  IonPage,
+} from '@ionic/vue';
+import Card from 'src/components/ui/card/Card.vue';
 const storeSettings = useStoreSettings()
 
 const appearanceFormSchema = toTypedSchema(z.object({
@@ -68,7 +72,10 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div>
+  <ion-page>
+    <ion-content>
+   <Card class="p-6 m-2">
+   <div>
     <h3 class="text-lg font-medium">
       Appearance
     </h3>
@@ -266,4 +273,7 @@ onMounted(async () => {
       </Button>
     </div>
   </form>
+</Card>
+</ion-content>
+</ion-page>
 </template>

@@ -12,6 +12,7 @@ import FormsLayout from 'src/layouts/FormsLayout.vue'
 import ProfileForm from 'src/components/Settings/ProfileForm.vue'
 import AccountForm from 'src/components/Settings/AccountForm.vue'
 import AppearanceForm from 'src/components/Settings/AppearanceForm.vue'
+import Settings from 'src/pages/Settings.vue'
 
 const routes = [
   {
@@ -56,10 +57,10 @@ const routes = [
       },
       {
         path: '/settings',
-        component: FormsLayout,
+        component: Settings,
         children: [
           {
-            path: '',
+            path: 'profile',
             component: ProfileForm,
             name: 'profile'
           },

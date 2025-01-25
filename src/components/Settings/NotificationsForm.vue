@@ -11,7 +11,11 @@ import { toTypedSchema } from '@vee-validate/zod'
 import { useForm } from 'vee-validate'
 import { h } from 'vue'
 import * as z from 'zod'
-
+import {
+  IonContent,
+  IonPage,
+} from '@ionic/vue';
+import Card from 'src/components/ui/card/Card.vue';
 const notificationsFormSchema = toTypedSchema(z.object({
   type: z.enum(['all', 'mentions', 'none'], {
     required_error: 'You need to select a notification type.',
@@ -42,6 +46,9 @@ const onSubmit = handleSubmit((values) => {
 </script>
 
 <template>
+  <ion-page>
+    <ion-content>
+      <Card class="p-6 m-2">
   <div>
     <h3 class="text-lg font-medium">
       Notifications
@@ -201,4 +208,7 @@ const onSubmit = handleSubmit((values) => {
       </Button>
     </div>
   </form>
+  </Card>
+  </ion-content>
+</ion-page>
 </template>

@@ -15,11 +15,13 @@ const router = useRouter()
 const sidebarNavItems: Item[] = [
   {
     title: 'Profile',
-    href: '/settings',
+    href: '/settings/profile',
+
   },
   {
     title: 'Account',
     href: '/settings/account',
+
   },
   {
     title: 'Appearance',
@@ -28,21 +30,25 @@ const sidebarNavItems: Item[] = [
   {
     title: 'Notifications',
     href: '/settings/notifications',
+
   },
   {
     title: 'Display',
     href: '/settings/display',
+
   },
 ]
 
 </script>
 
 <template>
+
   <nav class="flex space-x-2 lg:flex-col lg:space-x-0 lg:space-y-1">
     <Button
       v-for="item in sidebarNavItems"
       :key="item.title"
       variant="ghost"
+      :disabled="item.disabled"
       @click="router.push(item.href)"
       :class="cn(
         'w-full text-left justify-start cursor-pointer',

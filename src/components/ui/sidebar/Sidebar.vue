@@ -88,6 +88,9 @@ const { isMobile, state, openMobile, setOpenMobile } = useSidebar()
 .sidebar {
   background-color: #fafafa !important;
   border-color: rgba(var(--v-border-color), var(--v-border-opacity)) !important;
+  .flex {
+  flex-wrap: nowrap !important;
+}
 }
 .dark .sidebar {
   background-color: #1f1f1f !important;

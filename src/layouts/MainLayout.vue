@@ -211,15 +211,17 @@
               v-for="item in data.navMain"
               :key="item.title"
               as-child
-              :default-open="item.isActive"
+              :default-open="active(item.url)"
               class="group/collapsible"
             >
               <SidebarMenuItem >
-                <CollapsibleTrigger  as-child>
-                  <SidebarMenuButton @click="$router.push(item.url)" :class="active(item.url) ? 'bg-primary' : ''" class="group-data-[state=open]/collapsible:bg-sidebar-accent group-data-[state=open]/collapsible:text-accent-foreground hover:bg-accent hover:text-accent-foreground " :tooltip="item.title">
+                <CollapsibleTrigger   as-child>
+                  <SidebarMenuButton  @click="$router.push(item.url)" :class="active(item.url) ? 'bg-primary' : ''" class="group-data-[state=open]/collapsible:bg-sidebar-accent group-data-[state=open]/collapsible:text-accent-foreground hover:bg-accent hover:text-accent-foreground" :tooltip="item.title">
                     <component :class="!storeSettings.appearance.miniState?'mt-[-2px]':''" :is="item.icon"  />
                     <span :class="!storeSettings.appearance.miniState?'mt-[-2px]':''" >{{ item.title }}</span>
-                    <ChevronRight v-if="item.collapsible"  class="ml-auto mt-[-2px] transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
+                    <CollapsibleTrigger class="cursor-default"  as-child>
+                    <ChevronRight @click.stop v-if="item.collapsible"  class="ml-auto mt-[-2px] transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90 cursor-default" />
+                  </CollapsibleTrigger>
                   </SidebarMenuButton>
                 </CollapsibleTrigger>
                 <CollapsibleContent v-if="item.collapsible">
@@ -228,9 +230,9 @@
                       v-for="subItem in item.items"
                       :key="subItem.title"
                     >
-                      <SidebarMenuSubButton as-child>
-                        <a :href="subItem.url">
-                          <span>{{ subItem.title }}</span>
+                      <SidebarMenuSubButton as-child :class="active(subItem.url) ? 'bg-primary' : ''">
+                        <a @click="$router.push(subItem.url)">
+                          <span class="cursor-default">{{ subItem.title }}</span>
                         </a>
                       </SidebarMenuSubButton>
                     </SidebarMenuSubItem>
@@ -605,7 +607,7 @@ const data = {
     {
       title: 'Schedule',
       url: '/calendar',
-      collapsible:true,
+      // collapsible:true,
       icon:CalendarCheck,
       // items: [
       //   {
@@ -633,20 +635,24 @@ const data = {
       collapsible:true,
       items: [
         {
-          title: 'General',
-          url: '#',
+          title: 'Profile',
+          url: '/settings/profile',
         },
         {
-          title: 'Team',
-          url: '#',
+          title: 'Account',
+          url: '/settings/account',
         },
         {
-          title: 'Billing',
-          url: '#',
+          title: 'Appearance',
+          url: '/settings/appearance',
         },
         {
-          title: 'Limits',
-          url: '#',
+          title: 'Notifications',
+          url: '/settings/notifications',
+        },
+        {
+          title: 'Display',
+          url: '/settings/display',
         },
       ],
     },
@@ -834,9 +840,7 @@ ion-action-sheet {
   flex-grow: 1;
   flex-direction: column;
 }
-.row {
-  flex-wrap: nowrap !important;
-}
+
 .sidebar-menu-button:hover {
   background-color: #fafafa !important;
 

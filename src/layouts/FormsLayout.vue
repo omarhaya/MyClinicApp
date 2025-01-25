@@ -1,175 +1,61 @@
 <script setup lang="ts">
+import {onMounted} from 'vue'
 import { Separator } from 'src/lib/registry/new-york/ui/separator'
 import SidebarNav from 'src/components/Settings/SidebarNav.vue'
-import {
-  IonContent,
-  IonPage,
-IonRouterOutlet,
-} from '@ionic/vue';
-import Card from 'src/components/ui/card/Card.vue';
+import { IonContent, IonPage, IonRouterOutlet } from '@ionic/vue';
+import {useRouter} from 'vue-router'
+const router=useRouter()
+onMounted (()=>{
+router.push('/settings/profile')
+})
 </script>
 
 <template>
+  <ion-page ref="page">
+        <ion-content>
+      <!-- Layout with Sidebar and Router Outlet -->
+      <div class="layout h-full flex flex-col space-y-8 lg:flex-row lg:space-x-2 lg:space-y-0">
+        <!-- Sidebar -->
+        <aside class="sidebar ml-2 mt-4 ">
+          <SidebarNav />
+        </aside>
 
-  <div class="md:hidden">
-    <VPImage
-      alt="Forms"
-      width="1280"
-      height="1214" class="block" :image="{
-        dark: '/examples/forms-dark.png',
-        light: '/examples/forms-light.png',
-      }"
-    />
-  </div>
-  <div >
-    <Separator class="my-6" />
-    <div class="flex flex-col space-y-8 lg:flex-row lg:space-x-12 lg:space-y-0">
-      <!-- <aside class="sticky-sidebar -mx-4 lg:w-1/5 pl-[30px]">
-        <SidebarNav />
-      </aside> -->
-
-      <div class="flex-1 lg:max-w-5xl">
-
-        <div >
-
-        <IonRouterOutlet/>
-
+        <!-- Router Outlet -->
+        <div class="router-outlet h-full">
+          <IonRouterOutlet />
         </div>
-
       </div>
-    </div>
-  </div>
-
+    </ion-content>
+  </ion-page>
 </template>
 
-<style module>
-/* Use CSS modules to avoid style conflicts */
-.settings-page {
-  /* Reset any inherited styles */
-  all: initial;
-
-  /* Add your base styles */
-  font-family: system-ui, -apple-system, sans-serif;
-  color: var(--foreground);
-  background: var(--background);
-
-  /* Container styles */
-  width: 100%;
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-}
-
-.settings-main {
-  flex: 1;
-  min-height: calc(100vh - theme('spacing.16'));
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-  background: var(--background);
-  padding: 1rem;
-}
-
-@media (min-width: 768px) {
-  .settings-main {
-    gap: 2rem;
-    padding: 2.5rem;
-  }
-}
-
-/* Override any global styles that might affect our components */
-:global(.settings-page) {
-  /* Card styles */
-  .card {
-    background: var(--card-background);
-    border: 1px solid var(--border);
-    border-radius: 0.5rem;
-    box-shadow: var(--card-shadow);
-  }
-
-  /* Button styles */
-  .button {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 0.375rem;
-    font-weight: 500;
-    padding: 0.5rem 1rem;
-    transition: all 0.2s;
-  }
-
-  /* Input styles */
-  .input {
-    width: 100%;
-    padding: 0.5rem;
-    border: 1px solid var(--border);
-    border-radius: 0.375rem;
-    background: var(--input-background);
-  }
-
-  /* Navigation styles */
-  .nav-link {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    padding: 0.5rem 0.75rem;
-    border-radius: 0.375rem;
-    transition: all 0.2s;
-
-    &:hover {
-      background: var(--muted);
-    }
-  }
-}
-
-/* CSS Custom Properties for theming */
-:root {
-  --foreground: #000000;
-  --background: #ffffff;
-  --muted: #f4f4f5;
-  --border: #e4e4e7;
-  --card-background: #ffffff;
-  --card-shadow: 0 1px 3px rgba(0,0,0,0.1);
-  --input-background: #ffffff;
-}
-
-/* Dark mode variables */
-:root[data-theme="dark"] {
-  --foreground: #ffffff;
-  --background: #09090b;
-  --muted: #27272a;
-  --border: #3f3f46;
-  --card-background: #18181b;
-  --card-shadow: 0 1px 3px rgba(0,0,0,0.3);
-  --input-background: #27272a;
-}
-</style>
-
 <style scoped>
-/* Add any component-specific styles here */
-:deep(.ion-page) {
-  background: var(--background);
+/* Main layout container */
+.layout {
+  display: flex; /* Create a horizontal flex container */
+  gap: 1rem; /* Add space between sidebar and router outlet */
+
 }
 
-:deep(.ion-content) {
-  --background: var(--background);
-}
-
-/* Ensure Ionic components don't override our styles */
-:deep(.ion-page) {
-  contain: none;
-}
-
-/* Override any unwanted inherited styles */
-:deep(*) {
-  font-family: inherit;
-  box-sizing: border-box;
-}
-
-/* Sidebar Sticky Styles */
-.sticky-sidebar {
+/* Sidebar styles */
+.sidebar {
   position: sticky;
-  top: 1rem; /* Adjust the offset from the top as needed */
-  align-self: flex-start; /* Ensures proper alignment */
+  width: 200px; /* Fixed width for the sidebar */
+  background-color: var(--background); /* Match theme */
+
+  flex-shrink: 0; /* Prevent sidebar from shrinking */
+  overflow-y: auto; /* Allow scrolling if content overflows */
+  z-index: 1000000;
 }
+
+/* Router outlet container styles */
+.router-outlet {
+  flex: 1; /* Take up the remaining space */
+  background-color: var(--background); /* Match theme */
+  padding: 1rem; /* Add padding for content */
+  overflow-y: auto; /* Allow scrolling for the main content */
+  position: relative;
+
+}
+
 </style>
