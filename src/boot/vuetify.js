@@ -22,8 +22,9 @@ export default boot(async ( { app } ) => {
         light: {
           colors: {
             primary: '#5cbe95',
-            secondary: '#f4f4f5',
-            accent: '#9C27B0',
+            "on-primary": "#ffffff",
+            // secondary: '#f4f4f5',
+            // accent: '#9C27B0',
             'primary-darken-1': '#0c0a09',
             'secondary-darken-1': '#0c0a09',
             'button-hover': '#0c0a09',

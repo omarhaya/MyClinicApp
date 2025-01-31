@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, signOut } from 'firebase/auth'
 import { auth, db } from '/src/js/firebase'
-import { doc, setDoc, onSnapshot } from 'firebase/firestore'
+import { doc, setDoc, onSnapshot,updateDoc } from 'firebase/firestore'
 import { useStorePatients } from './storePatients'
 import { useStoreAppointments } from './storeAppointments'
 import { useStorePayments } from './storePayments'
@@ -9,7 +9,7 @@ import { useStoreInvoices } from './storeInvoices'
 import { useStoreWorks } from './storeWorks'
 import { useStoreSettings } from './storeSettings'
 
-let getDoctorsSnapshot = null
+let getStaffSnapshot = null
 let getUserRoleSnapshot = null
 
 export const useStoreAuth = defineStore('storeAuth', {
@@ -32,7 +32,7 @@ export const useStoreAuth = defineStore('storeAuth', {
       storeWorks,
       errorMessageLogin: '',
       errorMessageRegister: '',
-      loadingDoctors: false,
+      loadingStaff: false,
       loading: true, // Add loading state
       initialized: false, // Add an initialized flag
       loadingApp:null,
@@ -60,7 +60,7 @@ export const useStoreAuth = defineStore('storeAuth', {
 
                   await this.waitForLoading();
                   const clinicId = this.role.clinicId || user.uid;
-                  this.getDoctors(clinicId);
+                  this.getStaff(clinicId);
 
                   // Initialize dependent stores
                   try {
@@ -121,10 +121,13 @@ export const useStoreAuth = defineStore('storeAuth', {
           this.loading=false
           return setDoc(doc(db, 'users', userCredential.user.uid), {
             practicename: credentials.practicename,
-            doctors: {
+            staff: {
               [userCredential.user.uid]: {
-                doctorId: userCredential.user.uid,
+                staffId: userCredential.user.uid,
                 name: credentials.practicename,
+                role: 'admin',
+                permissions:[
+                  "Delete Patients","Delete Appointments","Delete Records","Delete Invoices","Edit Patients" ,"Edit Invoices","Edit Records" ,"Edit Appointments","Add Patients","Add Appointments","Add Records","Add Invoices","Add Transactions","Edit Transactions","Delete Transactions"]
               }
             }
           });
@@ -135,10 +138,10 @@ export const useStoreAuth = defineStore('storeAuth', {
         this.loading=false
     },
 
-    getDoctors(clinicId) {
+    getStaff(clinicId) {
       // Set doctors array
-      getDoctorsSnapshot = onSnapshot(doc(db, 'users', clinicId), (doc) => {
-        const doctorsData = doc.data().doctors;
+      getStaffSnapshot = onSnapshot(doc(db, 'users', clinicId), (doc) => {
+        const doctorsData = doc.data().staff;
         // Check if doctorsData is an array
         if (Array.isArray(doctorsData)) {
           // If it's an array, use it directly
@@ -153,12 +156,20 @@ export const useStoreAuth = defineStore('storeAuth', {
           doctorsArray.forEach((doctor, index) => {
             doctor.class = 'split' + (index + 1);
             doctor.color = '#5a4d4dd4';
+            if (doctor.userId === this.role.clinicId) {
+              doctor.role = 'admin';
+            }
+            // doctor.permissions=['Add Patients','Delete Patients','Edit Patients', 'Prescribe Treatments', 'Access Records','Add Patients', 'Delete Appointments','Edit Appointments', 'View Records', 'Perform Procedures', 'Edit Records', 'Add Appointments', 'Answer Calls','Add Invoices','Delete Invoices','Edit Invoices','Add Transactions','Delete Transactions','Edit Transactions'];
           });
+  //         { id: 'S001', name: 'Alice Smith', role: 'Doctor', permissions: ['View Patients', 'Prescribe Treatments', 'Access Records'] },
+  // { id: 'S002', name: 'John Doe', role: 'Doctor', permissions: ['Manage Appointments', 'View Records'] },
+  // { id: 'S003', name: 'Emily Davis', role: 'Nurse', permissions: ['Perform Procedures', 'Edit Records'] },
+  // { id: 'S004', name: 'Michael Brown', role: 'Receptionist', permissions: ['Schedule Appointments', 'Answer Calls'] },
           // Make the doctor with doctorId equal to user.uid first in the array
           const userUid = this.user.uid; // Assume user.uid is available in the context
           doctorsArray = doctorsArray.sort((a, b) => {
-            if (a.doctorId === userUid) return -1;
-            if (b.doctorId === userUid) return 1;
+            if (a.userId === userUid) return -1;
+            if (b.userId === userUid) return 1;
             return 0;
           });
           this.doctors = doctorsArray;
@@ -184,7 +195,6 @@ export const useStoreAuth = defineStore('storeAuth', {
           console.log('err', err.message);
         });
     },
-
     logoutUser() {
       signOut(auth).then(() => {
         this.storePatients.clearPatients();
@@ -197,6 +207,18 @@ export const useStoreAuth = defineStore('storeAuth', {
       }).catch((error) => {
         console.log(error.message);
       });
+    },
+    async updateStaff(staff) {
+      console.log('staff', staff);
+      try {
+        const staffUpdate = {};
+        staffUpdate[`doctors.${staff.doctorId}`] = staff; // Correctly target only the specific doctor
+
+        await updateDoc(doc(db, "users", this.role.clinicId), staffUpdate);
+        console.log(`Updated staff ${staff.doctorId} successfully`);
+      } catch (error) {
+        console.error("Error updating staff:", error);
+      }
     },
   },
 

@@ -1,96 +1,13 @@
-<template>
-  <ion-page ref="page">
-    <ion-header v-if="mobile" :translucent="true">
-      <ion-toolbar>
-        <ion-title>Dashboard</ion-title>
-      </ion-toolbar>
-    </ion-header>
-    <ion-content>
-      <ion-header collapse="condense">
-        <ion-toolbar class="home container">
-          <ion-title size="large">Dashboard</ion-title>
-        </ion-toolbar>
-      </ion-header>
-
-      <div class="row">
-        <CardWidgetIcons class="col-12 col-md card-widget" :prefix="'IQD'" :value="currentMonthPaymentsData" icon="card" label="Payments" />
-        <CardWidgetIcons class="col-12 col-md card-widget" :value="currentMonthAppointmentsCount" icon="calendar" label="Appointments" />
-        <CardWidgetIcons class="col-12 col-md card-widget" :value="currentMonthPatientsCount" icon="person"  label="New Clients" />
-        <CardWidgetIcons class="col-12 col-md card-widget" :value="storeWorks.totalPriceThisMonth" icon="newspaper" label="Invoices" />
-      </div>
-      <div class="row">
-        <div class="col-12 col-md">
-          <ion-card>
-            <ion-card-header>
-              <ion-card-title class="text-h6">
-                Upcoming Appointments
-              </ion-card-title>
-            </ion-card-header>
-
-            <ion-card-content style="min-height: 300px;" class="monthly-line-chart-wrapper">
-              <ion-list v-if="groupedAppointmentsByDate.length > 0">
-                <ion-item-group v-for="group in groupedAppointmentsByDate" :key="group.id">
-                  <ion-item-divider sticky>
-                    <ion-label>{{ group.id }}</ion-label>
-                  </ion-item-divider>
-                  <ion-item-sliding v-for="session in group.sessions" :key="session.appointmentId">
-                    <ion-card>
-                    <ion-item >
-                      <ion-label :style="getLabelStyle('primary')">
-                        <h3>{{ session.title }}</h3>
-                        <p>
-                          {{ dayjs(session.start, "HH:mm").format("h:mm A") + ' - ' + dayjs(session.end, "HH:mm").format("h:mm A") }}
-                        </p>
-                      </ion-label>
-                    </ion-item>
-                  </ion-card>
-                    <!-- <ion-item-options>
-                      <ion-item-option color="favorite" @click="addFavorite(session)">
-                        Favorite
-                      </ion-item-option>
-                      <ion-item-option color="danger" @click="removeFavorite(session)">
-                        Remove
-                      </ion-item-option>
-                    </ion-item-options> -->
-                  </ion-item-sliding>
-                </ion-item-group>
-                <div style="display: flex; justify-content: center; margin-top: 16px;">
-                <q-btn
-                  :loading="storeAppointments.loadingAppointments"
-                  flat
-                  color="secondary"
-                  @click="storeAppointments.limit += 2; storeAppointments.getMyAppointments()"
-                  label="Load More..."
-                />
-              </div>
-              </ion-list>
-              <div v-else> No Upcoming Appointments</div>
-              <!-- Center-aligned Button -->
-
-            </ion-card-content>
-          </ion-card>
-        </div>
-        <div class="col-12 col-md">
-        <ion-card>
-             <!-- Wrapping div to apply touch handlers -->
-        <ion-card-content
-            style="height: 300px;"
-            ref="monthlyLineChart"
-            @touchstart="handleTouchStart"
-            @touchmove="handleTouchMove"
-            class="monthly-line-chart-wrapper  ">
-         <MonthlyPaymentLineChart :paymentsData="paymentsData"/>
-        </ion-card-content>
-      </ion-card>
-    </div>
-
-      </div>
-
-    </ion-content>
-  </ion-page>
-</template>
-
 <script setup>
+import { Avatar, AvatarFallback, AvatarImage } from 'src/components/ui/avatar'
+import { Badge } from 'src/components/ui/badge'
+import { Button } from 'src/components/ui/button'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from 'src/components/ui/card'
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from 'src/components/ui/dropdown-menu'
+import { Input } from 'src/components/ui/input'
+import { Sheet, SheetContent, SheetTrigger } from 'src/components/ui/sheet'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from 'src/components/ui/table'
+import { Loader2, ArrowUpRight, CalendarPlus, CircleUser, CreditCard, DollarSign, Menu, Package2, Search, Users } from 'lucide-vue-next'
 import { ref, computed, onMounted, watch } from 'vue';
 import {
   IonCard,
@@ -114,9 +31,9 @@ import { useStoreAppointments } from 'src/stores/storeAppointments';
 import { useStoreWorks } from 'src/stores/storeWorks';
 import { useStoreAuth } from 'src/stores/storeAuth';
 import { defineEmits } from "vue";
-
-// Define the event this component will emit
-const emit = defineEmits(["toggle-sidebar"]);
+import numeral from 'numeral';
+import GrowingNumeral from 'src/components/GrowingNumeral.vue'
+import { useStoreInvoices } from 'src/stores/storeInvoices'
 dayjs.extend(isToday);
 dayjs.extend(isSameOrBefore);
 
@@ -124,13 +41,15 @@ const storePayments = useStorePayments();
 const storePatients = useStorePatients()
 const storeAppointments=useStoreAppointments()
 const storeWorks=useStoreWorks()
+const storeInvoices=useStoreInvoices()
 const storeAuth=useStoreAuth()
+storeInvoices.GET_INVOICES_NEXT()
+storePayments.getLastPayments()
 const conversionRates = {
   '$': 1500, // 1 USD = 1500 IQD
   'EUR': 1700, // Example: 1 EUR = 1700 IQD
   'GBP': 2000, // Example: 1 GBP = 2000 IQD
   'IQD': 1, // IQD is the base currency
-  // Add more currencies as needed
 };
 // Helper to format the date
 function formatDate(date) {
@@ -282,41 +201,261 @@ const getLabelStyle = (track) => {
     marginBottom: "12px"
   };
 };
+const isArabic=(value) =>{
+          return /[\u0600-\u06FF]/.test(value)
+       }
+const getInitials=(name) =>{
+          const nameParts = name.split(' ');
+          const firstName = nameParts[0].charAt(0).toUpperCase();
+          const lastName = nameParts[nameParts.length - 1].charAt(0).toUpperCase();
+          return `${firstName}${lastName}`;
+       }
 </script>
 
+<template>
+  <ion-page>
+    <ion-content>
+
+  <div class="flex min-h-screen w-full flex-col">
+    <main class="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
+      <div class="grid gap-4 md:grid-cols-2 md:gap-8 lg:grid-cols-4">
+        <Card>
+          <CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle class="text-sm font-medium">
+              Total Revenue
+            </CardTitle>
+            <DollarSign class="h-8 w-8 text-primary" />
+          </CardHeader>
+          <CardContent>
+            <div class="text-2xl font-bold">
+             IQD <GrowingNumeral :value="currentMonthPaymentsData" />
+
+            </div>
+            <p class="text-xs text-muted-foreground">
+              +20.1% from last month
+            </p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle class="text-sm font-medium">
+              New Clients
+            </CardTitle>
+            <Users class="h-8 w-8 text-primary" />
+          </CardHeader>
+          <CardContent>
+            <div class="text-2xl font-bold">
+             + <GrowingNumeral :value="currentMonthPatientsCount" />
+
+            </div>
+            <p class="text-xs text-muted-foreground">
+              +180.1% from last month
+            </p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle class="text-sm font-medium">
+              New Invoices
+            </CardTitle>
+            <CreditCard class="h-8 w-8 text-primary" />
+          </CardHeader>
+          <CardContent>
+            <div class="text-2xl font-bold">
+             + <GrowingNumeral :value="storeWorks.totalPriceThisMonth" />
+
+            </div>
+            <p class="text-xs text-muted-foreground">
+              +19% from last month
+            </p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle class="text-sm font-medium">
+              New Appointments
+            </CardTitle>
+            <CalendarPlus class="h-8 w-8 text-primary" />
+          </CardHeader>
+          <CardContent>
+            <div class="text-2xl font-bold">
+              + <GrowingNumeral :value="currentMonthAppointmentsCount"/>
+            </div>
+            <p class="text-xs text-muted-foreground">
+              +201 since last hour
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+      <div class="grid gap-4 md:gap-8 lg:grid-cols-2 xl:grid-cols-3">
+        <Card class="xl:col-span-1">
+          <CardHeader class="flex flex-row items-center">
+            <div class="grid gap-2">
+              <CardTitle>Upcoming Appointments</CardTitle>
+              <CardDescription>
+                Upcoming appointments from today.
+              </CardDescription>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <ion-list v-if="groupedAppointmentsByDate.length > 0">
+                <ion-item-group v-for="group in groupedAppointmentsByDate" :key="group.id">
+                  <ion-item-divider sticky>
+                    <ion-label>{{ group.id }}</ion-label>
+                  </ion-item-divider>
+                  <ion-item-sliding v-for="session in group.sessions" :key="session.appointmentId">
+                    <ion-card>
+                    <ion-item >
+                      <ion-label :style="getLabelStyle('primary')">
+                        <h3>{{ session.title }}</h3>
+                        <p>
+                          {{ dayjs(session.start, "HH:mm").format("h:mm A") + ' - ' + dayjs(session.end, "HH:mm").format("h:mm A") }}
+                        </p>
+                      </ion-label>
+                    </ion-item>
+                  </ion-card>
+                    <!-- <ion-item-options>
+                      <ion-item-option color="favorite" @click="addFavorite(session)">
+                        Favorite
+                      </ion-item-option>
+                      <ion-item-option color="danger" @click="removeFavorite(session)">
+                        Remove
+                      </ion-item-option>
+                    </ion-item-options> -->
+                  </ion-item-sliding>
+                </ion-item-group>
+                <div style="display: flex; justify-content: center; margin-top: 16px;">
+                 <Button as-child size="sm"
+                  :disabled="storeAppointments.loadingAppointments"
+                  @click="storeAppointments.limit += 2;storeAppointments.getMyAppointments()"
+                  class=" row  gap-1">
+                <span class="" v-if="!storeAppointments.loadingAppointments">   Load More</span>
+                <span class="row" v-if="storeAppointments.loadingAppointments">
+                  <Loader2 class="w-4 h-4 mr-2  animate-spin" />
+                <span class="col"> Please wait</span>
+              </span>
+                </Button>
+
+              </div>
+              </ion-list>
+              <div v-else> No Upcoming Appointments</div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader>
+            <CardTitle>Recent Invoices</CardTitle>
+          </CardHeader>
+          <CardContent class="grid gap-8">
+            <div v-for="invoice in storeInvoices.invoiceData.slice(0, 5)" class="flex items-center gap-4">
+              <Avatar v-if="!isArabic(storePatients.patients.find(patient => patient.patientId === invoice.patientId)?.namef || 'No Name')" class="h-9 w-9 sm:flex">
+                <AvatarImage src="/avatars/01.png" alt="Avatar" />
+                <AvatarFallback>{{getInitials(storePatients.patients.find(patient => patient.patientId === invoice.patientId)?.namef || 'No Name')}}</AvatarFallback>
+              </Avatar>
+              <Avatar v-else class="h-9 w-9 sm:flex">
+                <AvatarImage src="/avatars/01.png" alt="Avatar" />
+                <AvatarFallback><q-icon name="person"></q-icon></AvatarFallback>
+              </Avatar>
+              <div class="grid gap-1">
+                <p class="text-sm font-medium leading-none">
+                 {{storePatients.patients.find(patient => patient.patientId === invoice.patientId)?.namef || 'No Name'}}
+                </p>
+                <p class="text-sm text-muted-foreground">
+                {{ storePatients.patients.find(patient => patient.patientId === invoice.patientId)?.phone || 'No Phone Number'}}
+                </p>
+              </div>
+              <div v-if="invoice.works" v-for="subtotal in invoice.works.subTotals"  class="ml-auto font-medium">
+                <div  class="col flex font-[1000]" :class="{
+              'text-green-600 dark:text-green-400': subtotal.subTotal.sign !== '-', // Greener in dark mode
+              'text-red-600 dark:text-red-400': subtotal.subTotal.sign === '-', // Softer red in dark mode
+            }"><span class="currency"> <span v-if="subtotal.subTotal.sign !== '-'">+</span>{{(subtotal.totalAmount.currency)}} </span>{{(numeral(subtotal.totalAmount.absoluteValue).format('0,0')) }}</div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader>
+            <CardTitle>Monthly Income</CardTitle>
+          </CardHeader>
+          <CardContent
+            style="height: 400px; padding: 0;"
+            ref="monthlyLineChart"
+            @touchstart="handleTouchStart"
+            @touchmove="handleTouchMove" class="grid gap-8 monthly-line-chart-wrapper">
+           <MonthlyPaymentLineChart :paymentsData="paymentsData"/>
+          </CardContent>
+        </Card>
+        <Card class="xl:col-span-2">
+          <CardHeader class="flex flex-row items-center">
+            <div class="grid gap-2">
+              <CardTitle>Transactions</CardTitle>
+              <CardDescription>
+                Recent transactions from your store.
+              </CardDescription>
+            </div>
+            <Button as-child size="sm" class="ml-auto row  gap-1">
+                <span class="col">   View All</span>
+                <ArrowUpRight class="col ml-2 h-4 w-4" />
+            </Button>
+          </CardHeader>
+          <CardContent>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Customer</TableHead>
+                  <TableHead class=" 2xl:table-column&&xl:table-column">
+                    Type
+                  </TableHead>
+                  <TableHead class="hidden xl:table-column">
+                    Status
+                  </TableHead>
+                  <TableHead class=" xl:table-cell lg:hidden 2xl:table-column">
+                    Date
+                  </TableHead>
+                  <TableHead class="text-right">
+                    Amount
+                  </TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                <TableRow v-for="payment in storePayments.paymentData">
+                  <TableCell>
+                    <div class="font-medium">
+                      {{storePatients.patients.find(patient => patient.patientId === payment.patientId)?.namef || 'No Name'}}
+                    </div>
+                    <div class="hidden text-sm text-muted-foreground md:inline">
+                      {{storePatients.patients.find(patient => patient.patientId === payment.patientId)?.phone || 'No Phone Number'}}
+                    </div>
+                  </TableCell>
+                  <TableCell class="2xl:table-column&&xl:table-column">
+                    <Badge class="text-xs" :class="{ 'bg-green-500/10 text-green-500': payment.paid > 0, 'bg-red-500/10 text-red-500': payment.paid < 0 }" variant="outline">   {{payment.type}}</Badge>
+
+                  </TableCell>
+                  <TableCell class="hidden xl:table-column">
+                    <Badge class="text-xs" variant="outline">
+                      Approved
+                    </Badge>
+                  </TableCell>
+                  <TableCell class=" xl:table-cell lg:hidden 2xl:table-column">
+                     {{ payment.date }}
+                  </TableCell>
+                  <TableCell class="text-right"><span v-if="payment.type=='payment' && payment.paid>0" class="text-green-600">+  {{ payment.currency +' '+numeral(Math.abs(payment.paid)).format('0,0') }}</span><span v-if="payment.type=='expense' && payment.paid<0" class=text-red-600>-   {{ payment.currency +' '+numeral(Math.abs(payment.paid)).format('0,0') }}</span>
+
+                  </TableCell>
+                </TableRow>
+
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
+      </div>
+    </main>
+  </div>
+
+</ion-content>
+  </ion-page>
+</template>
 <style scoped>
-.row {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: space-between; /* Add spacing between cards */
-  gap: 10px; /* Ensure spacing between items */
-  padding: 10px; /* Replace margin with padding to prevent overflow */
-  box-sizing: border-box; /* Include padding in width calculations */
-}
-
-
-@media (max-width: 768px) {
-  .card-widget {
-    flex: 1 1 100%; /* Stack cards on smaller screens */
-    max-width: none;
-  }
-}
-.chart {
-  width: 100%;
-
-  /* touch-action: none;  Disable touch gestures on the chart to avoid interference */
-}
-ion-card-title {
-  -webkit-padding-start: 0px;
-  -webkit-padding-end: 0px;
-  padding-inline-start: 12px;
-  padding-inline-end:  12px;
-  padding-top: 12px;
-}
-ion-card-content {
-  -webkit-padding-start: 0px;
-  -webkit-padding-end: 0px;
-  padding-inline-start: 2px !important;
-  padding-inline-end:  2px !important;
+h3 {
+  margin:0 !important;
 }
 </style>

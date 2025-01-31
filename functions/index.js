@@ -28,7 +28,7 @@ exports.processSignUp = functions1.auth.user().onCreate(async (user) => {
     const customClaims = {
       doctor: true,
       accessLevel: 9,
-      clinicId:'',
+      clinicId:user.uid,
     };
   console.log(customClaims,'customClaims')
     try {

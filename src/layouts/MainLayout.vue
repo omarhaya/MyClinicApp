@@ -517,6 +517,9 @@ import {
   ArrowLeftRight,
   CalendarCheck,
   Users,
+  UserRoundCog,
+  ChartNoAxesCombined,
+  Package
 } from 'lucide-vue-next'
 import {useRoute}  from 'vue-router'
 
@@ -577,7 +580,7 @@ const data = {
       icon: ScrollText,
     },
     {
-      title: 'Patients',
+      title: 'Clients List',
       url: '/patients',
       icon: Users,
     },
@@ -627,6 +630,21 @@ const data = {
       //     url: '#',
       //   },
       // ],
+    },
+    {
+      title: 'Inventory',
+      url: '/inventory',
+      icon: Package ,
+    },
+    {
+      title: 'Staff Mangement',
+      url: '/staff',
+      icon: UserRoundCog ,
+    },
+    {
+      title: 'Reports & Analytics',
+      url: '/analytics',
+      icon: PieChart ,
     },
     {
       title: 'Settings',

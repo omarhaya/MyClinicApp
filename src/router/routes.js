@@ -13,6 +13,9 @@ import ProfileForm from 'src/components/Settings/ProfileForm.vue'
 import AccountForm from 'src/components/Settings/AccountForm.vue'
 import AppearanceForm from 'src/components/Settings/AppearanceForm.vue'
 import Settings from 'src/pages/Settings.vue'
+import StaffMangement from 'src/pages/StaffMangement.vue'
+import Inventory from 'src/pages/Inventory.vue'
+import Analytics from 'src/pages/Analytics.vue'
 
 const routes = [
   {
@@ -54,6 +57,21 @@ const routes = [
         path: '/Invoices',
         component: Invoices,
         name: 'invoices'
+      },
+      {
+        path: '/staff',
+        component: StaffMangement,
+        name: 'staff'
+      },
+      {
+        path: '/inventory',
+        component: Inventory,
+        name: 'inventory'
+      },
+      {
+        path: '/analytics',
+        component: Analytics,
+        name: 'analytics'
       },
       {
         path: '/settings',

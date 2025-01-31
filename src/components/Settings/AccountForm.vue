@@ -16,6 +16,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from 'src/lib/registry/new-york/ui/popover'
+import { RadioGroup, RadioGroupItem } from 'src/lib/registry/new-york/ui/radio-group'
 import { Separator } from 'src/lib/registry/new-york/ui/separator'
 
 import { toast } from 'src/lib/registry/new-york/ui/toast'
@@ -95,7 +96,7 @@ async function onSubmit(values: any) {
   <Form v-slot="{ setFieldValue }" :validation-schema="accountFormSchema" class="space-y-8" @submit="onSubmit">
     <FormField v-slot="{ componentField }" name="name">
       <FormItem>
-        <FormLabel>Name</FormLabel>
+        <FormLabel>Practice Name</FormLabel>
         <FormControl>
           <Input type="text" placeholder="Your name" v-bind="componentField" />
         </FormControl>
@@ -105,7 +106,43 @@ async function onSubmit(values: any) {
         <FormMessage />
       </FormItem>
     </FormField>
-
+    <FormField v-slot="{ componentField }" type="radio" name="type">
+      <FormItem class="space-y-3">
+        <FormLabel>Type of Practice</FormLabel>
+        <FormControl>
+          <RadioGroup
+            class="flex flex-col space-y-1"
+            v-bind="componentField"
+          >
+            <FormItem class="flex items-center space-x-3 space-y-0">
+              <FormControl>
+                <RadioGroupItem value="all" />
+              </FormControl>
+              <FormLabel class="font-normal">
+                Single-Room Clinic
+              </FormLabel>
+            </FormItem>
+            <FormItem   class="flex items-center space-x-3 space-y-0">
+              <FormControl :disabled='true'>
+                <RadioGroupItem value="mentions" />
+              </FormControl>
+              <FormLabel :disabled='true' class="font-normal">
+                Poly-Room Clinic
+              </FormLabel>
+            </FormItem>
+            <FormItem class="flex items-center space-x-3 space-y-0">
+              <FormControl>
+                <RadioGroupItem value="none" />
+              </FormControl>
+              <FormLabel class="font-normal">
+                Working in Poly Clinic
+              </FormLabel>
+            </FormItem>
+          </RadioGroup>
+        </FormControl>
+        <FormMessage />
+      </FormItem>
+    </FormField>
     <FormField v-slot="{ field, value }" name="dob">
       <FormItem class="flex flex-col">
         <FormLabel>Date of birth</FormLabel>

@@ -53,6 +53,7 @@ ion-content {
   padding: 0;
   box-sizing: border-box;
   font-family: "Poppins", sans-serif;
+
 }
 
 .app {
@@ -62,12 +63,14 @@ ion-content {
 
   @media (min-width: 900px) {
     flex-direction: row !important;
+
   }
 
   .app-content {
     padding: 0 20px;
     flex: 1;
     position: relative;
+
   }
 }
 
@@ -325,6 +328,7 @@ ion-content {
   font-size: 18px;
   color: #000;
 }
+
 </style>
 
 

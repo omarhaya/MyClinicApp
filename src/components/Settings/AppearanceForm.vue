@@ -57,7 +57,6 @@ onMounted(async () => {
   loading.value = true;
   try {
     await storeSettings.getSettings();
-
     // Set form values manually after fetching data
     setValues({
       theme: storeSettings.appearance.theme || 'system',

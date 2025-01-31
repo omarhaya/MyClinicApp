@@ -1,39 +1,23 @@
 <script setup lang="ts">
-import {onMounted} from 'vue'
 import { Separator } from 'src/lib/registry/new-york/ui/separator'
 import SidebarNav from 'src/components/Settings/SidebarNav.vue'
 import { IonContent, IonPage, IonRouterOutlet } from '@ionic/vue';
-import {useRouter} from 'vue-router'
-import { useStoreSettings } from 'src/stores/storeSettings';
-const storeSettings=useStoreSettings()
-const router=useRouter()
-// onMounted (()=>{
-// router.push('/settings/profile')
-// })
 </script>
 
 <template>
   <ion-page ref="page">
-        <ion-content>
+    <ion-content class="main-content">
+      <Separator class="my-6" />
+
       <!-- Layout with Sidebar and Router Outlet -->
-      <div class="layout h-full flex flex-col space-y-8 lg:flex-row lg:space-x-2 lg:space-y-0">
+      <div class="layout">
         <!-- Sidebar -->
-        <div
-          :class="[
-            'sidebar ml-2 mt-4 transform transition-transform duration-300 ease-in-out',
-            storeSettings.appearance.miniState ? 'translate-x-0' : '-translate-x-[1000px]',
-          ]"
-        >
+        <aside class="sidebar">
           <SidebarNav />
-        </div>
-<!--
-        <aside v-if="storeSettings.appearance.miniState" class="sidebar ml-2 mt-4 ">
-          <SidebarNav />
-        </aside> -->
+        </aside>
 
         <!-- Router Outlet -->
-
-          <div :class="[storeSettings.appearance.miniState ? 'router-outlet h-full' : ' h-full']">
+        <div class="router-outlet">
           <IonRouterOutlet />
         </div>
       </div>
@@ -46,15 +30,16 @@ const router=useRouter()
 .layout {
   display: flex; /* Create a horizontal flex container */
   gap: 1rem; /* Add space between sidebar and router outlet */
-
+  height: 100%; /* Full height of the content */
 }
 
 /* Sidebar styles */
 .sidebar {
   position: sticky;
-  width: 200px; /* Fixed width for the sidebar */
+  width: 300px; /* Fixed width for the sidebar */
   background-color: var(--background); /* Match theme */
-
+  border-right: 1px solid var(--border); /* Optional: Add a border for separation */
+  padding: 1rem; /* Add padding for content inside the sidebar */
   flex-shrink: 0; /* Prevent sidebar from shrinking */
   overflow-y: auto; /* Allow scrolling if content overflows */
   z-index: 1000000;
@@ -69,5 +54,4 @@ const router=useRouter()
   position: relative;
 
 }
-
 </style>

@@ -131,19 +131,19 @@ const chartOption = computed(() => {
     animationDuration: 1500,
     animationEasing: 'cubicOut',
     color: ['#37c651', '#00DDFF', '#FF8C00', '#FF0087'],
-    title: { text: 'Monthly Payments' },
+    // title: { text: 'Monthly Payments' },
     tooltip: {
       trigger: 'axis',
       axisPointer: { type: 'cross', label: { backgroundColor: '#6a7985' } },
     },
     legend: { data: currencies.map(currency => `${currency} Payments`) },
-    toolbox: {
-      feature: {
-        saveAsImage: {},
-        dataZoom: { yAxisIndex: 'none' },
-        dataView: { readOnly: false },
-      }
-    },
+    // toolbox: {
+    //   feature: {
+    //     saveAsImage: {},
+    //     dataZoom: { yAxisIndex: 'none' },
+    //     dataView: { readOnly: false },
+    //   }
+    // },
     grid: { left: '3%', right: '4%', bottom: '3%', containLabel: true },
     xAxis: [{ type: 'category', boundaryGap: false, data: xAxisLabels }],
     yAxis: [{

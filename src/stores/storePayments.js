@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
 import {
   collection, onSnapshot,where,
-  query,orderBy,addDoc,updateDoc,writeBatch,getDocs,collectionGroup,deleteField,deleteDoc,doc,
+  query,orderBy,addDoc,updateDoc,writeBatch,getDocs,collectionGroup,deleteField,deleteDoc,doc,limit,
 } from 'firebase/firestore'
 import {db} from '/src/js/firebase'
 import { useStoreAuth } from './storeAuth'
@@ -54,6 +54,7 @@ export const useStorePayments= defineStore('storePayments', {
        currentPaymentArray:[],
        mobile,
        loadingPayments:null,
+       paymentData:[],
     }
   },
 
@@ -459,7 +460,39 @@ async addPayment (work,type) {
 
       }
     },
+    async getLastPayments() {
+      this.loading=true
+      const paymentsCollectionRef = collectionGroup(
+        db,
+        'payments',
+      )
+     const paymentsCollectionQuery = query(paymentsCollectionRef, where('doctorId', '==', this.storeAuth.user.uid), orderBy("dateUnix", "desc"),
+      limit(5));
+     getPaymentsSnapshot=onSnapshot(paymentsCollectionQuery, (querySnapshot) => {
+       const payments=[]
+       querySnapshot.forEach((doc) => {
+       let payment={
+         paymentId:doc.id,
+         invoiceId:doc.data().invoiceId,
+         paid:doc.data().paid,
+         dateUnix:doc.data().dateUnix,
+         date:doc.data().date,
+         workId:doc.data().workId||'',
+         patientId:doc.data().patientId||'',
+         currency:doc.data().currency,
+         type:doc.data().type,
+         label:doc.data().label,
+       }
+      this.storeInvoices.GET_INVOICE_FOR_PAYMENT(payment.invoiceId)
+       payments.push(payment)
 
+       })
+       this.paymentData=payments
+      //  payments.forEach(payment=>{this.storeInvoices.GET_INVOICE_FOR_PAYMENT(payment.invoiceId)})
+   })
+   this.loading=false
+  console.log(this.paymentData,'paymentData')
+  },
 async addDiscount (work,type) {
   const paymentsCollectionRef = collection(
     invoicesCollectionRef,

@@ -50,6 +50,7 @@ export const useStoreAppointments= defineStore('storeAppointments', {
        mobile,
        limit:5,
        appointmentsCount:0,
+       loadingAppointments:false,
     }
   },
 

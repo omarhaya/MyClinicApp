@@ -5,6 +5,12 @@ import {
   IonContent,
   IonPage,
 } from '@ionic/vue';
+import {onMounted} from 'vue'
+import {useRouter} from 'vue-router'
+const router=useRouter()
+onMounted (()=>{
+router.push('/settings/profile')
+})
 </script>
 
 <template>

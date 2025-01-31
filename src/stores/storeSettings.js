@@ -22,6 +22,7 @@ export const useStoreSettings = defineStore('storeSettings', {
      const theme = useTheme()
     return {
       selectedDate: today(),
+      mobile,
       $q,
       theme,
       storeAuth: useStoreAuth(),
